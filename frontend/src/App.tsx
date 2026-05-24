@@ -1761,10 +1761,10 @@ function App() {
             }
           });
 
-          showToast('Campos preenchidos automaticamente com IA!', 'success');
+          showToast(t('toastFieldsAutoFilled'), 'success');
         } catch (err: any) {
           console.error('Erro ao enriquecer tarefa com Gemini:', err);
-          showToast(`Não foi possível classificar via IA: ${err.message || 'Erro de rede'}. Usando histórico.`, 'error');
+          showToast(t('toastChoreClassificationError').replace('{error}', err.message || t('toastNetworkError')), 'error');
           await runFallbackEnrichment(normalized);
         } finally {
           setIsEnrichingChore(false);
@@ -1929,7 +1929,7 @@ function App() {
           });
         } catch (err: any) {
           console.error('Erro na classificação em tempo real do Gemini:', err);
-          showToast(`Falha na classificação por IA: ${err.message || 'Erro de conexão'}. Adicionado em "Sem categoria".`, 'error');
+          showToast(t('toastIaClassificationError').replace('{error}', err.message || t('toastConnectionError')), 'error');
           // Fallback se a IA falhar: busca no histórico ou assume "un"
           defaultUnit = (await getPastUnit(nameNormalized)) || 'un';
         } finally {
@@ -1937,7 +1937,7 @@ function App() {
         }
       } else {
         if (aiCategorizationEnabled) {
-          showToast('IA ativa mas sem chave de API configurada. Adicionado em "Sem categoria" por padrão.', 'info');
+          showToast(t('toastIaActiveNoKey'), 'info');
         }
         // Fallback offline: busca no histórico ou assume "un"
         defaultUnit = (await getPastUnit(nameNormalized)) || 'un';
@@ -2036,7 +2036,7 @@ function App() {
       }
 
       setFridgeShoppingInput('');
-      showToast(`"${correctedName}" adicionado com sucesso!`, 'success');
+      showToast(t('toastChoreAddedSuccess').replace('{name}', correctedName), 'success');
     } else {
       let category = 'Sem categoria';
       let correctedName = name;
@@ -2056,14 +2056,14 @@ function App() {
           });
         } catch (err: any) {
           console.error('Erro na classificação em tempo real do Gemini:', err);
-          showToast(`Falha na classificação por IA: ${err.message || 'Erro de conexão'}. Adicionado em "Sem categoria".`, 'error');
+          showToast(t('toastIaClassificationError').replace('{error}', err.message || t('toastConnectionError')), 'error');
           defaultUnit = (await getPastUnit(nameNormalized)) || 'un';
         } finally {
           setIsAddingShoppingItem(false);
         }
       } else {
         if (aiCategorizationEnabled) {
-          showToast('IA ativa mas sem chave de API configurada. Adicionado em "Sem categoria" por padrão.', 'info');
+          showToast(t('toastIaActiveNoKey'), 'info');
         }
         defaultUnit = (await getPastUnit(nameNormalized)) || 'un';
       }
@@ -2094,7 +2094,7 @@ function App() {
       }
 
       setFridgeShoppingInput('');
-      showToast(`"${correctedName}" adicionado com sucesso!`, 'success');
+      showToast(t('toastChoreAddedSuccess').replace('{name}', correctedName), 'success');
     }
   };
 
@@ -2801,14 +2801,14 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
         const updatedFamily = { ...family, name };
         setFamily(updatedFamily);
         await db.metadata.put({ key: 'family_info', value: updatedFamily });
-        showToast('Nome da família atualizado com sucesso!', 'success');
+        showToast(t('toastFamilyNameUpdateSuccess'), 'success');
       } else {
         const errData = await response.json();
-        showToast(errData.error || 'Erro ao atualizar nome da família.', 'error');
+        showToast(errData.error || t('toastFamilyNameUpdateError'), 'error');
       }
     } catch (err) {
       console.error(err);
-      showToast('Erro ao se conectar ao servidor.', 'error');
+      showToast(t('toastServerConnectionError'), 'error');
     }
   };
 
@@ -2882,11 +2882,11 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
         await fetchFamilyMembers();
       } else {
         const errData = await response.json();
-        showToast(errData.error || 'Erro ao adicionar integrante.', 'error');
+        showToast(errData.error || t('toastMemberAddError'), 'error');
       }
     } catch (err) {
       console.error(err);
-      showToast('Erro ao se conectar ao servidor.', 'error');
+      showToast(t('toastServerConnectionError'), 'error');
     }
   };
 
@@ -2908,11 +2908,11 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
         await fetchFamilyMembers();
       } else {
         const errData = await response.json();
-        showToast(errData.error || 'Erro ao atualizar membro.', 'error');
+        showToast(errData.error || t('toastMemberUpdateError'), 'error');
       }
     } catch (err) {
       console.error(err);
-      showToast('Erro ao se conectar ao servidor.', 'error');
+      showToast(t('toastServerConnectionError'), 'error');
     }
   };
 
@@ -2936,15 +2936,15 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
         }
       });
       if (response.ok) {
-        showToast('Membro removido com sucesso!', 'success');
+        showToast(t('toastMemberRemoveSuccess'), 'success');
         await fetchFamilyMembers();
       } else {
         const errData = await response.json();
-        showToast(errData.error || 'Erro ao remover membro.', 'error');
+        showToast(errData.error || t('toastMemberRemoveError'), 'error');
       }
     } catch (err) {
       console.error(err);
-      showToast('Erro ao se conectar ao servidor.', 'error');
+      showToast(t('toastServerConnectionError'), 'error');
     }
   };
 
@@ -2964,25 +2964,25 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
         }
       });
       if (response.ok) {
-        showToast('Pontuações redefinidas no servidor com sucesso! Sincronizando dispositivos...', 'success');
+        showToast(t('toastScoresResetSuccess'), 'success');
         await triggerSync();
       } else {
         const errData = await response.json();
-        showToast(errData.error || 'Erro ao redefinir pontuações.', 'error');
+        showToast(errData.error || t('toastScoresResetError'), 'error');
       }
     } catch (err) {
       console.error(err);
-      showToast('Erro ao se conectar ao servidor.', 'error');
+      showToast(t('toastServerConnectionError'), 'error');
     }
   };
   
   const handleResetMemberPassword = async (memberId: string, newPassword: string) => {
     if (!isOnline || !token) {
-      showToast('Você precisa estar online para redefinir senhas.', 'error');
+      showToast(t('toastNeedOnlineToResetPassword'), 'error');
       return false;
     }
     if (!newPassword || !newPassword.trim()) {
-      showToast('A senha não pode ser vazia.', 'error');
+      showToast(t('toastPasswordEmpty'), 'error');
       return false;
     }
     try {
@@ -2995,27 +2995,27 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
         body: JSON.stringify({ password: newPassword })
       });
       if (response.ok) {
-        showToast('Senha redefinida com sucesso!', 'success');
+        showToast(t('toastMemberPasswordResetSuccess'), 'success');
         return true;
       } else {
         const errData = await response.json();
-        showToast(errData.error || 'Erro ao redefinir senha do membro.', 'error');
+        showToast(errData.error || t('toastMemberPasswordResetError'), 'error');
         return false;
       }
     } catch (err) {
       console.error(err);
-      showToast('Erro ao se conectar ao servidor.', 'error');
+      showToast(t('toastServerConnectionError'), 'error');
       return false;
     }
   };
 
   const handleExportBackup = async () => {
     if (!isOnline || !token) {
-      showToast('Você precisa estar online para exportar o backup.', 'error');
+      showToast(t('toastNeedOnlineToExportBackup'), 'error');
       return;
     }
     try {
-      showToast('Gerando e baixando backup do servidor...', 'info');
+      showToast(t('toastExportingBackup'), 'info');
       const response = await fetch(`${backendUrl}/api/family/backup/export`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -3032,20 +3032,20 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
         a.click();
         a.remove();
         window.URL.revokeObjectURL(url);
-        showToast('Backup exportado e baixado com sucesso!', 'success');
+        showToast(t('toastExportBackupSuccess'), 'success');
       } else {
         const errData = await response.json();
-        showToast(errData.error || 'Erro ao exportar backup.', 'error');
+        showToast(errData.error || t('toastExportBackupError'), 'error');
       }
     } catch (err) {
       console.error(err);
-      showToast('Erro ao se conectar ao servidor para exportar backup.', 'error');
+      showToast(t('toastServerConnectionError'), 'error');
     }
   };
 
   const handleImportBackup = async (file: File) => {
     if (!isOnline || !token) {
-      showToast('Você precisa estar online para importar um backup.', 'error');
+      showToast(t('toastNeedOnlineToImportBackup'), 'error');
       return;
     }
     if (!file) return;
@@ -3056,25 +3056,25 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
       try {
         backupData = JSON.parse(text);
       } catch (e) {
-        showToast('O arquivo selecionado não é um JSON válido.', 'error');
+        showToast(t('toastInvalidJson'), 'error');
         return;
       }
 
       if (!backupData.family || !Array.isArray(backupData.members) || !Array.isArray(backupData.sync_items)) {
-        showToast('Formato de arquivo de backup inválido.', 'error');
+        showToast(t('toastInvalidBackupFormat'), 'error');
         return;
       }
 
       if (backupData.family.id !== family?.id) {
-        showToast('Este backup pertence a outra família e não pode ser restaurado aqui.', 'error');
+        showToast(t('toastBackupOtherFamily'), 'error');
         return;
       }
 
-      if (!confirm('ATENÇÃO: Restaurar este backup substituirá os dados atuais do servidor e de todos os dispositivos. Continuar?')) {
+      if (!confirm(t('confirmRestoreBackup'))) {
         return;
       }
 
-      showToast('Processando e restaurando backup no servidor...', 'info');
+      showToast(t('toastRestoringBackup'), 'info');
       const response = await fetch(`${backendUrl}/api/family/backup/import`, {
         method: 'POST',
         headers: {
@@ -3085,16 +3085,16 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
       });
 
       if (response.ok) {
-        showToast('Backup restaurado com sucesso! Sincronizando todos os dispositivos...', 'success');
+        showToast(t('toastRestoreBackupSuccess'), 'success');
         await triggerSync();
         await fetchFamilyMembers();
       } else {
         const errData = await response.json();
-        showToast(errData.error || 'Erro ao restaurar backup.', 'error');
+        showToast(errData.error || t('toastRestoreBackupError'), 'error');
       }
     } catch (err) {
       console.error(err);
-      showToast('Erro de conexão ou leitura do arquivo de backup.', 'error');
+      showToast(t('toastRestoreBackupError'), 'error');
     }
   };
 
@@ -3186,26 +3186,26 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
       });
 
       if (response.ok) {
-        showToast('Backup local restaurado com sucesso! Sincronizando...', 'success');
+        showToast(t('toastLocalRestoreBackupSuccess'), 'success');
         await triggerSync();
         await fetchFamilyMembers();
       } else {
         const errData = await response.json();
-        showToast(errData.error || 'Erro ao restaurar backup.', 'error');
+        showToast(errData.error || t('toastRestoreBackupError'), 'error');
       }
     } catch (err) {
       console.error(err);
-      showToast('Erro ao ler ou processar o backup local.', 'error');
+      showToast(t('toastRestoreBackupError'), 'error');
     }
   };
 
   const handleCreateManualLocalBackup = async () => {
-    showToast('Gerando snapshot de backup local...', 'info');
+    showToast(t('toastCreatingLocalBackup'), 'info');
     const indexList = await createLocalBackupSnapshot('Backup Manual Instantâneo');
     if (indexList) {
-      showToast('Snapshot de backup local gerado com sucesso!', 'success');
+      showToast(t('toastLocalBackupSuccess'), 'success');
     } else {
-      showToast('Erro ao gerar snapshot de backup local. Verifique sua conexão e privilégios.', 'error');
+      showToast(t('toastLocalBackupError'), 'error');
     }
   };
 
@@ -3253,7 +3253,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
       .reduce((acc, p) => acc + p.points, 0);
 
     if (userTotalPoints < reward.cost_points) {
-      showToast(`Você não tem pontos suficientes para resgatar esta recompensa! Faltam ${reward.cost_points - userTotalPoints} XP.`, 'error');
+      showToast(t('toastInsufficientPoints').replace('{points}', String(reward.cost_points - userTotalPoints)), 'error');
       return;
     }
 
@@ -3276,7 +3276,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
       triggerSync();
     }
 
-    showToast(`Recompensa "${reward.title}" resgatada com sucesso!`, 'success');
+    showToast(t('toastRewardRedeemedSuccess').replace('{title}', reward.title), 'success');
   };
 
 
@@ -3767,7 +3767,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
               }}
             >
               <Tablet size={14} />
-              <span>Sair do Painel</span>
+              <span>{t('exitFridgeMode')}</span>
             </button>
           </div>
         </header>
@@ -3782,7 +3782,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                 {family ? family.name : 'Grupo Local Demo'}
               </h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: 'var(--text-secondary)' }}>
-                <span className="hide-on-xs">Olá, <strong>{currentUser ? (currentUser.display_name || currentUser.username) : 'Membro'}</strong></span>
+                <span className="hide-on-xs">{t('helloUser')} <strong>{currentUser ? (currentUser.display_name || currentUser.username) : t('member')}</strong></span>
               </div>
             </div>
           </div>
@@ -3846,10 +3846,10 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
               onClick={() => setIsFridgeMode(!isFridgeMode)}
               className="btn-secondary"
               style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', background: isFridgeMode ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.04)', borderColor: isFridgeMode ? 'var(--accent-primary)' : 'var(--border-light)' }}
-              title="Alternar para Modo Painel da Geladeira"
+              title={t('toggleFridgeMode')}
             >
               <Tablet size={13} />
-              <span className="hide-on-mobile">Fridge Mode</span>
+              <span className="hide-on-mobile">{t('fridgeMode')}</span>
             </button>
 
             {/* Configurações (Ajustes) */}
@@ -3857,7 +3857,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
               onClick={() => setActiveTab('settings')}
               className={activeTab === 'settings' ? 'btn-primary' : 'btn-secondary'}
               style={{ padding: '6px', borderRadius: '50%', minWidth: '32px', height: '32px', border: activeTab === 'settings' ? 'none' : '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              title="Ajustes e Configurações"
+              title={t('settings')}
             >
               <Settings size={13} style={{ color: activeTab === 'settings' ? '#fff' : 'var(--text-secondary)' }} />
             </button>
@@ -3884,7 +3884,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
             <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
               <h3 style={{ fontSize: '18px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                 <CheckSquare size={20} style={{ color: 'var(--accent-primary)' }} />
-                <span>Tarefas e Medicamentos de Hoje ({currentDayName})</span>
+                <span>{t('todayTasksAndMeds')} ({currentDayName})</span>
               </h3>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: '500px' }}>
                 {(() => {
@@ -3900,8 +3900,8 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                           <CheckSquare size={24} />
                         </div>
                         <div style={{ maxWidth: '280px' }}>
-                          <h4 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 6px 0' }}>Sem tarefas para hoje!</h4>
-                          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>Tudo pronto por aqui. Aproveite o dia com a família!</p>
+                          <h4 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 6px 0' }}>{t('noTasksToday')}</h4>
+                          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>{t('noTasksTodayDesc')}</p>
                         </div>
                       </div>
                     );
@@ -3971,7 +3971,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
             <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
               <h3 style={{ fontSize: '18px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                 <ShoppingCart size={20} style={{ color: 'var(--accent-warning)' }} />
-                <span>Lista de Compras da Casa</span>
+                <span>{t('homeShoppingList')}</span>
               </h3>
 
               {/* Formulário de Adição Rápida */}
@@ -3980,7 +3980,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                   type="text"
                   value={fridgeShoppingInput}
                   onChange={(e) => setFridgeShoppingInput(e.target.value)}
-                  placeholder={isAddingShoppingItem ? "Classificando com IA..." : "Adicione item (ex: '2 un leite', 'queijo')..."}
+                  placeholder={isAddingShoppingItem ? t('classifyingAi') : t('addShoppingItemPlaceholder')}
                   disabled={isAddingShoppingItem}
                   style={{
                     flex: 1,
@@ -4026,8 +4026,8 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                           <ShoppingCart size={24} />
                         </div>
                         <div style={{ maxWidth: '280px' }}>
-                          <h4 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 6px 0' }}>Sua despensa está cheia!</h4>
-                          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>Nenhum item pendente. Use o campo acima para adicionar de forma rápida.</p>
+                          <h4 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 6px 0' }}>{t('pantryFull')}</h4>
+                          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>{t('noPendingItems')}</p>
                         </div>
                       </div>
                     );
@@ -4067,17 +4067,17 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
             <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
               <h3 style={{ fontSize: '18px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                 <Trophy size={20} style={{ color: 'var(--accent-success)' }} />
-                <span>Leaderboard Semanal</span>
+                <span>{t('leaderboardWeekly')}</span>
               </h3>
               
               {/* Progresso Geral de Hoje */}
               <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '16px', marginBottom: '20px', textAlign: 'center' }}>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Progresso das tarefas hoje</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>{t('todayTasksProgress')}</p>
                 <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${choreProgressToday.percentage}%`, background: 'linear-gradient(90deg, var(--accent-primary), var(--accent-success))', transition: 'width 0.4s' }}></div>
                 </div>
                 <h4 style={{ fontSize: '24px', fontWeight: '700', marginTop: '12px' }}>{choreProgressToday.percentage}%</h4>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{choreProgressToday.completed} de {choreProgressToday.total} rotinas cumpridas</p>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('tasksCompletedOf').replace('{completed}', String(choreProgressToday.completed)).replace('{total}', String(choreProgressToday.total))}</p>
               </div>
 
               {/* Tabela de Ranking de XP */}
@@ -4316,7 +4316,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                       }}
                                       onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
                                       onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
-                                      title="Remover aviso"
+                                      title={t('removeWarning')}
                                     >
                                       <Trash2 size={11} />
                                     </button>
@@ -4335,14 +4335,13 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                       <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
                         <div>
-                          <p style={{ fontSize: '10px', color: 'var(--accent-primary-hover)', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>Roteiro da Família</p>
+                          <p style={{ fontSize: '10px', color: 'var(--accent-primary-hover)', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>{t('routines')}</p>
                           <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0 0 0' }}>
                             <CheckSquare size={16} style={{ color: 'var(--accent-primary)' }} />
                             <span>
                               {(() => {
-                                const daysOfWeekFull = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
-                                const monthsPTFull = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-                                return `${daysOfWeekFull[calendarSelectedDate.getDay()]}, ${calendarSelectedDate.getDate()} de ${monthsPTFull[calendarSelectedDate.getMonth()]}`;
+                                const formattedDate = calendarSelectedDate.toLocaleDateString(language === 'pt' ? 'pt-BR' : language, { weekday: 'long', day: 'numeric', month: 'long' });
+                                return formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
                               })()}
                             </span>
                           </h3>
@@ -4358,9 +4357,9 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                             }}
                             className="btn-primary"
                             style={{ padding: '6px 10px', fontSize: '11px', borderRadius: 'var(--radius-sm)' }}
-                            title="Criar nova rotina para o dia selecionado"
+                            title={t('createChoreForSelectedDay')}
                           >
-                            + Nova Rotina
+                            + {t('createNewChore')}
                           </button>
                         )}
                       </div>
@@ -4379,7 +4378,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                           if (targetChores.length === 0) {
                             return (
                               <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)', fontSize: '13px' }}>
-                                💤 Sem atividades agendadas para este dia.
+                                💤 {t('noChoresForDate')}
                               </div>
                             );
                           }
@@ -4411,10 +4410,10 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                           });
 
                           const categories = [
-                            { id: 'manha', label: 'Manhã', icon: '🌅', color: 'var(--accent-warning)', items: manhaChores },
-                            { id: 'tarde', label: 'Tarde', icon: '☀️', color: 'var(--accent-info)', items: tardeChores },
-                            { id: 'noite', label: 'Noite', icon: '🌙', color: 'var(--accent-primary-hover)', items: noiteChores },
-                            { id: 'flexivel', label: 'Flexíveis / O Dia Todo', icon: '📅', color: 'var(--text-secondary)', items: flexivelChores }
+                            { id: 'manha', label: t('periodMorning'), icon: '🌅', color: 'var(--accent-warning)', items: manhaChores },
+                            { id: 'tarde', label: t('periodAfternoon'), icon: '☀️', color: 'var(--accent-info)', items: tardeChores },
+                            { id: 'noite', label: t('periodEvening'), icon: '🌙', color: 'var(--accent-primary-hover)', items: noiteChores },
+                            { id: 'flexivel', label: t('periodFlexible'), icon: '📅', color: 'var(--text-secondary)', items: flexivelChores }
                           ];
 
                           const activeCategories = categories.filter(cat => cat.items.length > 0);
@@ -4424,7 +4423,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', paddingBottom: '4px', marginBottom: '2px' }}>
                                 <span style={{ fontSize: '13px' }}>{cat.icon}</span>
                                 <span style={{ fontSize: '11px', fontWeight: '800', color: cat.color, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{cat.label}</span>
-                                <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 'auto', fontWeight: 'bold' }}>{cat.items.length} {cat.items.length === 1 ? 'tarefa' : 'tarefas'}</span>
+                                <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 'auto', fontWeight: 'bold' }}>{cat.items.length} {cat.items.length === 1 ? t('choreSingle') : t('chorePlural')}</span>
                               </div>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                 {cat.items.map(chore => {
@@ -4622,14 +4621,19 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                     // Formatar o cabeçalho temporal conforme a perspectiva
                     let dateHeaderTitle = '';
                     if (calendarView === 'month') {
-                      dateHeaderTitle = `${monthsPT[calendarMonth]} ${calendarYear}`;
+                      const dummyDate = new Date(calendarYear, calendarMonth, 1);
+                      const monthStr = dummyDate.toLocaleDateString(language === 'pt' ? 'pt-BR' : language, { month: 'long' });
+                      dateHeaderTitle = `${monthStr.charAt(0).toUpperCase() + monthStr.slice(1)} ${calendarYear}`;
                     } else if (calendarView === 'week') {
                       const weekDays = getActiveWeekDays(calendarSelectedDate);
                       const firstDay = weekDays[0];
                       const lastDay = weekDays[6];
-                      dateHeaderTitle = `${firstDay.getDate()} ${monthsPT[firstDay.getMonth()].substring(0,3)} - ${lastDay.getDate()} ${monthsPT[lastDay.getMonth()].substring(0,3)} (${lastDay.getFullYear()})`;
+                      const firstMonthStr = firstDay.toLocaleDateString(language === 'pt' ? 'pt-BR' : language, { month: 'short' }).replace('.', '');
+                      const lastMonthStr = lastDay.toLocaleDateString(language === 'pt' ? 'pt-BR' : language, { month: 'short' }).replace('.', '');
+                      dateHeaderTitle = `${firstDay.getDate()} ${firstMonthStr} - ${lastDay.getDate()} ${lastMonthStr} (${lastDay.getFullYear()})`;
                     } else {
-                      dateHeaderTitle = `${daysOfWeek[calendarSelectedDate.getDay()]}, ${calendarSelectedDate.getDate()} de ${monthsPT[calendarSelectedDate.getMonth()]}`;
+                      const dayStr = calendarSelectedDate.toLocaleDateString(language === 'pt' ? 'pt-BR' : language, { weekday: 'long', day: 'numeric', month: 'long' });
+                      dateHeaderTitle = dayStr.charAt(0).toUpperCase() + dayStr.slice(1);
                     }
 
                     // Células mensais
@@ -4647,8 +4651,8 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                         {/* CABEÇALHO DO CALENDÁRIO COM SELETORES */}
                         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '4px' }}>
                           <div>
-                            <h3 style={{ fontSize: '20px', fontWeight: '700' }}>Calendário Familiar</h3>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Acompanhamento integrado de rotinas e remédios.</p>
+                            <h3 style={{ fontSize: '20px', fontWeight: '700' }}>{t('familyCalendar')}</h3>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{t('calendarSubtitle')}</p>
                           </div>
 
                           {/* Seletor de Perspectivas */}
@@ -4671,7 +4675,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                   letterSpacing: '0.5px'
                                 }}
                               >
-                                {view === 'month' ? 'Mês' : view === 'week' ? 'Semana' : 'Dia'}
+                                {view === 'month' ? t('month') : view === 'week' ? t('week') : t('day')}
                               </button>
                             ))}
                           </div>
@@ -4681,7 +4685,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                             <button
                               onClick={handlePrevPeriod}
                               style={{ border: 'none', background: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', transition: 'transform 0.15s ease' }}
-                              title="Voltar"
+                              title={t('back')}
                             >
                               <ChevronLeft size={18} />
                             </button>
@@ -4691,7 +4695,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                             <button
                               onClick={handleNextPeriod}
                               style={{ border: 'none', background: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', transition: 'transform 0.15s ease' }}
-                              title="Avançar"
+                              title={t('forward')}
                             >
                               <ChevronRight size={18} />
                             </button>
@@ -4700,11 +4704,11 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
                         {/* FILTROS INTEGRADOS AO CALENDÁRIO */}
                         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '4px', background: 'rgba(255,255,255,0.01)', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
-                          <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', alignSelf: 'center' }}>Filtros:</span>
+                          <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', alignSelf: 'center' }}>{t('filters')}</span>
                           <div>
                             <select className="input-field" style={{ padding: '4px 10px', height: '32px', fontSize: '12px', width: '130px', margin: 0 }} value={filterChoreUser} onChange={(e) => setFilterChoreUser(e.target.value)}>
-                              <option value="all">Membro: Todos</option>
-                              <option value="all-family">Família Coletiva</option>
+                              <option value="all">{t('memberAll')}</option>
+                              <option value="all-family">{t('familyCollective')}</option>
                               {familyMembers.map(m => (
                                 <option key={m.id} value={m.username}>{m.display_name || m.username}</option>
                               ))}
@@ -4712,9 +4716,9 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                           </div>
                           <div>
                             <select className="input-field" style={{ padding: '4px 10px', height: '32px', fontSize: '12px', width: '130px', margin: 0 }} value={filterChoreType} onChange={(e) => setFilterChoreType(e.target.value)}>
-                              <option value="all">Tipo: Todos</option>
-                              <option value="routine">Apenas Rotinas</option>
-                              <option value="medication">Apenas Remédios</option>
+                              <option value="all">{t('typeAll')}</option>
+                              <option value="routine">{t('onlyRoutines')}</option>
+                              <option value="medication">{t('onlyMedications')}</option>
                             </select>
                           </div>
                         </div>
@@ -4981,10 +4985,13 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                           return (
                             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                               <div className="glass-panel" style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--accent-primary-hover)' }}>Atividades Detalhadas do Dia</span>
+                                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--accent-primary-hover)' }}>{t('detailedDayActivities')}</span>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                   <span className="badge-xp" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-primary)' }}>
-                                    {choresOnThisDay.filter(c => isChoreCompletedOnDate(c, cellDateStr)).length} de {choresOnThisDay.length} feitas
+                                    {t('tasksCompletedOf')
+                                      .replace('{completed}', String(choresOnThisDay.filter(c => isChoreCompletedOnDate(c, cellDateStr)).length))
+                                      .replace('{total}', String(choresOnThisDay.length))
+                                    }
                                   </span>
                                   {currentUser && (
                                     <button
@@ -4994,9 +5001,9 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                       }}
                                       className="btn-primary"
                                       style={{ padding: '4px 8px', fontSize: '10px', borderRadius: 'var(--radius-sm)' }}
-                                      title="Criar nova rotina para o dia selecionado"
+                                      title={t('createChoreForSelectedDay')}
                                     >
-                                      + Nova Rotina
+                                      + {t('createNewChore')}
                                     </button>
                                   )}
                                 </div>
@@ -5006,7 +5013,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                 {choresOnThisDay.length === 0 ? (
                                   <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.01)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--border-light)' }}>
                                     <CalendarIcon size={24} style={{ marginBottom: '8px', color: 'var(--text-secondary)', opacity: 0.4 }} />
-                                    <p style={{ fontSize: '13px', fontWeight: '500', margin: 0 }}>Nenhuma rotina cadastrada para esta data.</p>
+                                    <p style={{ fontSize: '13px', fontWeight: '500', margin: 0 }}>{t('noChoresForDate')}</p>
                                   </div>
                                 ) : (
                                   choresOnThisDay.map(chore => {
@@ -5198,11 +5205,11 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                       >
                         {isAddingShoppingItem ? (
                           <>
-                            <RefreshCw size={16} className="animate-spin" /> Classificando...
+                            <RefreshCw size={16} className="animate-spin" /> {t('classifyingAi')}
                           </>
                         ) : (
                           <>
-                            <Plus size={16} /> Adicionar
+                            <Plus size={16} /> {t('add')}
                           </>
                         )}
                       </button>
@@ -5212,7 +5219,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                   {/* Exibição dos Itens da Lista de Compras */}
                   <div className="glass-panel" style={{ padding: '24px' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <ShoppingBag size={20} style={{ color: 'var(--accent-warning)' }} /> Lista de Compras Compartilhada
+                      <ShoppingBag size={20} style={{ color: 'var(--accent-warning)' }} /> {t('sharedShoppingList')}
                     </h3>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -5403,7 +5410,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                             handleAdjustShoppingItemQty(item.id, 1);
                                           }}
                                           style={{ border: 'none', background: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                          title="Aumentar quantidade"
+                                          title={t('increaseQty')}
                                         >
                                           <ChevronUp size={14} />
                                         </button>
@@ -5413,14 +5420,14 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                             handleAdjustShoppingItemQty(item.id, -1);
                                           }}
                                           style={{ border: 'none', background: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                          title="Diminuir quantidade"
+                                          title={t('decreaseQty')}
                                         >
                                           <ChevronDown size={14} />
                                         </button>
                                       </div>
                                     )}
 
-                                    <button onClick={() => handleDeleteShoppingItem(item.id)} style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} title="Excluir Item">
+                                    <button onClick={() => handleDeleteShoppingItem(item.id)} style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} title={t('deleteItem')}>
                                       <Trash2 size={13} />
                                     </button>
                                   </div>
@@ -5434,7 +5441,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                       {activeShoppingItems.length === 0 && (
                         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                           <span style={{ fontSize: '24px' }}>🛒</span>
-                          <p style={{ margin: 0, fontSize: '14px' }}>Sua lista de compras compartilhada está vazia! Adicione itens acima.</p>
+                          <p style={{ margin: 0, fontSize: '14px' }}>{t('emptyShoppingList')}</p>
                         </div>
                       )}
 
@@ -5454,8 +5461,8 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                               fontWeight: '600'
                             }}
                           >
-                            <span>📦 Histórico de Compras (Arquivados) ({archivedShoppingItems.length})</span>
-                            <span>{showArchivedShopping ? 'Recolher ▲' : 'Expandir ▼'}</span>
+                            <span>📦 {t('shoppingHistoryArchived')} ({archivedShoppingItems.length})</span>
+                            <span>{showArchivedShopping ? t('collapse') : t('expand')}</span>
                           </button>
 
                           {showArchivedShopping && (
@@ -5479,7 +5486,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                       {item.name}
                                     </p>
                                     <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                                      Qtd: {item.quantity} | Comprado por: {item.checked_by || 'Alguém'} em {new Date(item.updated_at).toLocaleDateString(LOCALE_MAP[language] || 'en-US')}
+                                      {t('qtyLabel')}: {item.quantity} | {t('boughtBy').replace('{user}', item.checked_by || t('someone')).replace('{date}', new Date(item.updated_at).toLocaleDateString(LOCALE_MAP[language] || 'en-US'))}
                                     </span>
                                   </div>
                                   
@@ -5487,12 +5494,12 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                   <button
                                     onClick={() => handleRestoreShoppingItem(item.id)}
                                     style={{ border: 'none', background: 'none', color: 'var(--accent-primary-hover)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                                    title="Restaurar item para a lista ativa"
+                                    title={t('restoreItemTooltip')}
                                   >
                                     <RotateCcw size={14} />
                                   </button>
 
-                                  <button onClick={() => handleDeleteShoppingItem(item.id)} style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} title="Excluir Definitivamente">
+                                  <button onClick={() => handleDeleteShoppingItem(item.id)} style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} title={t('deletePermanently')}>
                                     <Trash2 size={13} />
                                   </button>
                                 </div>
@@ -5554,21 +5561,21 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                   <div className="reward-store-panel glass-panel" style={{ padding: '24px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
                       <div>
-                        <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Loja de Privilégios da Casa</h3>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Redima seus pontos de XP acumulados por recompensas reais da casa!</p>
+                        <h3 style={{ fontSize: '18px', fontWeight: '700' }}>{t('rewardStoreTitle')}</h3>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{t('gamificationSubtitle')}</p>
                       </div>
 
                       {/* Exibir pontos do usuário atual */}
                       <div className="glass-panel" style={{ padding: '8px 16px', border: '1px solid var(--border-focus)', display: 'flex', alignItems: 'center', gap: '8px', height: 'fit-content' }}>
                         <Coins size={16} style={{ color: 'var(--accent-warning)' }} />
                         <span style={{ fontSize: '13px', fontWeight: '700' }}>
-                          Seu Saldo:{' '}
+                          {t('yourBalance').split('{points}')[0]}
                           <strong style={{ color: 'var(--accent-success)' }}>
                             {localPoints
                               .filter(p => p.user_id === (currentUser ? currentUser.id : 'demo-user-child'))
-                              .reduce((acc, p) => acc + p.points, 0)}{' '}
-                            XP
+                              .reduce((acc, p) => acc + p.points, 0)}
                           </strong>
+                          {t('yourBalance').split('{points}')[1] || ' XP'}
                         </span>
                       </div>
                     </div>
@@ -5577,15 +5584,15 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                     {(!currentUser || currentUser.role === 'admin' || !isAuthenticated) && (
                       <form onSubmit={handleCreateReward} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', padding: '16px', borderRadius: 'var(--radius-md)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px' }}>
                         <div style={{ gridColumn: 'span 2' }}>
-                          <input type="text" className="input-field" style={{ padding: '8px 12px', fontSize: '13px' }} placeholder="Nome da recompensa..." value={newRewardTitle} onChange={(e) => setNewRewardTitle(e.target.value)} required />
+                          <input type="text" className="input-field" style={{ padding: '8px 12px', fontSize: '13px' }} placeholder={t('rewardNamePlaceholder')} value={newRewardTitle} onChange={(e) => setNewRewardTitle(e.target.value)} required />
                         </div>
                         <div>
-                          <input type="text" className="input-field" style={{ padding: '8px 12px', fontSize: '13px' }} placeholder="Breve descrição..." value={newRewardDesc} onChange={(e) => setNewRewardDesc(e.target.value)} />
+                          <input type="text" className="input-field" style={{ padding: '8px 12px', fontSize: '13px' }} placeholder={t('rewardDescriptionPlaceholder')} value={newRewardDesc} onChange={(e) => setNewRewardDesc(e.target.value)} />
                         </div>
                         <div>
-                          <input type="number" className="input-field" style={{ padding: '8px 12px', fontSize: '13px' }} placeholder="Custo (XP)" value={newRewardCost} onChange={(e) => setNewRewardCost(Number(e.target.value))} required />
+                          <input type="number" className="input-field" style={{ padding: '8px 12px', fontSize: '13px' }} placeholder={t('rewardCostPlaceholder')} value={newRewardCost} onChange={(e) => setNewRewardCost(Number(e.target.value))} required />
                         </div>
-                        <button type="submit" className="btn-primary" style={{ padding: '8px', fontSize: '12px' }}>Criar Recompensa</button>
+                        <button type="submit" className="btn-primary" style={{ padding: '8px', fontSize: '12px' }}>{t('createReward')}</button>
                       </form>
                     )}
 
@@ -5715,10 +5722,10 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                               <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <Tablet size={20} style={{ color: 'var(--accent-warning)' }} />
                               </div>
-                              <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>Simulador de Usuário</h4>
+                              <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('userSimulator')}</h4>
                             </div>
                             <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
-                              Alterne de perfil em tempo real para testar o aplicativo simulando diferentes integrantes.
+                              {t('userSimulatorDesc')}
                             </p>
                           </div>
                         )}
@@ -5864,18 +5871,18 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                               <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <CalendarIcon size={18} style={{ color: 'var(--accent-primary)' }} />
                               </div>
-                              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>Visualização Padrão do Calendário</h3>
+                              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('defaultCalendarView')}</h3>
                             </div>
 
                             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>
-                              Escolha qual visualização do calendário (Mês, Semana ou Dia) deve ser exibida por padrão ao abrir o seu painel de controle familiar.
+                              {t('defaultCalendarViewDesc')}
                             </p>
 
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
                               {[
-                                { id: 'month', label: 'Visão Mensal (Padrão)', desc: 'Calendário completo do mês corrente', icon: '📅' },
-                                { id: 'week', label: 'Visão Semanal', desc: 'Foco no roteiro semanal de 7 dias', icon: '🗓️' },
-                                { id: 'day', label: 'Visão Diária', desc: 'Foco exclusivo na lista do dia', icon: '☀️' }
+                                { id: 'month', label: t('calendarViewMonthLabel'), desc: t('calendarViewMonthDesc'), icon: '📅' },
+                                { id: 'week', label: t('calendarViewWeekLabel'), desc: t('calendarViewWeekDesc'), icon: '🗓️' },
+                                { id: 'day', label: t('calendarViewDayLabel'), desc: t('calendarViewDayDesc'), icon: '☀️' }
                               ].map(viewOpt => {
                                 const isSelected = defaultCalendarView === viewOpt.id;
                                 return (
@@ -6027,22 +6034,22 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                             }}>
                               <Wand2 size={18} style={{ color: '#ec4899', flexShrink: 0, marginTop: '2px' }} />
                               <div>
-                                <strong style={{ display: 'block', marginBottom: '4px', color: '#ec4899' }}>Configurações Centralizadas</strong>
-                                Apenas administradores podem modificar as configurações globais de Inteligência Artificial para a família. Toda chave de API configurada pelo Admin é compartilhada de forma segura e sincronizada automaticamente com todos os membros.
+                                <strong style={{ display: 'block', marginBottom: '4px', color: '#ec4899' }}>{t('centralizedAiTitle')}</strong>
+                                {t('centralizedAiDesc')}
                               </div>
                             </div>
                           )}
 
                           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>
-                            Configure a chave de API oficial do Google Gemini para categorizar automaticamente de forma inteligente todos os itens que você adicionar à sua lista de compras.
+                            {t('aiCategorizationDesc')}
                           </p>
 
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             {/* Ativar/Desativar Categorização por IA */}
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderRadius: 'var(--radius-md)', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-light)' }}>
                               <div>
-                                <p style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>Categorização por IA Ativa</p>
-                                <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0, marginTop: '2px' }}>Utiliza o Gemini 2.5 Flash em segundo plano ao adicionar novos itens.</p>
+                                <p style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('aiCategorizationActive')}</p>
+                                <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0, marginTop: '2px' }}>{t('geminiWarningDesc')}</p>
                               </div>
                               <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '46px', height: '22px', cursor: currentUser?.role === 'admin' ? 'pointer' : 'not-allowed' }}>
                                 <input 
@@ -6301,68 +6308,68 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                           <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                               <div>
-                                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Nome de Exibição (Nome)</label>
+                                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>{t('fullName')}</label>
                                 <input
                                   type="text"
                                   className="input-field"
                                   style={{ padding: '8px 12px', fontSize: '13px' }}
                                   value={profileDisplayName}
                                   onChange={(e) => setProfileDisplayName(e.target.value)}
-                                  placeholder="Ex: Jorge Silva"
+                                  placeholder={t('fullNamePlaceholder')}
                                 />
                               </div>
                               <div>
-                                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Nome de Usuário (Login Handle)</label>
+                                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>{t('usernameLoginHandle')}</label>
                                 <input
                                   type="text"
                                   className="input-field"
                                   style={{ padding: '8px 12px', fontSize: '13px' }}
                                   value={profileUsername}
                                   onChange={(e) => setProfileUsername(e.target.value)}
-                                  placeholder="Ex: jorge"
+                                  placeholder={t('usernamePlaceholder')}
                                 />
                               </div>
                             </div>
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                               <div>
-                                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Título Familiar</label>
+                                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>{t('familyTitle')}</label>
                                 <select
                                   className="input-field"
                                   style={{ padding: '8px 12px', fontSize: '13px', height: '38px' }}
                                   value={profileFamilyTitle}
                                   onChange={(e) => setProfileFamilyTitle(e.target.value)}
                                 >
-                                  <option value="Pai">Pai</option>
-                                  <option value="Mãe">Mãe</option>
-                                  <option value="Filho">Filho</option>
-                                  <option value="Filha">Filha</option>
-                                  <option value="Avô">Avô</option>
-                                  <option value="Avó">Avó</option>
-                                  <option value="Tio">Tio</option>
-                                  <option value="Tia">Tia</option>
-                                  <option value="Outro">Outro</option>
+                                  <option value="Pai">{t('titleFather')}</option>
+                                  <option value="Mãe">{t('titleMother')}</option>
+                                  <option value="Filho">{t('titleSon')}</option>
+                                  <option value="Filha">{t('titleDaughter')}</option>
+                                  <option value="Avô">{t('titleGrandfather')}</option>
+                                  <option value="Avó">{t('titleGrandmother')}</option>
+                                  <option value="Tio">{t('titleUncle')}</option>
+                                  <option value="Tia">{t('titleAunt')}</option>
+                                  <option value="Outro">{t('titleOther')}</option>
                                 </select>
                               </div>
                               <div>
-                                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Sexo / Gênero</label>
+                                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>{t('gender')}</label>
                                 <select
                                   className="input-field"
                                   style={{ padding: '8px 12px', fontSize: '13px', height: '38px' }}
                                   value={profileGender}
                                   onChange={(e) => setProfileGender(e.target.value)}
                                 >
-                                  <option value="Masculino">Masculino</option>
-                                  <option value="Feminino">Feminino</option>
-                                  <option value="Outro">Outro</option>
-                                  <option value="Não Informar">Não Informar</option>
+                                  <option value="Masculino">{t('genderMale')}</option>
+                                  <option value="Feminino">{t('genderFemale')}</option>
+                                  <option value="Outro">{t('genderOther')}</option>
+                                  <option value="Não Informar">{t('genderNone')}</option>
                                 </select>
                               </div>
                             </div>
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                               <div>
-                                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Data de Nascimento</label>
+                                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>{t('birthDate')}</label>
                                 <input
                                   type="date"
                                   className="input-field"
@@ -6372,14 +6379,14 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                 />
                               </div>
                               <div>
-                                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Nova Senha</label>
+                                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>{t('newPassword')}</label>
                                 <input
                                   type="password"
                                   className="input-field"
                                   style={{ padding: '8px 12px', fontSize: '13px' }}
                                   value={profilePassword}
                                   onChange={(e) => setProfilePassword(e.target.value)}
-                                  placeholder={isAuthenticated ? "Preencha para alterar" : "Inativo em modo demo"}
+                                  placeholder={isAuthenticated ? t('fillToChange') : t('inactiveInDemo')}
                                   disabled={!isAuthenticated}
                                 />
                               </div>
@@ -6402,7 +6409,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                               className="btn-primary"
                               style={{ padding: '10px 20px', fontSize: '13px', alignSelf: 'flex-start', marginTop: '4px' }}
                             >
-                              Salvar Alterações
+                              {t('saveChanges')}
                             </button>
                           </form>
                         </div>
@@ -6500,10 +6507,10 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                           value={member.role}
                                           onChange={(e) => handleUpdateMember(member.id, e.target.value, undefined)}
                                           disabled={member.id === currentUser.id || member.id === family?.creator_id}
-                                          title={member.id === family?.creator_id ? "O criador da família deve ser sempre um administrador." : undefined}
+                                          title={member.id === family?.creator_id ? t('creatorMustBeAdmin') : undefined}
                                         >
                                           <option value="admin">Admin</option>
-                                          <option value="user">Usuário</option>
+                                          <option value="user">{t('roleUser')}</option>
                                         </select>
 
                                         <button
@@ -6523,7 +6530,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                             color: 'var(--accent-warning)',
                                             background: 'rgba(245, 158, 11, 0.05)'
                                           }}
-                                          title="Redefinir senha de acesso deste usuário"
+                                          title={t('resetUserPassword')}
                                         >
                                           <Key size={14} />
                                         </button>
@@ -6543,7 +6550,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                             color: (member.id === currentUser.id || member.id === family?.creator_id) ? 'var(--text-muted)' : 'var(--accent-danger)',
                                             opacity: (member.id === currentUser.id || member.id === family?.creator_id) ? 0.3 : 1
                                           }}
-                                          title={member.id === family?.creator_id ? "O criador da família não pode ser removido." : "Remover integrante da família"}
+                                          title={member.id === family?.creator_id ? t('creatorCannotBeRemoved') : t('removeFamilyMember')}
                                         >
                                           <Trash2 size={14} />
                                         </button>
@@ -6557,10 +6564,10 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                               <div style={{ background: 'rgba(255,255,255,0.01)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                                   <UserPlus size={16} style={{ color: 'var(--accent-primary-hover)' }} />
-                                  <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.3px', margin: 0 }}>Adicionar Membro Manualmente</label>
+                                  <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.3px', margin: 0 }}>{t('addMemberManually')}</label>
                                 </div>
                                 <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                                  Cadastre um novo integrante diretamente na família. Ele poderá fazer login imediatamente usando o e-mail e a senha definida abaixo.
+                                  {t('addMemberManuallyDesc')}
                                 </p>
                                 
                                 <form onSubmit={handleAddMember} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -6572,7 +6579,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                         style={{ padding: '8px 10px', fontSize: '13px' }}
                                         value={addMemUsername}
                                         onChange={(e) => setAddMemUsername(e.target.value)}
-                                        placeholder="Nome de Usuário (ex: Maria)"
+                                        placeholder={t('addMemberUsernamePlaceholder')}
                                         required
                                       />
                                     </div>
@@ -6586,7 +6593,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                         style={{ padding: '8px 10px', fontSize: '13px' }}
                                         value={addMemPassword}
                                         onChange={(e) => setAddMemPassword(e.target.value)}
-                                        placeholder="Senha provisória"
+                                        placeholder={t('temporaryPasswordPlaceholder')}
                                       />
                                     </div>
                                     
@@ -6597,15 +6604,15 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                         value={addMemTitle}
                                         onChange={(e) => setAddMemTitle(e.target.value)}
                                       >
-                                        <option value="Pai">Pai</option>
-                                        <option value="Mãe">Mãe</option>
-                                        <option value="Filho">Filho</option>
-                                        <option value="Filha">Filha</option>
-                                        <option value="Avô">Avô</option>
-                                        <option value="Avó">Avó</option>
-                                        <option value="Tio">Tio</option>
-                                        <option value="Tia">Tia</option>
-                                        <option value="Outro">Outro</option>
+                                        <option value="Pai">{t('titleFather')}</option>
+                                        <option value="Mãe">{t('titleMother')}</option>
+                                        <option value="Filho">{t('titleSon')}</option>
+                                        <option value="Filha">{t('titleDaughter')}</option>
+                                        <option value="Avô">{t('titleGrandfather')}</option>
+                                        <option value="Avó">{t('titleGrandmother')}</option>
+                                        <option value="Tio">{t('titleUncle')}</option>
+                                        <option value="Tia">{t('titleAunt')}</option>
+                                        <option value="Outro">{t('titleOther')}</option>
                                       </select>
                                     </div>
 
@@ -6616,8 +6623,8 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                         value={addMemRole}
                                         onChange={(e) => setAddMemRole(e.target.value)}
                                       >
-                                        <option value="user">Papel: Usuário</option>
-                                        <option value="admin">Papel: Admin</option>
+                                        <option value="user">{t('roleSelectorUser')}</option>
+                                        <option value="admin">{t('roleSelectorAdmin')}</option>
                                       </select>
                                     </div>
                                   </div>
@@ -6637,7 +6644,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                     }}
                                   >
                                     <UserPlus size={14} />
-                                    Adicionar à Família
+                                    {t('addMemberButton')}
                                   </button>
                                 </form>
                               </div>
@@ -6792,7 +6799,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                 }}
                               >
                                 <Award size={15} />
-                                Zerar Pontuações da Família
+                                {t('resetFamilyScores')}
                               </button>
                             </div>
                           )}
@@ -6800,11 +6807,11 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                           {/* Redefinição e Limpeza do Banco de Dados */}
                           {currentUser?.role === 'admin' && (
                             <div style={{ marginTop: '24px', borderTop: '1px solid var(--border-light)', paddingTop: '20px' }}>
-                              <h4 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: 'var(--accent-danger)' }}>Zona de Perigo</h4>
-                              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>Ações destrutivas sobre os dados locais.</p>
+                              <h4 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: 'var(--accent-danger)' }}>{t('dangerZone')}</h4>
+                              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>{t('destructiveActionsDesc')}</p>
                               <button
                                   onClick={async () => {
-                                    if (confirm('Tem certeza absoluta? Isso zerará e apagará todas as tabelas e dados no servidor E localmente, desconectando o seu usuário.')) {
+                                    if (confirm(t('confirmResetDatabase'))) {
                                       try {
                                         // 0. Chamar API do backend para apagar e re-semear o banco de dados do servidor
                                         if (isOnline && token) {
@@ -6823,14 +6830,14 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                         window.location.reload();
                                       } catch (err) {
                                         console.error("Erro ao redefinir banco local:", err);
-                                        alert("Ocorreu um erro ao limpar o banco. Por favor, tente recarregar a página.");
+                                        alert(t('dbResetErrorMsg'));
                                       }
                                     }
                                   }}
                                   className="btn-secondary"
                                   style={{ color: 'var(--accent-danger)', borderColor: 'rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.05)', padding: '8px 16px', fontSize: '13px' }}
                               >
-                                Limpar Banco de Dados e Reiniciar
+                                {t('clearDatabaseAndRestart')}
                               </button>
                             </div>
                           )}
@@ -6844,11 +6851,11 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                             <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <Tablet size={18} style={{ color: 'var(--accent-warning)' }} />
                             </div>
-                            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>Simulador de Usuário Ativo</h3>
+                            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('activeUserSimulator')}</h3>
                           </div>
 
                           <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
-                            Você está no modo de simulação offline. Selecione qual membro deseja simular para testar as permissões de admin/usuário em tempo real:
+                            {t('userSimulatorDesc')}
                           </p>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px' }}>
                             {(familyMembers.length > 0 ? familyMembers : defaultDemoMembers).map((member: any) => {
@@ -6881,10 +6888,10 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                     <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>@{member.username}</div>
                                   )}
                                   <div style={{ fontSize: '11px', marginTop: '4px', color: member.role === 'admin' ? 'var(--accent-warning)' : 'var(--text-muted)' }}>
-                                    {member.family_title || (member.role === 'admin' ? 'Administrador' : 'Membro')}
+                                    {member.family_title || (member.role === 'admin' ? t('roleAdmin') : t('member'))}
                                   </div>
                                   <div style={{ fontSize: '9px', marginTop: '6px', opacity: isActive ? 1 : 0, color: 'var(--accent-primary-hover)', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                                    Ativo
+                                    {t('active')}
                                   </div>
                                 </div>
                               );
@@ -6908,7 +6915,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
       {/* FOOTER DESCRITIVO */}
       <footer style={{ borderTop: '1px solid var(--border-light)', padding: '16px 24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px' }}>
-        FamilySync v1.0.0 • Desenvolvido de forma privada, segura e offline-first. Licenciado para auto-hospedagem (Self-Hosted).
+        {t('footerText')}
       </footer>
 
       {/* MODAL DE CRIAÇÃO DE NOVA ROTINA (GOOGLE CALENDAR STYLE) */}
@@ -6951,7 +6958,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
             }}>
               <h3 style={{ fontSize: '20px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-primary)', margin: 0 }}>
                 <PlusCircle size={22} style={{ color: 'var(--accent-primary)' }} />
-                <span>{editingChore ? 'Editar Rotina ou Medicamento' : 'Agendar Nova Rotina ou Medicamento'}</span>
+                <span>{editingChore ? t('editChoreOrMed') : t('scheduleNewChoreOrMed')}</span>
               </h3>
               <button
                 onClick={() => {
@@ -6978,7 +6985,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
               {/* Título */}
               <div>
                 <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <span>Título</span>
+                  <span>{t('titleField')}</span>
                   {isEnrichingChore && (
                     <span style={{ color: '#ec4899', fontSize: '11px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '5px' }}>
                       <span className="spinner-border" style={{
@@ -6990,14 +6997,14 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                         display: 'inline-block',
                         animation: 'spin 0.6s linear infinite'
                       }} />
-                      Sugerindo detalhes com IA...
+                      {t('aiSuggestingDetails')}
                     </span>
                   )}
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="ex: Lavar a louça do jantar, Paracetamol..."
+                  placeholder={t('choreTitlePlaceholder')}
                   value={newChoreTitle}
                   onChange={(e) => setNewChoreTitle(e.target.value)}
                   onBlur={handleChoreTitleBlur}
@@ -7009,11 +7016,11 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
               {/* Descrição */}
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Descrição</label>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>{t('descriptionField')}</label>
                 <textarea
                   className="input-field"
                   style={{ minHeight: '60px', resize: 'vertical' }}
-                  placeholder={isEnrichingChore ? "Aguardando sugestão da IA..." : "Instruções ou detalhes adicionais..."}
+                  placeholder={isEnrichingChore ? t('waitingAiSuggestion') : t('additionalInstructionsPlaceholder')}
                   value={newChoreDesc}
                   onChange={(e) => setNewChoreDesc(e.target.value)}
                   disabled={isEnrichingChore}
@@ -7023,9 +7030,9 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
               {/* Linha 1: Atribuído, Co-responsável e Pontos */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Responsável Principal</label>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>{t('mainResponsible')}</label>
                   <select className="input-field" value={newChoreAssigned} onChange={(e) => setNewChoreAssigned(e.target.value)} disabled={isEnrichingChore || (currentUser && currentUser.role !== 'admin')}>
-                    <option value="all">Toda a Família (Livre)</option>
+                    <option value="all">{t('wholeFamilyFree')}</option>
                     {(familyMembers.length > 0 ? familyMembers : defaultDemoMembers).map((member: any) => (
                       <option key={member.id} value={member.username}>
                         {member.display_name || member.username} ({member.family_title || member.role})
@@ -7035,9 +7042,9 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Co-responsável</label>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>{t('coResponsible')}</label>
                   <select className="input-field" value={newChoreCoResponsible} onChange={(e) => setNewChoreCoResponsible(e.target.value)} disabled={isEnrichingChore}>
-                    <option value="none">Nenhum</option>
+                    <option value="none">{t('none')}</option>
                     {(familyMembers.length > 0 ? familyMembers : defaultDemoMembers).map((member: any) => (
                       <option key={member.id} value={member.username}>
                         {member.display_name || member.username} ({member.family_title || member.role})
@@ -7047,7 +7054,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Pontos (XP)</label>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>{t('pointsXp')}</label>
                   <input
                     type="number"
                     className="input-field"
@@ -7060,11 +7067,11 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
               {/* Seção de Agendamento e Repetição */}
               <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
-                <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--accent-primary-hover)', display: 'block', marginBottom: '12px' }}>Programação de Datas</label>
+                <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--accent-primary-hover)', display: 'block', marginBottom: '12px' }}>{t('dateScheduling')}</label>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '16px' }}>
                   <div>
-                    <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Data de Início</label>
+                    <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>{t('startDate')}</label>
                     <input
                       type="date"
                       className="input-field"
@@ -7075,7 +7082,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Data Limite (Até Quando - Opcional)</label>
+                    <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>{t('endDateOptional')}</label>
                     <input
                       type="date"
                       className="input-field"
@@ -7094,7 +7101,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                     style={{ width: '18px', height: '18px', accentColor: 'var(--accent-primary)', cursor: 'pointer' }}
                   />
                   <label htmlFor="repeatsChore" style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', cursor: 'pointer' }}>
-                    Esta atividade se repete? (Recorrente)
+                    {t('activityRepeats')}
                   </label>
                 </div>
 
@@ -7102,19 +7109,19 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
                       <div>
-                        <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Frequência</label>
+                        <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>{t('frequency')}</label>
                         <select className="input-field" value={newChoreRecurrenceType} onChange={(e: any) => setNewChoreRecurrenceType(e.target.value)}>
-                          <option value="daily">Diária</option>
-                          <option value="weekly">Semanal</option>
-                          <option value="monthly">Mensal</option>
-                          <option value="custom_days">Dias Específicos da Semana</option>
+                          <option value="daily">{t('recurrenceDaily')}</option>
+                          <option value="weekly">{t('recurrenceWeekly')}</option>
+                          <option value="monthly">{t('recurrenceMonthly')}</option>
+                          <option value="custom_days">{t('recurrenceCustomDays')}</option>
                         </select>
                       </div>
 
                       {newChoreRecurrenceType !== 'custom_days' && (
                         <div>
                           <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
-                            Intervalo (A cada quantos {newChoreRecurrenceType === 'daily' ? 'dia(s)' : newChoreRecurrenceType === 'weekly' ? 'semana(s)' : 'mês(es)'})
+                            {t('recurrenceIntervalLabel').replace('{unit}', newChoreRecurrenceType === 'daily' ? t('unitDays') : newChoreRecurrenceType === 'weekly' ? t('unitWeeks') : t('unitMonths'))}
                           </label>
                           <input
                             type="number"
@@ -7129,7 +7136,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
                     {(newChoreRecurrenceType === 'weekly' || newChoreRecurrenceType === 'custom_days') && (
                       <div>
-                        <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Escolha os dias da semana</label>
+                        <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>{t('chooseWeekdays')}</label>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                           {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day, idx) => {
                             const isSelected = newChoreRecurrenceDays.includes(day);
@@ -7171,20 +7178,20 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
               {/* Seção de Horário */}
               <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
-                <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--accent-primary-hover)', display: 'block', marginBottom: '12px' }}>Horário da Atividade</label>
+                <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--accent-primary-hover)', display: 'block', marginBottom: '12px' }}>{t('activityTime')}</label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
                   <div>
-                    <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Formato</label>
+                    <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>{t('timeFormat')}</label>
                     <select className="input-field" value={newChoreTimeType} onChange={(e: any) => setNewChoreTimeType(e.target.value)}>
-                      <option value="all_day">Dia Todo (Qualquer horário)</option>
-                      <option value="fixed">Horário Fixo</option>
-                      <option value="period">Período do Dia</option>
+                      <option value="all_day">{t('timeAllDay')}</option>
+                      <option value="fixed">{t('timeFixed')}</option>
+                      <option value="period">{t('timePeriod')}</option>
                     </select>
                   </div>
 
                   {newChoreTimeType === 'fixed' && (
                     <div>
-                      <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Definir Horário</label>
+                      <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>{t('setTime')}</label>
                       <input
                         type="time"
                         className="input-field"
@@ -7196,11 +7203,11 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
                   {newChoreTimeType === 'period' && (
                     <div>
-                      <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Selecione o Período</label>
+                      <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>{t('selectPeriod')}</label>
                       <select className="input-field" value={newChorePeriodTime} onChange={(e: any) => setNewChorePeriodTime(e.target.value)}>
-                        <option value="manha">🌅 Manhã</option>
-                        <option value="tarde">☀️ Tarde</option>
-                        <option value="noite">🌙 Noite</option>
+                        <option value="manha">🌅 {t('periodMorning')}</option>
+                        <option value="tarde">☀️ {t('periodAfternoon')}</option>
+                        <option value="noite">🌙 {t('periodEvening')}</option>
                       </select>
                     </div>
                   )}
@@ -7217,7 +7224,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                   style={{ width: '18px', height: '18px', accentColor: 'var(--accent-primary)', cursor: 'pointer' }}
                 />
                 <label htmlFor="isMedicationChore" style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', cursor: 'pointer' }}>
-                  É um medicamento? (Configurar Ciclo de Dosagem Sequencial)
+                  {t('isMedicationLabel')}
                 </label>
               </div>
 
@@ -7225,17 +7232,17 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
               {newChoreIsMed && (
                 <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
                   <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--accent-info)', display: 'block', marginBottom: '8px' }}>
-                    Ciclo de Dosagem Sequencial
+                    {t('sequentialDosageCycle')}
                   </label>
                   <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.4' }}>
-                    Defina as doses em ordem (ex: Dia 1: 10mg, Dia 2: 10mg, Dia 3: 5mg). O app repetirá esta sequência sequencialmente com base nos dias decorridos.
+                    {t('sequentialDosageDesc')}
                   </p>
 
                   {/* Frequência de doses e Duração */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px', marginBottom: '16px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px' }}>
                     <div>
                       <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
-                        Frequência das Doses
+                        {t('dosageFrequency')}
                       </label>
                       <select
                         className="input-field"
@@ -7244,15 +7251,15 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                         onChange={(e) => setNewChoreMedFrequency(e.target.value)}
                         disabled={!!editingChore}
                       >
-                        <option value="1">1x ao dia (no horário definido acima)</option>
-                        <option value="2">2x ao dia (A cada 12h: 08:00, 20:00)</option>
-                        <option value="3">3x ao dia (A cada 8h: 08:00, 16:00, 00:00)</option>
-                        <option value="4">4x ao dia (A cada 6h: 06:00, 12:00, 18:00, 00:00)</option>
+                        <option value="1">{t('freqOnceDaily')}</option>
+                        <option value="2">{t('freqTwiceDaily')}</option>
+                        <option value="3">{t('freqThriceDaily')}</option>
+                        <option value="4">{t('freqFourTimesDaily')}</option>
                       </select>
                     </div>
                     <div>
                       <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
-                        Duração do Tratamento
+                        {t('treatmentDuration')}
                       </label>
                       <select
                         className="input-field"
@@ -7261,13 +7268,13 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                         onChange={(e) => setNewChoreMedDuration(Number(e.target.value))}
                         disabled={!!editingChore}
                       >
-                        <option value="1">1 dia (dose única)</option>
-                        <option value="3">3 dias</option>
-                        <option value="5">5 dias</option>
-                        <option value="7">7 dias (1 semana)</option>
-                        <option value="10">10 dias</option>
-                        <option value="14">14 dias (2 semanas)</option>
-                        <option value="30">30 dias (1 mês)</option>
+                        <option value="1">{t('durOneDay')}</option>
+                        <option value="3">{t('daysCount').replace('{count}', '3')}</option>
+                        <option value="5">{t('daysCount').replace('{count}', '5')}</option>
+                        <option value="7">{t('durOneWeek')}</option>
+                        <option value="10">{t('daysCount').replace('{count}', '10')}</option>
+                        <option value="14">{t('durTwoWeeks')}</option>
+                        <option value="30">{t('durOneMonth')}</option>
                       </select>
                     </div>
                   </div>
@@ -7275,12 +7282,12 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
                     {newChoreMedCycle.map((dose, idx) => (
                       <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)', width: '50px', fontWeight: '600' }}>Dia {idx + 1}:</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)', width: '50px', fontWeight: '600' }}>{t('dayCountLabel').replace('{count}', String(idx + 1))}</span>
                         <input
                           type="text"
                           className="input-field"
                           style={{ padding: '6px 12px', fontSize: '13px' }}
-                          placeholder="ex: 10mg, 1 dose, Sem dose..."
+                          placeholder={t('dosePlaceholder')}
                           value={dose}
                           onChange={(e) => {
                             const updated = [...newChoreMedCycle];
@@ -7297,7 +7304,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                               setNewChoreMedCycle(updated);
                             }}
                             style={{ border: 'none', background: 'none', color: 'var(--accent-danger)', cursor: 'pointer', padding: '4px' }}
-                            title="Remover etapa"
+                            title={t('removeStep')}
                           >
                             <Trash2 size={16} />
                           </button>
@@ -7308,12 +7315,12 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
                   <button
                     type="button"
-                    onClick={() => setNewChoreMedCycle([...newChoreMedCycle, '1 dose'])}
+                    onClick={() => setNewChoreMedCycle([...newChoreMedCycle, t('defaultDoseValue')])}
                     className="btn-secondary"
                     style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
                   >
                     <Plus size={12} />
-                    <span>Adicionar Dose ao Ciclo</span>
+                    <span>{t('addDoseToCycle')}</span>
                   </button>
                 </div>
               )}
@@ -7324,7 +7331,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                   <button
                     type="button"
                     onClick={() => {
-                      if (window.confirm(`Deseja realmente excluir a atividade "${editingChore.title}"?`)) {
+                      if (window.confirm(t('confirmDeleteActivity').replace('{title}', editingChore.title))) {
                         handleDeleteChore(editingChore.id);
                       }
                     }}
@@ -7332,7 +7339,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                     style={{ padding: '10px 20px', color: 'var(--accent-danger)', borderColor: 'rgba(239, 68, 68, 0.2)', marginRight: 'auto', display: 'flex', alignItems: 'center', gap: '6px' }}
                   >
                     <Trash2 size={16} />
-                    <span>Excluir</span>
+                    <span>{t('delete')}</span>
                   </button>
                 )}
                 <button
@@ -7344,18 +7351,18 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                   className="btn-secondary"
                   style={{ padding: '10px 20px' }}
                 >
-                  Cancelar
+                  {t('cancel')}
                 </button>
                 <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>
                   {editingChore ? (
                     <>
                       <Check size={16} />
-                      <span>Salvar Alterações</span>
+                      <span>{t('saveChanges')}</span>
                     </>
                   ) : (
                     <>
                       <Plus size={16} />
-                      <span>Criar Rotina</span>
+                      <span>{t('createChore')}</span>
                     </>
                   )}
                 </button>
@@ -7396,20 +7403,22 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
           }}>
             <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Key size={18} style={{ color: 'var(--accent-warning)' }} />
-              Redefinir Senha do Membro
+              {t('resetMemberPassword')}
             </h3>
             <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.4' }}>
-              Defina uma nova senha de acesso temporária para o integrante: <strong>{familyMembers.find(m => m.id === resetPasswordMemberId)?.display_name || familyMembers.find(m => m.id === resetPasswordMemberId)?.username}</strong>. Ele poderá fazer login imediatamente usando esta credencial.
+              {t('resetPasswordModalDesc').split('{name}')[0]}
+              <strong>{familyMembers.find(m => m.id === resetPasswordMemberId)?.display_name || familyMembers.find(m => m.id === resetPasswordMemberId)?.username}</strong>
+              {t('resetPasswordModalDesc').split('{name}')[1]}
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Nova Senha Temporária</label>
+                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>{t('newTemporaryPassword')}</label>
                 <input
                   type="password"
                   className="input-field"
                   style={{ padding: '10px 12px', fontSize: '14px' }}
-                  placeholder="Insira a nova senha provisória"
+                  placeholder={t('temporaryPasswordInputPlaceholder')}
                   value={resetPasswordNewValue}
                   onChange={(e) => setResetPasswordNewValue(e.target.value)}
                   autoFocus
@@ -7427,7 +7436,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                 }}
                 style={{ padding: '8px 16px', fontSize: '13px' }}
               >
-                Cancelar
+                {t('cancel')}
               </button>
               <button
                 type="button"
@@ -7441,7 +7450,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                 }}
                 style={{ padding: '8px 20px', fontSize: '13px' }}
               >
-                Salvar Nova Senha
+                {t('saveNewPassword')}
               </button>
             </div>
           </div>

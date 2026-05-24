@@ -108,12 +108,6 @@ FamilySync is designed to operate within your local area network (LAN). To acces
 
 ---
 
-## 📦 Releases & Deployment
-
-The complete guide on publishing releases to GitHub, preparing and tagging production Docker images, using the local Docker server (`192.168.100.19`), and pushing to Docker Hub is documented in [RELEASE.md](RELEASE.md).
-
----
-
 ## 📜 Credits & Third-Party Attributions
 
 **FamilySync** is built using excellent open-source libraries, APIs, and technologies:

@@ -91,3 +91,7 @@ backend/node_modules/
 .antigravitycli/
 .gemini/
 scratch/
+
+# Local / Private release notes
+RELEASE.md
+release-notes.md

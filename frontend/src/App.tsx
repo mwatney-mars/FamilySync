@@ -44,7 +44,8 @@ import {
   Key,
   Shield,
   Upload,
-  Download
+  Download,
+  Archive
 } from 'lucide-react';
 
 
@@ -2310,6 +2311,22 @@ function App() {
     }
   };
 
+  // Arquivar Item de Compra (Imediatamente / Forçar Arquivamento)
+  const handleArchiveShoppingItem = async (itemId: string) => {
+    const now = Date.now();
+    // Define o timestamp como 2 horas no passado para forçar o arquivamento sob a regra de 1h
+    const forceArchiveTime = now - 2 * 60 * 60 * 1000;
+    await db.shopping.update(itemId, {
+      checked: 1,
+      updated_at: forceArchiveTime
+    });
+
+    if (isAuthenticated) {
+      await queueSyncOperation(itemId, 'shopping', 'update');
+      triggerSync();
+    }
+  };
+
   // Ajustar Quantidade do Item de Compra
   const handleAdjustShoppingItemQty = async (itemId: string, amount: number) => {
     const item = await db.shopping.get(itemId);
@@ -3921,24 +3938,20 @@ Instruções para resposta:
 
   // --- MEMOS PARA LISTA DE COMPRAS E HISTÓRICO/SUGESTÕES ---
   const activeShoppingItems = useMemo(() => {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const startOfTodayTimestamp = startOfToday.getTime();
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
 
     return localShopping.filter(item => 
-      item.checked === 0 || (item.checked === 1 && item.updated_at >= startOfTodayTimestamp)
+      item.checked === 0 || (item.checked === 1 && item.updated_at >= oneHourAgo)
     );
-  }, [localShopping]);
+  }, [localShopping, currentTime]);
 
   const archivedShoppingItems = useMemo(() => {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const startOfTodayTimestamp = startOfToday.getTime();
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
 
     return localShopping.filter(item => 
-      item.checked === 1 && item.updated_at < startOfTodayTimestamp
+      item.checked === 1 && item.updated_at < oneHourAgo
     );
-  }, [localShopping]);
+  }, [localShopping, currentTime]);
 
   const shoppingSuggestions = useMemo(() => {
     const inputVal = keepItemName;
@@ -6128,9 +6141,29 @@ Instruções para resposta:
                                       </div>
                                     )}
 
-                                    <button onClick={() => handleDeleteShoppingItem(item.id)} style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} title={t('deleteItem')}>
-                                      <Trash2 size={13} />
-                                    </button>
+                                    {checked ? (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleArchiveShoppingItem(item.id);
+                                        }}
+                                        style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                                        title={t('archiveItem')}
+                                      >
+                                        <Archive size={13} />
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteShoppingItem(item.id);
+                                        }}
+                                        style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                                        title={t('deleteItem')}
+                                      >
+                                        <Trash2 size={13} />
+                                      </button>
+                                    )}
                                   </div>
                                 );
                               })}

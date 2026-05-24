@@ -80,7 +80,7 @@ const LOCALE_MAP: Record<string, string> = {
 };
 
 const getLocalizedDate = (d: Date, lang: string) => {
-  const locale = LOCALE_MAP[lang] || 'pt-BR';
+  const locale = LOCALE_MAP[lang] || 'en-US';
   const formatter = new Intl.DateTimeFormat(locale, {
     weekday: 'long',
     day: 'numeric',
@@ -91,7 +91,7 @@ const getLocalizedDate = (d: Date, lang: string) => {
 };
 
 const getLocalizedMonths = (lang: string): string[] => {
-  const locale = LOCALE_MAP[lang] || 'pt-BR';
+  const locale = LOCALE_MAP[lang] || 'en-US';
   const formatter = new Intl.DateTimeFormat(locale, { month: 'long' });
   const result: string[] = [];
   for (let m = 0; m < 12; m++) {
@@ -104,7 +104,7 @@ const getLocalizedMonths = (lang: string): string[] => {
 };
 
 const getLocalizedWeekdays = (lang: string, formatStyle: 'short' | 'long' = 'short'): string[] => {
-  const locale = LOCALE_MAP[lang] || 'pt-BR';
+  const locale = LOCALE_MAP[lang] || 'en-US';
   const formatter = new Intl.DateTimeFormat(locale, { weekday: formatStyle });
   const result: string[] = [];
   for (let i = 1; i <= 7; i++) {
@@ -413,10 +413,10 @@ function App() {
   const [setupLoading, setSetupLoading] = useState<boolean>(false);
 
   // --- ESTADO DE IDIOMA & TRADUÇÃO ---
-  const [language, setLanguage] = useState<string>('pt');
+  const [language, setLanguage] = useState<string>('en');
 
   const t = (key: string): string => {
-    return TRANSLATIONS[language]?.[key] || TRANSLATIONS['pt']?.[key] || key;
+    return TRANSLATIONS[language]?.[key] || TRANSLATIONS['en']?.[key] || key;
   };
 
   // --- ESTADOS DE USABILIDADE E CUSTOMIZAÇÃO ---
@@ -3413,13 +3413,9 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
           
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '18px' }}>
-              <img src="/logo.png" alt="FamilySync Logo" style={{ width: '80px', height: '80px', borderRadius: '20px', boxShadow: '0 4px 20px rgba(139, 92, 246, 0.25)' }} />
+              <img src="/logo.png" alt="FamilySync Logo" style={{ width: '160px', height: 'auto' }} />
             </div>
-            <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '2px', background: 'rgba(139, 92, 246, 0.1)', padding: '4px 12px', borderRadius: '999px' }}>
-              PROJETO FAMILYSYNC
-            </span>
-            <h1 style={{ fontSize: '32px', fontWeight: '700', marginTop: '12px', letterSpacing: '-1px' }}>FamilySync</h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '6px' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '16px' }}>
               Organização, gamificação e comunicação familiar criptografada e segura.
             </p>
           </div>
@@ -3659,7 +3655,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ fontSize: '32px', fontWeight: '800', letterSpacing: '-1px', color: 'var(--text-primary)', lineHeight: '1', fontFamily: '"Outfit", "Inter", sans-serif' }}>
-                {currentTime.toLocaleTimeString(LOCALE_MAP[language] || 'pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                {currentTime.toLocaleTimeString(LOCALE_MAP[language] || 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
               </div>
               <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', fontWeight: '500' }}>
                 {getLocalizedDate(currentTime, language)}
@@ -3730,7 +3726,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
           
           {/* Identificação de Família */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <img src="/logo.png" alt="FamilySync Logo" style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1.5px solid var(--accent-primary)', boxShadow: '0 0 10px rgba(139, 92, 246, 0.3)' }} />
+            <img src="/logo.png" alt="FamilySync Logo" style={{ height: '36px', width: 'auto' }} />
             <div>
               <h2 style={{ fontSize: '16px', fontWeight: '700', letterSpacing: '-0.3px' }}>
                 {family ? family.name : 'Grupo Local Demo'}
@@ -4153,7 +4149,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid var(--border-light)', paddingTop: '14px', fontSize: '20px', fontWeight: '700', color: 'var(--accent-primary-hover)' }}>
                           <Clock size={20} style={{ color: 'var(--accent-primary)' }} />
-                          <span>{currentTime.toLocaleTimeString('pt-BR')}</span>
+                          <span>{currentTime.toLocaleTimeString(LOCALE_MAP[language] || 'en-US')}</span>
                           <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500', marginLeft: 'auto' }}>
                             Sistema 100% Sincronizado
                           </span>
@@ -5433,7 +5429,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                       {item.name}
                                     </p>
                                     <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                                      Qtd: {item.quantity} | Comprado por: {item.checked_by || 'Alguém'} em {new Date(item.updated_at).toLocaleDateString('pt-BR')}
+                                      Qtd: {item.quantity} | Comprado por: {item.checked_by || 'Alguém'} em {new Date(item.updated_at).toLocaleDateString(LOCALE_MAP[language] || 'en-US')}
                                     </span>
                                   </div>
                                   
@@ -6694,7 +6690,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                       <div key={bk.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-light)' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                                           <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)' }}>{bk.label}</span>
-                                          <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>{new Date(bk.timestamp).toLocaleString('pt-BR')}</span>
+                                          <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>{new Date(bk.timestamp).toLocaleString(LOCALE_MAP[language] || 'en-US')}</span>
                                         </div>
                                         <button
                                           onClick={() => handleRestoreLocalBackup(bk.id)}

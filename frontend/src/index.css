@@ -42,6 +42,38 @@
   --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+[data-theme="light"] {
+  /* Cores Base - Tema Light Premium */
+  --bg-main: #f8fafc;        /* Slate 50 */
+  --bg-surface: #ffffff;     /* Solid pure white */
+  --bg-surface-hover: #f1f5f9;/* Slate 100 */
+  --bg-glass: rgba(255, 255, 255, 0.7); /* Frosted glass */
+  
+  --border-light: rgba(15, 23, 42, 0.06); /* slate-900 with low opacity */
+  --border-medium: rgba(15, 23, 42, 0.12);
+  --border-focus: rgba(124, 58, 237, 0.4); /* Violet 600 */
+
+  /* Acentas e Alertas Adaptados para Contraste */
+  --accent-primary: #7c3aed; /* Violeta Deeper */
+  --accent-primary-hover: #6d28d9;
+  --accent-success: #059669; /* Verde Deeper */
+  --accent-warning: #d97706; /* Laranja Deeper */
+  --accent-danger: #dc2626;  /* Vermelho Deeper */
+  --accent-info: #0891b2;    /* Ciano Deeper */
+
+  /* Cores de Texto de Alto Contraste */
+  --text-primary: #0f172a;   /* Slate 900 */
+  --text-secondary: #475569; /* Slate 600 */
+  --text-muted: #64748b;     /* Slate 500 */
+
+  /* Sombras e Bordas Adaptadas para Light */
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.12);
+  --shadow-glow: 0 0 20px rgba(124, 58, 237, 0.1);
+}
+
+
 /* Reset de Estilos */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -174,7 +206,7 @@ select.input-field {
 }
 
 select.input-field option {
-  background-color: #121418 !important;
+  background-color: var(--bg-surface) !important;
   color: var(--text-primary) !important;
   font-family: var(--font-family);
   padding: 12px;

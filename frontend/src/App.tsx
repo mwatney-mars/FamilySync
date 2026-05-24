@@ -13,6 +13,7 @@ import {
   Wifi,
   WifiOff,
   RefreshCw,
+  BarChart3,
   Tablet,
   Coins,
   LogOut,
@@ -32,6 +33,7 @@ import {
   Globe,
   Clock,
   Sun,
+  Moon,
   CloudRain,
   Sparkles,
   Pin,
@@ -56,10 +58,10 @@ import type {
   PurchaseRecord
 } from './db';
 
-// URL padrão para o backend (ajustável pelo usuário se ele estiver hospedando o próprio servidor)
-const DEFAULT_BACKEND_URL = window.location.origin.includes(':5173')
-  ? 'http://localhost:5000'
-  : window.location.origin;
+const DEFAULT_BACKEND_URL =
+  window.location.port && window.location.port !== '5000'
+    ? `${window.location.protocol}//${window.location.hostname}:5000`
+    : window.location.origin;
 
 // --- FUNÇÕES AUXILIARES DE AGENDAMENTO E DATAS ---
 const getTodayStr = () => {
@@ -321,12 +323,6 @@ const sortChoresChronologically = (a: Chore, b: Chore): number => {
   return a.title.localeCompare(b.title);
 };
 
-const defaultDemoMembers = [
-  { id: 'demo-pai', username: 'Pai', role: 'admin', family_title: 'Pai' },
-  { id: 'demo-mae', username: 'Mãe', role: 'admin', family_title: 'Mãe' },
-  { id: 'demo-filho', username: 'Filho', role: 'user', family_title: 'Filho' },
-  { id: 'demo-filha', username: 'Filha', role: 'user', family_title: 'Filha' }
-];
 
 // --- SINTETIZADOR DE SOM NATIVO (Web Audio API - 0 Bytes) ---
 const playChimeSound = () => {
@@ -380,7 +376,7 @@ const playChimeSound = () => {
 
 function App() {
   // --- ESTADO GLOBAL ---
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'shopping' | 'gamification' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'shopping' | 'gamification' | 'reports' | 'settings'>('dashboard');
   const [isAuthenticated, setIsAuth] = useState<boolean>(false);
   const [token, setToken] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -419,6 +415,9 @@ function App() {
   const [profileGender, setProfileGender] = useState<string>('Não Informar');
   const [profileFamilyTitle, setProfileFamilyTitle] = useState<string>('Membro');
   const [activeSettingsSection, setActiveSettingsSection] = useState<string>('menu');
+  const [reportsSelectedUser, setReportsSelectedUser] = useState<string>('all');
+  const [reportsSelectedType, setReportsSelectedType] = useState<string>('all');
+  const [reportsSearch, setReportsSearch] = useState<string>('');
   const [profilePassword, setProfilePassword] = useState<string>('');
   const [profileSaveSuccess, setProfileSaveSuccess] = useState<string | null>(null);
   const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
@@ -440,6 +439,21 @@ function App() {
   };
 
   // --- ESTADOS DE USABILIDADE E CUSTOMIZAÇÃO ---
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+    return 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
+
   const [accentTheme, setAccentTheme] = useState<string>('violet');
   const [gamificationEnabled, setGamificationEnabled] = useState<boolean>(true);
   const [defaultCalendarView, setDefaultCalendarView] = useState<'month' | 'week' | 'day'>('month');
@@ -626,31 +640,12 @@ function App() {
         // Carregar membros imediatamente
         fetchFamilyMembers(storedToken.value, currentBackendUrl);
       } else {
-        // Se for o primeiro acesso absoluto e não houver autenticação nenhuma, preencher dados demonstrativos
-        const isFirstRun = !(await db.metadata.get('first_run_done'));
-        if (isFirstRun) {
-          await populateDemoData();
-          await db.metadata.put({ key: 'first_run_done', value: true });
-        }
-
-        // Inicializar membros da demonstração locais no IndexedDB se não existirem
-        let localDemoMembers = await db.metadata.get('demo_family_members');
-        if (!localDemoMembers) {
-          localDemoMembers = { key: 'demo_family_members', value: defaultDemoMembers };
-          await db.metadata.put(localDemoMembers);
-        }
-        setFamilyMembers(localDemoMembers.value);
-
-        // Inicializar usuário ativo da demo local no IndexedDB se não existir (Pai por padrão)
-        let localActiveDemoUser = await db.metadata.get('active_demo_user');
-        if (!localActiveDemoUser) {
-          localActiveDemoUser = { key: 'active_demo_user', value: defaultDemoMembers[0] }; // Pai (Admin)
-          await db.metadata.put(localActiveDemoUser);
-        }
-        setCurrentUser(localActiveDemoUser.value);
-
-        // Definir dados de família fictícios na demo
-        setFamily({ id: 'demo-family', name: 'Família Demonstrativa (Simulador)', join_code: 'DEMO12', e2ee_salt: 'demosalt' });
+        // Sem autenticação: limpar estados e forçar login
+        setToken(null);
+        setCurrentUser(null);
+        setFamily(null);
+        setIsAuth(false);
+        setFamilyMembers([]);
       }
     }
     loadAuth();
@@ -1080,68 +1075,11 @@ function App() {
         
         setProfileSaveSuccess('Seu perfil foi atualizado com sucesso no servidor!');
         fetchFamilyMembers(data.token || token, backendUrl);
-      } else {
-        // MODO SIMULAÇÃO (OFFLINE LOCAL)
-        if (!currentUser) return;
-
-        // 1. Atualizar o membro correspondente na lista de membros da simulação
-        const currentMembers = familyMembers.length > 0 ? [...familyMembers] : [...defaultDemoMembers];
-        const updatedMembers = currentMembers.map(member => {
-          if (member.id === currentUser.id) {
-            return {
-              ...member,
-              username: profileUsername,
-              display_name: profileDisplayName,
-              email: profileEmail,
-              birth_date: profileBirthDate,
-              gender: profileGender,
-              family_title: profileFamilyTitle
-            };
-          }
-          return member;
-        });
-
-        // 2. Salvar lista de membros atualizada no IndexedDB e atualizar estado
-        await db.metadata.put({ key: 'demo_family_members', value: updatedMembers });
-        setFamilyMembers(updatedMembers);
-
-        // 3. Atualizar usuário ativo na simulação
-        const updatedActiveUser = {
-          ...currentUser,
-          username: profileUsername,
-          display_name: profileDisplayName,
-          email: profileEmail,
-          birth_date: profileBirthDate,
-          gender: profileGender,
-          family_title: profileFamilyTitle
-        };
-
-        await db.metadata.put({ key: 'active_demo_user', value: updatedActiveUser });
-        setCurrentUser(updatedActiveUser);
-
-        setProfileSaveSuccess('Perfil simulado atualizado localmente com sucesso!');
       }
     } catch (err: any) {
       setProfileSaveError(err.message || 'Ocorreu um erro ao salvar o perfil.');
     }
   };
-
-  // --- ALTERNAR USUÁRIO ATIVO DO SIMULADOR (DEMO) ---
-  const handleSwitchSimulatedUser = async (memberId: string) => {
-    const currentMembers = familyMembers.length > 0 ? familyMembers : defaultDemoMembers;
-    const targetMember = currentMembers.find((m: any) => m.id === memberId);
-    if (targetMember) {
-      await db.metadata.put({ key: 'active_demo_user', value: targetMember });
-      setCurrentUser(targetMember);
-      setProfileSaveSuccess(null);
-      setProfileSaveError(null);
-    }
-  };
-
-  // --- INICIALIZAR DADOS DEMONSTRATIVOS (SE PRIMEIRO ACESSO) ---
-  async function populateDemoData() {
-    console.log('Ambiente limpo inicializado. Nenhum dado demonstrativo semeado.');
-  }
 
   // --- EXECUÇÃO DO MOTOR DE SINCRONIZAÇÃO BIDIRECIONAL (E2EE CLIENT-SIDE) ---
   async function triggerSync() {
@@ -2330,6 +2268,13 @@ function App() {
       if (isAuthenticated) {
         await queueSyncOperation(recordId, 'purchase_history', 'insert');
       }
+
+      sendFamilyNotification(
+        t('notifShoppingItemChecked')
+          .replace('{user}', currentUser?.display_name || checkerName)
+          .replace('{name}', item.name)
+          .replace('{quantity}', item.quantity || '1 un')
+      );
     } else {
       // transição de marcado para desmarcado (cancelar compra)
       const linkedRecords = await db.purchase_history
@@ -3320,41 +3265,6 @@ Instruções para resposta:
       showToast(t('toastFillRequiredFields'), 'error');
       return;
     }
-
-    const demoEmail = addMemUsername.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9._-]/g, '') + '@familysync.local';
-
-    if (!isAuthenticated) {
-      // MODO SIMULAÇÃO OFFLINE: Adicionar localmente ao IndexedDB/Dexie
-      const newMember = {
-        id: 'demo-' + Math.random().toString(36).substring(2, 9),
-        username: addMemUsername,
-        email: demoEmail,
-        role: addMemRole,
-        family_title: addMemTitle,
-        birth_date: '',
-        gender: ''
-      };
-
-      try {
-        const updatedMembers = [...familyMembers, newMember];
-        setFamilyMembers(updatedMembers);
-        await db.metadata.put({ key: 'demo_family_members', value: updatedMembers });
-
-        // Limpar campos
-        setAddMemUsername('');
-        setAddMemPassword('');
-        setAddMemRole('user');
-        setAddMemTitle('Filho');
-
-        showToast(t('toastDemoMemberAdded'), 'success');
-      } catch (err) {
-        console.error(err);
-        showToast(t('toastDemoMemberError'), 'error');
-      }
-      return;
-    }
-
-    // MODO ONLINE
     if (!isOnline || !token) {
       showToast(t('toastNeedOnlineToManageMembers'), 'error');
       return;
@@ -3780,6 +3690,13 @@ Instruções para resposta:
       triggerSync();
     }
 
+    sendFamilyNotification(
+      t('notifRewardRedeemed')
+        .replace('{user}', currentUser?.display_name || userName)
+        .replace('{title}', reward.title)
+        .replace('{points}', reward.cost_points.toString())
+    );
+
     showToast(t('toastRewardRedeemedSuccess').replace('{title}', reward.title), 'success');
   };
 
@@ -3793,8 +3710,8 @@ Instruções para resposta:
   const userStats = useMemo(() => {
     const stats: { [key: string]: { points: number; level: number; nextLevelXp: number; displayName: string } } = {};
 
-    // Inicializar dinamicamente com os membros reais da família ou fallback da demo
-    const activeMembers = familyMembers.length > 0 ? familyMembers : defaultDemoMembers;
+    // Inicializar dinamicamente com os membros reais da família
+    const activeMembers = familyMembers;
     activeMembers.forEach(m => {
       stats[m.username] = { 
         points: 0, 
@@ -3825,6 +3742,144 @@ Instruções para resposta:
 
     return stats;
   }, [localPoints, familyMembers]);
+
+  // --- CÁLCULO DE RELATÓRIOS E ESTATÍSTICAS (v1.2.0) ---
+
+  const filteredPointLogs = useMemo(() => {
+    return localPoints.filter(log => {
+      const matchUser = reportsSelectedUser === 'all' || log.user_name === reportsSelectedUser || log.user_id === reportsSelectedUser;
+      const isTask = log.points > 0 && log.reason.includes('Concluiu:');
+      const isMed = log.points > 0 && log.reason.includes('Tomou:');
+      const isReward = log.points < 0 && log.reason.includes('Resgatou:');
+      
+      let matchType = true;
+      if (reportsSelectedType === 'tasks') matchType = isTask;
+      else if (reportsSelectedType === 'meds') matchType = isMed;
+      else if (reportsSelectedType === 'rewards') matchType = isReward;
+      
+      const matchSearch = !reportsSearch.trim() || log.reason.toLowerCase().includes(reportsSearch.toLowerCase()) || log.user_name.toLowerCase().includes(reportsSearch.toLowerCase());
+      
+      return matchUser && matchType && matchSearch;
+    }).sort((a, b) => b.timestamp - a.timestamp);
+  }, [localPoints, reportsSelectedUser, reportsSelectedType, reportsSearch]);
+
+  const reportsStats = useMemo(() => {
+    let tasksCount = 0;
+    let medsCount = 0;
+    let rewardsCount = 0;
+    let familyXp = 0;
+    
+    localPoints.forEach(log => {
+      if (log.points > 0) {
+        familyXp += log.points;
+        if (log.reason.includes('Concluiu:')) {
+          tasksCount++;
+        } else if (log.reason.includes('Tomou:')) {
+          medsCount++;
+        }
+      } else if (log.points < 0 && log.reason.includes('Resgatou:')) {
+        rewardsCount++;
+      }
+    });
+    
+    return { tasksCount, medsCount, rewardsCount, familyXp };
+  }, [localPoints]);
+
+  const reportsHighlights = useMemo(() => {
+    const earned: Record<string, number> = {};
+    const spent: Record<string, number> = {};
+    
+    localPoints.forEach(log => {
+      const name = log.user_name;
+      if (log.points > 0) {
+        earned[name] = (earned[name] || 0) + log.points;
+      } else if (log.points < 0 && log.reason.includes('Resgatou:')) {
+        spent[name] = (spent[name] || 0) + Math.abs(log.points);
+      }
+    });
+    
+    let topEarner = 'none';
+    let maxEarned = 0;
+    Object.entries(earned).forEach(([name, val]) => {
+      if (val > maxEarned) {
+        maxEarned = val;
+        topEarner = name;
+      }
+    });
+    
+    let topSpender = 'none';
+    let maxSpent = 0;
+    Object.entries(spent).forEach(([name, val]) => {
+      if (val > maxSpent) {
+        maxSpent = val;
+        topSpender = name;
+      }
+    });
+    
+    return { topEarner, maxEarned, topSpender, maxSpent };
+  }, [localPoints]);
+
+  const contributionSegments = useMemo(() => {
+    const earned: Record<string, number> = {};
+    let total = 0;
+    
+    localPoints.forEach(log => {
+      if (log.points > 0) {
+        const name = log.user_name;
+        earned[name] = (earned[name] || 0) + log.points;
+        total += log.points;
+      }
+    });
+    
+    const circumference = 314.16;
+    const colors = ['#7c3aed', '#10b981', '#06b6d4', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6'];
+    let accumulatedPercent = 0;
+    
+    return Object.entries(earned).map(([name, pts], idx) => {
+      const percent = total > 0 ? (pts / total) * 100 : 0;
+      const strokeDasharray = `${(percent * circumference) / 100} ${circumference}`;
+      const strokeDashoffset = circumference - ((accumulatedPercent * circumference) / 100);
+      accumulatedPercent += percent;
+      
+      return {
+        name,
+        points: pts,
+        percent: percent.toFixed(1),
+        color: colors[idx % colors.length],
+        strokeDasharray,
+        strokeDashoffset
+      };
+    });
+  }, [localPoints]);
+
+  const weeklyTrendData = useMemo(() => {
+    const days = [];
+    const now = new Date();
+    
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(now.getDate() - i);
+      const dateStr = d.toLocaleDateString(language === 'pt' ? 'pt-BR' : language, { weekday: 'short', day: 'numeric' });
+      
+      const y = d.getFullYear();
+      const startOfDay = new Date(y, d.getMonth(), d.getDate()).getTime();
+      const endOfDay = startOfDay + 24 * 60 * 60 * 1000 - 1;
+      
+      const count = localPoints.filter(log => 
+        log.points > 0 && 
+        log.timestamp >= startOfDay && 
+        log.timestamp <= endOfDay
+      ).length;
+      
+      days.push({ label: dateStr, count });
+    }
+    
+    const maxCount = Math.max(...days.map(d => d.count), 1);
+    return days.map(d => ({
+      ...d,
+      percent: (d.count / maxCount) * 100
+    }));
+  }, [localPoints, language]);
 
   // Taxa de cumprimento das tarefas de hoje
   const choreProgressToday = useMemo(() => {
@@ -4022,11 +4077,7 @@ Instruções para resposta:
               </div>
             </form>
 
-          <div style={{ marginTop: '24px', borderTop: '1px solid var(--border-light)', paddingTop: '16px', textAlign: 'center' }}>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              {t('loginDemoText')}
-            </p>
-          </div>
+
         </div>
       </div>
     );
@@ -4224,6 +4275,38 @@ Instruções para resposta:
               <span>{isOnline ? t('syncStatusOnline') : t('syncStatusOffline')}</span>
             </button>
 
+            {/* Alternador de Tema no Modo Geladeira */}
+            <button
+              onClick={toggleTheme}
+              className="btn-secondary"
+              style={{
+                padding: '6px',
+                borderRadius: '50%',
+                minWidth: '32px',
+                height: '32px',
+                border: '1px solid var(--border-light)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(255, 255, 255, 0.04)',
+                cursor: 'pointer',
+                transition: 'transform var(--transition-fast)'
+              }}
+              title={theme === 'dark' ? t('switchToLightMode') : t('switchToDarkMode')}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              {theme === 'dark' ? (
+                <Sun size={13} style={{ color: '#f59e0b' }} />
+              ) : (
+                <Moon size={13} style={{ color: '#7c3aed' }} />
+              )}
+            </button>
+
             {/* Exit Panel button */}
             <button
               onClick={() => setIsFridgeMode(false)}
@@ -4326,6 +4409,38 @@ Instruções para resposta:
             >
               <Tablet size={13} />
               <span className="hide-on-mobile">{t('fridgeMode')}</span>
+            </button>
+
+            {/* Alternador de Tema (Modo Claro / Escuro) */}
+            <button
+              onClick={toggleTheme}
+              className="btn-secondary"
+              style={{
+                padding: '6px',
+                borderRadius: '50%',
+                minWidth: '32px',
+                height: '32px',
+                border: '1px solid var(--border-light)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(255, 255, 255, 0.04)',
+                cursor: 'pointer',
+                transition: 'transform var(--transition-fast)'
+              }}
+              title={theme === 'dark' ? t('switchToLightMode') : t('switchToDarkMode')}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              {theme === 'dark' ? (
+                <Sun size={13} style={{ color: '#f59e0b' }} />
+              ) : (
+                <Moon size={13} style={{ color: '#7c3aed' }} />
+              )}
             </button>
 
             {/* Configurações (Ajustes) */}
@@ -4605,9 +4720,14 @@ Instruções para resposta:
               </button>
 
               {gamificationEnabled && (
-                <button onClick={() => setActiveTab('gamification')} className={activeTab === 'gamification' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Trophy size={16} /> <span className="nav-btn-text" style={{ marginLeft: '4px' }}>{t('gamification')}</span>
-                </button>
+                <>
+                  <button onClick={() => setActiveTab('gamification')} className={activeTab === 'gamification' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Trophy size={16} /> <span className="nav-btn-text" style={{ marginLeft: '4px' }}>{t('gamification')}</span>
+                  </button>
+                  <button onClick={() => setActiveTab('reports')} className={activeTab === 'reports' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <BarChart3 size={16} /> <span className="nav-btn-text" style={{ marginLeft: '4px' }}>{t('reportsTab')}</span>
+                  </button>
+                </>
               )}
             </nav>
 
@@ -6207,7 +6327,354 @@ Instruções para resposta:
                 </div>
               )}
 
-              {/* ABA 7: CONFIGURAÇÕES E PARÂMETROS DO CLIENTE */}
+              {/* ABA 7: RELATÓRIOS E CONQUISTAS (v1.2.0) */}
+              {activeTab === 'reports' && (
+                <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  
+                  {/* Cabeçalho */}
+                  <div className="glass-panel" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '150px', height: '150px', background: 'radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ background: 'linear-gradient(135deg, var(--accent-primary), #4c1d95)', padding: '12px', borderRadius: 'var(--radius-md)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(124, 58, 237, 0.25)' }}>
+                        <BarChart3 size={24} />
+                      </div>
+                      <div>
+                        <h2 style={{ fontSize: '22px', fontWeight: '800', background: 'linear-gradient(135deg, #ffffff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
+                          {t('reportsTab')}
+                        </h2>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px', margin: 0 }}>
+                          {t('reportsSubtitle')}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Cards de Métricas */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                    
+                    <div className="glass-panel" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', position: 'relative', transition: 'all 0.3s ease', cursor: 'default' }}>
+                      <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '12px', borderRadius: 'var(--radius-md)', color: 'var(--accent-success)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <CheckSquare size={24} />
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+                          {t('reportsTotalChores')}
+                        </p>
+                        <h3 style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', color: '#ffffff', margin: 0 }}>
+                          {reportsStats.tasksCount}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="glass-panel" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', position: 'relative', transition: 'all 0.3s ease', cursor: 'default' }}>
+                      <div style={{ background: 'rgba(6, 182, 212, 0.1)', border: '1px solid rgba(6, 182, 212, 0.2)', padding: '12px', borderRadius: 'var(--radius-md)', color: 'var(--accent-info)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Clock size={24} />
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+                          {t('reportsTotalMeds')}
+                        </p>
+                        <h3 style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', color: '#ffffff', margin: 0 }}>
+                          {reportsStats.medsCount}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="glass-panel" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', position: 'relative', transition: 'all 0.3s ease', cursor: 'default' }}>
+                      <div style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '12px', borderRadius: 'var(--radius-md)', color: 'var(--accent-warning)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Award size={24} />
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+                          {t('reportsTotalRewards')}
+                        </p>
+                        <h3 style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', color: '#ffffff', margin: 0 }}>
+                          {reportsStats.rewardsCount}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="glass-panel" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', position: 'relative', transition: 'all 0.3s ease', cursor: 'default' }}>
+                      <div style={{ background: 'rgba(124, 58, 237, 0.1)', border: '1px solid rgba(124, 58, 237, 0.2)', padding: '12px', borderRadius: 'var(--radius-md)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Sparkles size={24} />
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+                          {t('reportsTotalXp')}
+                        </p>
+                        <h3 style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', color: '#ffffff', margin: 0 }}>
+                          {reportsStats.familyXp} XP
+                        </h3>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Gráficos de Contribuição e Tendência */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+                    
+                    {/* Gráfico Rosca */}
+                    <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+                      <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                        <Users size={18} style={{ color: 'var(--accent-primary)' }} />
+                        <span>{t('reportsChartContribution')}</span>
+                      </h3>
+                      
+                      {contributionSegments.length === 0 ? (
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', minHeight: '200px' }}>
+                          {t('reportsNoData')}
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', flexWrap: 'wrap', gap: '20px', flex: 1 }}>
+                          
+                          <div style={{ position: 'relative', width: '150px', height: '150px' }}>
+                            <svg width="150" height="150" viewBox="0 0 120 120" style={{ transform: 'rotate(-90deg)' }}>
+                              <circle cx="60" cy="60" r="50" fill="transparent" stroke="rgba(255,255,255,0.03)" strokeWidth="12" />
+                              {contributionSegments.map((seg) => (
+                                <circle
+                                  key={seg.name}
+                                  cx="60"
+                                  cy="60"
+                                  r="50"
+                                  fill="transparent"
+                                  stroke={seg.color}
+                                  strokeWidth="12"
+                                  strokeDasharray={seg.strokeDasharray}
+                                  strokeDashoffset={seg.strokeDashoffset}
+                                  strokeLinecap="round"
+                                  style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+                                />
+                              ))}
+                            </svg>
+                            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', width: '80%' }}>
+                              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', textTransform: 'uppercase', fontWeight: '600' }}>Total</span>
+                              <span style={{ fontSize: '18px', fontWeight: '800', color: '#ffffff' }}>{reportsStats.familyXp}</span>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '140px' }}>
+                            {contributionSegments.map(seg => (
+                              <div key={seg.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: seg.color }} />
+                                  <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{seg.name}</span>
+                                </div>
+                                <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>
+                                  {seg.percent}%
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Gráfico de Barras dos últimos 7 dias */}
+                    <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+                      <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                        <Trophy size={18} style={{ color: 'var(--accent-success)' }} />
+                        <span>{t('reportsChartTrend')}</span>
+                      </h3>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1, justifyContent: 'center' }}>
+                        {weeklyTrendData.map((day) => (
+                          <div key={day.label} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{ width: '70px', fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                              {day.label}
+                            </span>
+                            <div style={{ flex: 1, height: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: '7px', overflow: 'hidden', position: 'relative' }}>
+                              <div 
+                                style={{ 
+                                  height: '100%', 
+                                  width: `${day.percent}%`, 
+                                  background: 'linear-gradient(90deg, var(--accent-success), #10b981)', 
+                                  borderRadius: '7px',
+                                  transition: 'width 0.8s ease'
+                                }} 
+                              />
+                            </div>
+                            <span style={{ width: '25px', fontSize: '12px', fontWeight: '700', textAlign: 'right', color: '#ffffff' }}>
+                              {day.count}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Campeões e Conquistas */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                    
+                    <div className="glass-panel" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '16px', position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', opacity: 0.05, color: '#f59e0b' }}>
+                        <Trophy size={120} />
+                      </div>
+                      <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'linear-gradient(135deg, #f59e0b, #d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', boxShadow: '0 8px 20px rgba(245,158,11,0.2)' }}>
+                        <Trophy size={28} style={{ margin: 'auto' }} />
+                      </div>
+                      <div>
+                        <h4 style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--accent-warning)', fontWeight: '700', margin: 0 }}>
+                          {t('reportsTopEarner')}
+                        </h4>
+                        <h3 style={{ fontSize: '18px', fontWeight: '800', marginTop: '4px', color: '#ffffff', margin: 0 }}>
+                          {reportsHighlights.topEarner === 'none' ? '---' : reportsHighlights.topEarner}
+                        </h3>
+                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', margin: 0 }}>
+                          {reportsHighlights.topEarner === 'none' ? '' : `+${reportsHighlights.maxEarned} XP`}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="glass-panel" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '16px', position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', opacity: 0.05, color: '#a78bfa' }}>
+                        <Award size={120} />
+                      </div>
+                      <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-primary), #6d28d9)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', boxShadow: '0 8px 20px rgba(124,58,237,0.2)' }}>
+                        <Award size={28} style={{ margin: 'auto' }} />
+                      </div>
+                      <div>
+                        <h4 style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#a78bfa', fontWeight: '700', margin: 0 }}>
+                          {t('reportsTopSpender')}
+                        </h4>
+                        <h3 style={{ fontSize: '18px', fontWeight: '800', marginTop: '4px', color: '#ffffff', margin: 0 }}>
+                          {reportsHighlights.topSpender === 'none' ? '---' : reportsHighlights.topSpender}
+                        </h3>
+                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', margin: 0 }}>
+                          {reportsHighlights.topSpender === 'none' ? '' : `${reportsHighlights.maxSpent} XP ${t('reportsTotalRewards').toLowerCase()}`}
+                        </p>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Tabela de Histórico (Ledger) */}
+                  <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                      <div>
+                        <h3 style={{ fontSize: '18px', fontWeight: '700', margin: 0 }}>{t('reportsHistory')}</h3>
+                      </div>
+                      
+                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end', minWidth: '280px' }}>
+                        
+                        <select 
+                          className="input-field" 
+                          style={{ padding: '8px 12px', fontSize: '13px', width: 'auto', background: 'var(--bg-card)', border: '1px solid var(--border-light)', color: 'var(--text-primary)' }}
+                          value={reportsSelectedUser}
+                          onChange={(e) => setReportsSelectedUser(e.target.value)}
+                        >
+                          <option value="all">{t('reportsAllMembers')}</option>
+                          {familyMembers.map(member => (
+                            <option key={member.id} value={member.username}>{member.display_name || member.username}</option>
+                          ))}
+                        </select>
+
+                        <select 
+                          className="input-field" 
+                          style={{ padding: '8px 12px', fontSize: '13px', width: 'auto', background: 'var(--bg-card)', border: '1px solid var(--border-light)', color: 'var(--text-primary)' }}
+                          value={reportsSelectedType}
+                          onChange={(e) => setReportsSelectedType(e.target.value)}
+                        >
+                          <option value="all">{t('reportsFilterAll')}</option>
+                          <option value="tasks">{t('reportsFilterTasks')}</option>
+                          <option value="meds">{t('reportsFilterMeds')}</option>
+                          <option value="rewards">{t('reportsFilterRewards')}</option>
+                        </select>
+
+                        <input 
+                          type="text" 
+                          className="input-field" 
+                          style={{ padding: '8px 12px', fontSize: '13px', width: '200px', background: 'var(--bg-card)', border: '1px solid var(--border-light)', color: 'var(--text-primary)' }}
+                          placeholder={t('reportsSearchPlaceholder')}
+                          value={reportsSearch}
+                          onChange={(e) => setReportsSearch(e.target.value)}
+                        />
+
+                      </div>
+                    </div>
+
+                    <div style={{ overflowX: 'auto' }}>
+                      {filteredPointLogs.length === 0 ? (
+                        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                          {t('reportsNoData')}
+                        </div>
+                      ) : (
+                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '1px solid var(--border-light)', color: 'var(--text-secondary)', fontSize: '13px' }}>
+                              <th style={{ padding: '12px 16px', fontWeight: '600' }}>{t('member')}</th>
+                              <th style={{ padding: '12px 16px', fontWeight: '600' }}>
+                                {{
+                                  pt: 'Atividade',
+                                  en: 'Activity',
+                                  es: 'Actividad',
+                                  pl: 'Aktywność',
+                                  de: 'Aktivität',
+                                  fr: 'Activité',
+                                  it: 'Attività'
+                                }[language] || 'Activity'}
+                              </th>
+                              <th style={{ padding: '12px 16px', fontWeight: '600' }}>XP</th>
+                              <th style={{ padding: '12px 16px', fontWeight: '600' }}>
+                                {{
+                                  pt: 'Data / Hora',
+                                  en: 'Date / Time',
+                                  es: 'Fecha / Hora',
+                                  pl: 'Data / Czas',
+                                  de: 'Datum / Uhrzeit',
+                                  fr: 'Date / Heure',
+                                  it: 'Data / Ora'
+                                }[language] || 'Date / Time'}
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredPointLogs.map((log) => {
+                              const isPositive = log.points > 0;
+                              return (
+                                <tr 
+                                  key={log.id} 
+                                  style={{ 
+                                    borderBottom: '1px solid rgba(255,255,255,0.02)', 
+                                    fontSize: '14px',
+                                    transition: 'background 0.2s ease'
+                                  }}
+                                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.01)' }}
+                                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                                >
+                                  <td style={{ padding: '12px 16px', fontWeight: '600', color: '#ffffff' }}>
+                                    {log.user_name}
+                                  </td>
+                                  <td style={{ padding: '12px 16px', color: 'var(--text-primary)' }}>
+                                    {log.reason}
+                                  </td>
+                                  <td style={{ padding: '12px 16px', fontWeight: '700', color: isPositive ? 'var(--accent-success)' : 'var(--accent-warning)' }}>
+                                    {isPositive ? `+${log.points}` : log.points} XP
+                                  </td>
+                                  <td style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontSize: '12px' }}>
+                                    {new Date(log.timestamp).toLocaleString(language === 'pt' ? 'pt-BR' : language, {
+                                      day: 'numeric',
+                                      month: 'short',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+
+                  </div>
+
+                </div>
+              )}
+
+              {/* ABA 8: CONFIGURAÇÕES E PARÂMETROS DO CLIENTE */}
               {activeTab === 'settings' && (
                 <div 
                   className="animate-fade-in glass-panel" 
@@ -6288,24 +6755,7 @@ Instruções para resposta:
                           </div>
                         )}
 
-                        {/* CARD 4: Simulador de Usuário (Modo Demo Offline) */}
-                        {!isAuthenticated && (
-                          <div 
-                            className="glass-panel glass-panel-hover" 
-                            onClick={() => setActiveSettingsSection('simulator')}
-                            style={{ padding: '20px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)' }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                              <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Tablet size={20} style={{ color: 'var(--accent-warning)' }} />
-                              </div>
-                              <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('userSimulator')}</h4>
-                            </div>
-                            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
-                              {t('userSimulatorDesc')}
-                            </p>
-                          </div>
-                        )}
+
 
                         {/* CARD 6: Aparência & Preferências */}
                         <div 
@@ -7446,61 +7896,7 @@ Instruções para resposta:
                         </div>
                       )}
 
-                      {/* 4. SIMULADOR DE USUÁRIO */}
-                      {activeSettingsSection === 'simulator' && !isAuthenticated && (
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                            <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <Tablet size={18} style={{ color: 'var(--accent-warning)' }} />
-                            </div>
-                            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('activeUserSimulator')}</h3>
-                          </div>
 
-                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
-                            {t('userSimulatorDesc')}
-                          </p>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px' }}>
-                            {(familyMembers.length > 0 ? familyMembers : defaultDemoMembers).map((member: any) => {
-                              const isActive = currentUser && currentUser.id === member.id;
-                              return (
-                                <div
-                                  key={member.id}
-                                  onClick={() => handleSwitchSimulatedUser(member.id)}
-                                  style={{
-                                    padding: '12px 10px',
-                                    borderRadius: 'var(--radius-md)',
-                                    background: isActive 
-                                      ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15))' 
-                                      : 'rgba(255, 255, 255, 0.02)',
-                                    border: isActive 
-                                      ? '2px solid var(--accent-primary)' 
-                                      : '1px solid var(--border-light)',
-                                    textAlign: 'center',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                    transform: isActive ? 'scale(1.03)' : 'scale(1)',
-                                    boxShadow: isActive ? '0 4px 15px rgba(99, 102, 241, 0.15)' : 'none'
-                                  }}
-                                  className="simulator-card"
-                                >
-                                  <div style={{ fontSize: '14px', fontWeight: '700', color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                                    {member.display_name || member.username}
-                                  </div>
-                                  {(member.display_name && member.display_name !== member.username) && (
-                                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>@{member.username}</div>
-                                  )}
-                                  <div style={{ fontSize: '11px', marginTop: '4px', color: member.role === 'admin' ? 'var(--accent-warning)' : 'var(--text-muted)' }}>
-                                    {member.family_title || (member.role === 'admin' ? t('roleAdmin') : t('member'))}
-                                  </div>
-                                  <div style={{ fontSize: '9px', marginTop: '6px', opacity: isActive ? 1 : 0, color: 'var(--accent-primary-hover)', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                                    {t('active')}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
 
                     </div>
                   )}
@@ -7635,7 +8031,7 @@ Instruções para resposta:
                   <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>{t('mainResponsible')}</label>
                   <select className="input-field" value={newChoreAssigned} onChange={(e) => setNewChoreAssigned(e.target.value)} disabled={isEnrichingChore || (currentUser && currentUser.role !== 'admin')}>
                     <option value="all">{t('wholeFamilyFree')}</option>
-                    {(familyMembers.length > 0 ? familyMembers : defaultDemoMembers).map((member: any) => (
+                    {familyMembers.map((member: any) => (
                       <option key={member.id} value={member.username}>
                         {member.display_name || member.username} ({member.family_title || member.role})
                       </option>
@@ -7647,7 +8043,7 @@ Instruções para resposta:
                   <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>{t('coResponsible')}</label>
                   <select className="input-field" value={newChoreCoResponsible} onChange={(e) => setNewChoreCoResponsible(e.target.value)} disabled={isEnrichingChore}>
                     <option value="none">{t('none')}</option>
-                    {(familyMembers.length > 0 ? familyMembers : defaultDemoMembers).map((member: any) => (
+                    {familyMembers.map((member: any) => (
                       <option key={member.id} value={member.username}>
                         {member.display_name || member.username} ({member.family_title || member.role})
                       </option>

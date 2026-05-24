@@ -440,6 +440,7 @@ function App() {
 
   // --- ESTADOS DE USABILIDADE E CUSTOMIZAÇÃO ---
   const [accentTheme, setAccentTheme] = useState<string>('violet');
+  const [gamificationEnabled, setGamificationEnabled] = useState<boolean>(true);
   const [defaultCalendarView, setDefaultCalendarView] = useState<'month' | 'week' | 'day'>('month');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | null; id: number | null }>({ message: '', type: null, id: null });
   const [calendarYear, setCalendarYear] = useState<number>(new Date().getFullYear());
@@ -583,7 +584,9 @@ function App() {
 
     // Inicializar de acordo com a conectividade real do navegador
     if (navigator.onLine === false) {
-      setIsOnline(false);
+      Promise.resolve().then(() => {
+        setIsOnline(false);
+      });
     }
 
     return () => {
@@ -791,6 +794,11 @@ function App() {
         if (storedView && storedView.value) {
           setDefaultCalendarView(storedView.value);
           setCalendarView(storedView.value);
+        }
+
+        const storedGamification = await db.metadata.get('gamification_enabled');
+        if (storedGamification !== undefined && storedGamification !== null) {
+          setGamificationEnabled(storedGamification.value);
         }
 
         const liveConfig = await db.ai_config.get('current_ai_config');
@@ -3980,7 +3988,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                             )}
                           </div>
                         </div>
-                        <span className="badge-xp">+{chore.points_worth} XP</span>
+                        {gamificationEnabled && <span className="badge-xp">+{chore.points_worth} XP</span>}
                       </div>
                     );
                   });
@@ -4087,8 +4095,17 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
             {/* Bloco 3: Dashboard de Gamificação / Status Família */}
             <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
               <h3 style={{ fontSize: '18px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                <Trophy size={20} style={{ color: 'var(--accent-success)' }} />
-                <span>{t('leaderboardWeekly')}</span>
+                {gamificationEnabled ? (
+                  <>
+                    <Trophy size={20} style={{ color: 'var(--accent-success)' }} />
+                    <span>{t('leaderboardWeekly')}</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckSquare size={20} style={{ color: 'var(--accent-primary)' }} />
+                    <span>{t('familyProgressTitle')}</span>
+                  </>
+                )}
               </h3>
               
               {/* Progresso Geral de Hoje */}
@@ -4102,24 +4119,26 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
               </div>
 
               {/* Tabela de Ranking de XP */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {Object.entries(userStats)
-                  .sort((a, b) => b[1].points - a[1].points)
-                  .map(([name, stats], index) => (
-                    <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: 'var(--radius-md)' }}>
-                      <div style={{ fontSize: '16px', fontWeight: '700', width: '24px', color: index === 0 ? 'var(--accent-warning)' : 'var(--text-secondary)' }}>
-                        #{index + 1}
+              {gamificationEnabled && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {Object.entries(userStats)
+                    .sort((a, b) => b[1].points - a[1].points)
+                    .map(([name, stats], index) => (
+                      <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: 'var(--radius-md)' }}>
+                        <div style={{ fontSize: '16px', fontWeight: '700', width: '24px', color: index === 0 ? 'var(--accent-warning)' : 'var(--text-secondary)' }}>
+                          #{index + 1}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontSize: '14px', fontWeight: '600' }}>{stats.displayName || name}</p>
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{t('levelLabel').replace('{level}', String(stats.level))}</span>
+                        </div>
+                        <span className="badge-xp" style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-success)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                          {stats.points} XP
+                        </span>
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: '14px', fontWeight: '600' }}>{stats.displayName || name}</p>
-                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{t('levelLabel').replace('{level}', String(stats.level))}</span>
-                      </div>
-                      <span className="badge-xp" style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-success)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                        {stats.points} XP
-                      </span>
-                    </div>
-                  ))}
-              </div>
+                    ))}
+                </div>
+              )}
             </div>
 
           </div>
@@ -4138,9 +4157,11 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                 <ShoppingCart size={16} /> <span className="nav-btn-text" style={{ marginLeft: '4px' }}>{t('shoppingList')}</span>
               </button>
 
-              <button onClick={() => setActiveTab('gamification')} className={activeTab === 'gamification' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Trophy size={16} /> <span className="nav-btn-text" style={{ marginLeft: '4px' }}>{t('gamification')}</span>
-              </button>
+              {gamificationEnabled && (
+                <button onClick={() => setActiveTab('gamification')} className={activeTab === 'gamification' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Trophy size={16} /> <span className="nav-btn-text" style={{ marginLeft: '4px' }}>{t('gamification')}</span>
+                </button>
+              )}
             </nav>
 
             {/* CONTEÚDO DAS ABAS */}
@@ -4498,7 +4519,9 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                           {isMed && dose && (
                                             <span style={{ fontSize: '10px', color: 'var(--accent-info)' }}>({dose})</span>
                                           )}
-                                          <span className="badge-xp" style={{ fontSize: '9px', padding: '0 4px' }}>+{chore.points_worth} XP</span>
+                                          {gamificationEnabled && (
+                                            <span className="badge-xp" style={{ fontSize: '9px', padding: '0 4px' }}>+{chore.points_worth} XP</span>
+                                          )}
                                         </div>
                                       </div>
                                       <button
@@ -5087,9 +5110,11 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                             <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600' }}>
                                               👤 {chore.assigned_to === 'all' ? t('allFamily') : chore.assigned_to}
                                             </span>
-                                            <span className="badge-xp" style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-success)', border: '1px solid rgba(16, 185, 129, 0.2)', fontSize: '9px', padding: '0 4px' }}>
-                                              ★ {chore.points_worth} XP
-                                            </span>
+                                            {gamificationEnabled && (
+                                              <span className="badge-xp" style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-success)', border: '1px solid rgba(16, 185, 129, 0.2)', fontSize: '9px', padding: '0 4px' }}>
+                                                ★ {chore.points_worth} XP
+                                              </span>
+                                            )}
                                           </div>
                                         </div>
 
@@ -5534,7 +5559,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
               )}
 
               {/* ABA 6: GAMIFICAÇÃO */}
-              {activeTab === 'gamification' && (
+              {gamificationEnabled && activeTab === 'gamification' && (
                 <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
                   
                   {/* Leaderboard Completo */}
@@ -6017,6 +6042,58 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                   </div>
                                 );
                               })}
+                            </div>
+                          </div>
+
+                          {/* RECURSOS DE GAMIFICAÇÃO */}
+                          <div style={{ marginTop: '30px', borderTop: '1px solid var(--border-light)', paddingTop: '24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                              <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Trophy size={18} style={{ color: 'var(--accent-primary)' }} />
+                              </div>
+                              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('gamificationFeatures')}</h3>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderRadius: 'var(--radius-md)', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-light)' }}>
+                              <div style={{ marginRight: '16px', flex: 1 }}>
+                                <p style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('gamificationFeatures')}</p>
+                                <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0, marginTop: '2px' }}>{t('gamificationFeaturesDesc')}</p>
+                              </div>
+                              <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '46px', height: '22px', cursor: 'pointer' }}>
+                                <input 
+                                  type="checkbox" 
+                                  checked={gamificationEnabled} 
+                                  onChange={async (e) => {
+                                    const val = e.target.checked;
+                                    setGamificationEnabled(val);
+                                    await db.metadata.put({ key: 'gamification_enabled', value: val });
+                                    if (!val && (activeTab as string) === 'gamification') {
+                                      setActiveTab('dashboard');
+                                    }
+                                  }}
+                                  style={{ opacity: 0, width: 0, height: 0 }}
+                                />
+                                <span style={{
+                                  position: 'absolute',
+                                  cursor: 'pointer',
+                                  top: 0, left: 0, right: 0, bottom: 0,
+                                  backgroundColor: gamificationEnabled ? 'var(--accent-primary)' : 'rgba(255, 255, 255, 0.1)',
+                                  transition: '0.3s',
+                                  borderRadius: '34px'
+                                }}>
+                                  <span style={{
+                                    position: 'absolute',
+                                    content: '""',
+                                    height: '16px', width: '16px',
+                                    left: gamificationEnabled ? '26px' : '3px',
+                                    bottom: '3px',
+                                    backgroundColor: 'white',
+                                    transition: '0.3s',
+                                    borderRadius: '50%',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                  }} />
+                                </span>
+                              </label>
                             </div>
                           </div>
                         </div>

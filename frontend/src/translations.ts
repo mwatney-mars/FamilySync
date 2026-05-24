@@ -452,6 +452,9 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     themeRubyDesc: "Estilo dinâmico, forte e de alta visibilidade",
     confirmRemoveMember: "Deseja realmente remover este integrante da família? Ele perderá acesso às rotinas compartilhadas.",
     confirmResetScores: "Deseja realmente ZERAR todas as pontuações e logs de XP de TODOS os membros da família? Esta ação é irreversível.",
+    gamificationFeatures: "Recursos de Gamificação",
+    gamificationFeaturesDesc: "Ativar/desativar o sistema de XP, níveis, conquistas de tarefas e recompensas.",
+    familyProgressTitle: "Progresso Familiar",
   },
   en: {
     addedBy: "Added by",
@@ -897,6 +900,9 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     themeRubyDesc: "Dynamic, strong and high visibility style",
     confirmRemoveMember: "Do you really want to remove this family member? They will lose access to shared routines.",
     confirmResetScores: "Do you really want to RESET all scores and XP logs of ALL family members? This action is irreversible.",
+    gamificationFeatures: "Gamification Features",
+    gamificationFeaturesDesc: "Enable or disable XP, levels, chore achievements, and family rewards system.",
+    familyProgressTitle: "Family Progress",
   },
   es: {
     addedBy: "Añadido por",
@@ -1342,6 +1348,9 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     themeRubyDesc: "Estilo dinámico, fuerte y de alta visibilidad",
     confirmRemoveMember: "¿Realmente desea eliminar a este miembro de la familia? Perderá el acceso a las rutinas compartidas.",
     confirmResetScores: "¿Realmente desea RESTABLECER todas las puntuaciones y registros de XP de TODOS los miembros de la familia? Esta acción es irreversible.",
+    gamificationFeatures: "Funciones de Gamificación",
+    gamificationFeaturesDesc: "Activar o desactivar el sistema de XP, niveles, logros de tareas y recompensas familiares.",
+    familyProgressTitle: "Progreso Familiar",
   },
   pl: {
     addedBy: "Dodane przez",
@@ -1786,7 +1795,10 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     themeRubyName: "Rubinowa Czerwień",
     themeRubyDesc: "Styl dynamiczny, silny i o wysokiej widoczności",
     confirmRemoveMember: "Czy na pewno chcesz usunąć tego członka rodziny? Straci on dostęp do wspólnych zadań.",
-    confirmResetScores: "Czy na pewno chcesz ZRESETOWAĆ wszystkie wyniki i dzienniki PD WSZYSTKICH członków rodziny? Ta akcja jest nieodwracalna."
+    confirmResetScores: "Czy na pewno chcesz ZRESETOWAĆ wszystkie wyniki i dzienniki PD WSZYSTKICH członków rodziny? Ta akcja jest nieodwracalna.",
+    gamificationFeatures: "Funkcje Grywalizacji",
+    gamificationFeaturesDesc: "Włącz lub wyłącz system PD, poziomów, osiągnięć za zadania i nagród rodzinnych.",
+    familyProgressTitle: "Postęp Rodzinny",
   },
   de: {
     addedBy: "Hinzugefügt von",
@@ -2232,6 +2244,9 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     themeRubyDesc: "Dynamischer, starker und gut sichtbarer Stil",
     confirmRemoveMember: "Möchten Sie dieses Familienmitglied wirklich entfernen? Es verliert den Zugriff auf gemeinsame Routinen.",
     confirmResetScores: "Möchten Sie wirklich alle Punkte und XP-Protokolle ALLER Familienmitglieder zurücksetzen? Diese Aktion ist unumkehrbar.",
+    gamificationFeatures: "Gamification-Funktionen",
+    gamificationFeaturesDesc: "Aktivieren oder deaktivieren Sie das System für XP, Level, Aufgabenerfolge und Familienbelohnungen.",
+    familyProgressTitle: "Familienfortschritt",
   },
   fr: {
     addedBy: "Ajouté par",
@@ -2677,6 +2692,9 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     themeRubyDesc: "Style dynamique, fort et de haute visibilité",
     confirmRemoveMember: "Voulez-vous vraiment supprimer ce membre de la famille ? Il perdra l'accès aux routines partagées.",
     confirmResetScores: "Voulez-vous vraiment RÉINITIALISER tous les scores et journaux d'XP de TOUS les membres de la famille ? Cette action est irréversible.",
+    gamificationFeatures: "Fonctionnalités de Gamification",
+    gamificationFeaturesDesc: "Activer ou désactiver le système d'XP, de niveaux, de réussites de tâches et de récompenses familiales.",
+    familyProgressTitle: "Progrès de la Famille",
   },
   it: {
     addedBy: "Aggiunto da",
@@ -3122,5 +3140,8 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     themeRubyDesc: "Stile dinamico, forte e ad alta visibilità",
     confirmRemoveMember: "Vuoi davvero rimuovere questo membro della famiglia? Perderà l'accesso alle routine condivise.",
     confirmResetScores: "Vuoi davvero REIMPOSTARE tutti i punteggi e i log XP di TUTTI i membri della famiglia? Questa azione è irreversibile.",
+    gamificationFeatures: "Funzionalità di Gamification",
+    gamificationFeaturesDesc: "Abilita o disabilita il sistema di XP, livelli, obiettivi delle mansioni e premi familiari.",
+    familyProgressTitle: "Progresso Familiare",
   }
 };

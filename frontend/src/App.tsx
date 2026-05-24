@@ -190,7 +190,14 @@ const isChoreActiveOnDate = (chore: Chore, dateStr: string): boolean => {
   }
 
   if (!chore.repeats) {
-    return dateStr === startDateStr;
+    const isCompletedOnThisDate = isChoreCompletedOnDate(chore, dateStr);
+    const hasAnyCompletion = !!(chore.completed_at || (chore.completed_dates && chore.completed_dates.length > 0));
+    
+    return (
+      dateStr === startDateStr ||
+      isCompletedOnThisDate ||
+      (dateStr === todayStr && !hasAnyCompletion)
+    );
   }
 
   const startDate = parseDateStr(startDateStr);

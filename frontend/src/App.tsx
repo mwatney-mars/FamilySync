@@ -4645,9 +4645,9 @@ Instruções para resposta:
                       <div
                         key={item.id}
                         onClick={() => handleToggleShoppingItem(item.id)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: 'var(--radius-md)', background: checked ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.03)', border: '1px solid var(--border-light)', cursor: 'pointer', opacity: checked ? 0.5 : 1, transition: 'all 0.2s', transform: 'scale(1)' }}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.01)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 4px', borderBottom: '1px solid var(--border-light)', background: 'transparent', cursor: 'pointer', opacity: checked ? 0.5 : 1, transition: 'all 0.2s' }}
+                        onMouseEnter={(e) => { if (!checked) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                       >
                         <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: '2px solid', borderColor: checked ? 'var(--accent-warning)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: checked ? 'var(--accent-warning)' : 'transparent', color: '#000' }}>
                           {checked && <Check size={12} strokeWidth={3} />}
@@ -5059,14 +5059,16 @@ Instruções para resposta:
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '12px',
-                                        background: 'rgba(255,255,255,0.02)',
-                                        padding: '10px 12px',
-                                        borderRadius: 'var(--radius-md)',
+                                        background: 'transparent',
+                                        padding: '8px 4px',
+                                        borderBottom: '1px solid var(--border-light)',
                                         borderLeft: '3px solid',
                                         borderLeftColor: completed ? 'var(--accent-success)' : (isMed ? 'var(--accent-info)' : 'var(--accent-primary)'),
-                                        border: '1px solid var(--border-light)',
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        transition: 'background-color 0.2s'
                                       }}
+                                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'; }}
+                                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                                     >
                                       <div style={{ flex: 1, minWidth: 0 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap', marginBottom: '2px' }}>
@@ -6026,14 +6028,15 @@ Instruções para resposta:
                                       display: 'flex',
                                       alignItems: 'center',
                                       gap: '12px',
-                                      padding: '12px 16px',
-                                      borderRadius: 'var(--radius-sm)',
-                                      background: checked ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.03)',
-                                      border: draggingItemId === item.id ? '1px dashed var(--accent-warning)' : '1px solid var(--border-light)',
-                                      opacity: checked ? 0.6 : draggingItemId === item.id ? 0.4 : 1,
+                                      padding: '8px 4px',
+                                      borderBottom: '1px solid var(--border-light)',
+                                      background: 'transparent',
+                                      opacity: checked ? 0.5 : draggingItemId === item.id ? 0.4 : 1,
                                       transition: 'all 0.2s',
                                       cursor: isClassifying ? 'not-allowed' : checked ? 'default' : draggingItemId === item.id ? 'grabbing' : 'grab'
                                     }}
+                                    onMouseEnter={(e) => { if (!checked && draggingItemId !== item.id) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                                   >
                                     <div
                                       onClick={() => !isClassifying && handleToggleShoppingItem(item.id)}

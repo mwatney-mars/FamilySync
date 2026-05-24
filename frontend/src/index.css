@@ -1100,3 +1100,380 @@ select.input-field option {
   }
 }
 
+/* ==========================================================================
+   MOBILE REAL ESTATE COMPACTION & DENSITY OPTIMIZATIONS (IMPLEMENTATION PLAN)
+   ========================================================================== */
+
+/* 1. Global Container Stacking */
+.responsive-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+/* 2. Welcome Header Greeting Sizes */
+.welcome-greeting-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin-top: 8px;
+  margin-bottom: 2px;
+  color: #fff;
+  transition: font-size var(--transition-normal);
+}
+
+/* 3. Daily Chores / Routines Optimizations */
+.chore-btn-text {
+  display: inline;
+}
+
+.chore-complete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.chore-complete-btn .chore-check-icon {
+  display: none; /* hidden on desktop when not completed */
+}
+
+.chore-complete-btn.completed .chore-check-icon {
+  display: inline-block !important; /* always show when completed */
+}
+
+/* 4. Shopping List Page Classes */
+.shopping-tab-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.shopping-quick-add-panel {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+.shopping-suggestions-panel {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shopping-list-display-panel {
+  padding: 24px;
+}
+
+.shopping-categories-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.shopping-category-container {
+  transition: all 0.3s;
+  border-radius: var(--radius-md);
+  padding: 0px;
+  background: transparent;
+  border: 1.5px dashed transparent;
+}
+
+.shopping-category-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-warning);
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shopping-items-list-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shopping-item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--border-light);
+  background: transparent;
+  transition: all 0.2s;
+}
+
+.shopping-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.shopping-item-meta {
+  font-size: 11px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+}
+
+.shopping-item-qty {
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 4px 10px;
+  min-width: 45px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.shopping-item-qty-adjust {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-right: 8px;
+}
+
+/* 5. Calendar Page Responsive Containers */
+.calendar-page-container {
+  padding: 24px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.calendar-controls-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.calendar-filters-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+  background: rgba(255, 255, 255, 0.01);
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+}
+
+
+/* ==========================================
+   RESPONSIVE OVERRIDES - TABLETS & PHONES (<= 768px)
+   ========================================== */
+@media (max-width: 768px) {
+  .responsive-stack {
+    gap: 12px !important;
+  }
+
+  .welcome-greeting-title {
+    font-size: 18px !important;
+  }
+
+  .mural-row-desktop {
+    gap: 12px !important;
+  }
+
+  /* Compact Sticky Notes Mural on Mobile */
+  .sticky-notes-container {
+    grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .sticky-note {
+    min-height: 90px !important;
+    padding: 8px 10px !important;
+  }
+
+  .sticky-note p {
+    font-size: 11px !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Compact Shopping List Containers */
+  .shopping-tab-container {
+    gap: 12px !important;
+  }
+
+  .shopping-quick-add-panel {
+    padding: 10px 14px !important;
+    gap: 6px !important;
+  }
+
+  .shopping-suggestions-panel {
+    padding: 10px 14px !important;
+    gap: 8px !important;
+  }
+
+  .shopping-list-display-panel {
+    padding: 14px !important;
+  }
+
+  .shopping-categories-stack {
+    gap: 14px !important;
+  }
+
+  .shopping-category-title {
+    font-size: 13px !important;
+    padding-bottom: 4px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .shopping-items-list-col {
+    gap: 4px !important;
+  }
+
+  .shopping-item-row {
+    padding: 6px 2px !important;
+    gap: 8px !important;
+  }
+
+  .shopping-item-name {
+    font-size: 13px !important;
+  }
+
+  .shopping-item-meta {
+    font-size: 10px !important;
+    margin-top: 1px !important;
+  }
+
+  .shopping-item-qty {
+    font-size: 12px !important;
+    padding: 2px 6px !important;
+    min-width: 32px !important;
+    border-radius: 4px !important;
+  }
+
+  .shopping-item-qty-adjust {
+    margin-right: 4px !important;
+    gap: 0px !important;
+  }
+
+  /* Compact Calendar Elements */
+  .calendar-page-container {
+    padding: 12px !important;
+    gap: 12px !important;
+  }
+
+  .calendar-controls-bar {
+    gap: 8px !important;
+    margin-bottom: 0 !important;
+  }
+
+  .calendar-filters-row {
+    gap: 8px !important;
+    padding: 6px 10px !important;
+    margin-bottom: 0 !important;
+  }
+}
+
+/* ==========================================
+   RESPONSIVE OVERRIDES - ULTRA MOBILE (<= 480px)
+   ========================================== */
+@media (max-width: 480px) {
+  .responsive-stack {
+    gap: 8px !important;
+  }
+
+  .welcome-greeting-title {
+    font-size: 16px !important;
+    margin-top: 4px !important;
+  }
+
+  .mural-row-desktop {
+    gap: 8px !important;
+  }
+
+  /* Ultra-dense Sticky Notes Mural */
+  .sticky-notes-container {
+    grid-template-columns: repeat(auto-fill, minmax(102px, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .sticky-note {
+    min-height: 80px !important;
+    padding: 6px 8px !important;
+    border-radius: 4px !important;
+  }
+
+  .sticky-note p {
+    font-size: 10.5px !important;
+  }
+
+  .sticky-note div {
+    margin-top: 4px !important;
+    padding-top: 4px !important;
+  }
+
+  /* Ultra-compact Chores Checklist Controls */
+  .chore-responsible-label {
+    display: none !important; /* Hide verbose label to fit name on 1 line! */
+  }
+
+  .chore-complete-btn {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    padding: 0 !important;
+    border-radius: 50% !important; /* Circular Toggle! */
+    aspect-ratio: 1/1 !important;
+  }
+
+  .chore-btn-text {
+    display: none !important; /* Hide "Fazer"/"Feito" text on small viewports! */
+  }
+
+  .chore-complete-btn .chore-check-icon {
+    display: block !important; /* Show check icon */
+    opacity: 0.35;
+  }
+
+  .chore-complete-btn.completed .chore-check-icon {
+    opacity: 1 !important;
+  }
+
+  /* Ultra-compact Shopping List Suggestion Carousel Cards */
+  .suggestion-card {
+    width: 135px !important;
+    padding: 8px 10px !important;
+    gap: 4px !important;
+    border-radius: var(--radius-sm) !important;
+  }
+
+  .suggestion-card span {
+    font-size: 11px !important;
+  }
+
+  .suggestion-card .btn-suggestion-add {
+    padding: 6px 8px !important;
+    font-size: 10px !important;
+    border-radius: 4px !important;
+  }
+}
+
+

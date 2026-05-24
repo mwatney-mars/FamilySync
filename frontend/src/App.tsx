@@ -4799,7 +4799,7 @@ Instruções para resposta:
                 const weather = getWeatherInfo();
 
                 return (
-                  <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  <div className="animate-fade-in responsive-stack">
                     
                     {/* LINHA SUPERIOR: GREETING & MURAL */}
                     <div className="mural-row-desktop" style={{ display: 'grid', gap: '24px' }}>
@@ -4810,7 +4810,7 @@ Instruções para resposta:
                             <span className="badge-xp" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)', border: '1px solid var(--border-light)', fontSize: '10px' }}>
                               🏠 {t('controlCenter')}
                             </span>
-                            <h2 style={{ fontSize: '24px', fontWeight: '800', marginTop: '8px', marginBottom: '2px', color: '#fff' }}>
+                            <h2 className="welcome-greeting-title">
                               {getGreeting()}, {currentUser ? (currentUser.display_name || currentUser.username) : 'Família'}!
                             </h2>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: '500' }}>
@@ -5093,7 +5093,7 @@ Instruções para resposta:
                                           )}
                                         </div>
                                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{t('responsibleLabel')} <strong>{chore.assigned_to === 'all' ? t('allLabel') : (chore.assigned_to === currentUser?.username ? t('youLabel') : chore.assigned_to)}</strong></span>
+                                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}><span className="chore-responsible-label">{t('responsibleLabel')} </span><strong>{chore.assigned_to === 'all' ? t('allLabel') : (chore.assigned_to === currentUser?.username ? t('youLabel') : chore.assigned_to)}</strong></span>
                                           {isMed && dose && (
                                             <span style={{ fontSize: '10px', color: 'var(--accent-info)' }}>({dose})</span>
                                           )}
@@ -5109,7 +5109,8 @@ Instruções para resposta:
                                         }}
                                         className={`chore-complete-btn btn-secondary ${completed ? 'completed' : ''}`}
                                       >
-                                        {completed ? 'Feito' : 'Fazer'}
+                                        <Check size={14} strokeWidth={3} className="chore-check-icon" />
+                                        <span className="chore-btn-text">{completed ? 'Feito' : 'Fazer'}</span>
                                       </button>
                                     </div>
                                   );
@@ -5127,7 +5128,7 @@ Instruções para resposta:
               {/* ABA 1.5: CALENDÁRIO DEDICADO */}
               {activeTab === 'calendar' && (() => {
                 return (
-                  <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  <div className="animate-fade-in responsive-stack">
                     {(() => {
                     const monthsPT = getLocalizedMonths(language);
                     const firstDayIndex = new Date(calendarYear, calendarMonth, 1).getDay();
@@ -5256,10 +5257,10 @@ Instruções para resposta:
                     }
 
                     return (
-                      <div className="glass-panel" style={{ padding: '24px', position: 'relative', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      <div className="glass-panel calendar-page-container">
                         
                         {/* CABEÇALHO DO CALENDÁRIO COM SELETORES */}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '4px' }}>
+                        <div className="calendar-controls-bar">
                           <div>
                             <h3 style={{ fontSize: '20px', fontWeight: '700' }}>{t('familyCalendar')}</h3>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{t('calendarSubtitle')}</p>
@@ -5313,7 +5314,7 @@ Instruções para resposta:
                         </div>
 
                         {/* FILTROS INTEGRADOS AO CALENDÁRIO */}
-                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '4px', background: 'rgba(255,255,255,0.01)', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
+                        <div className="calendar-filters-row">
                           <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', alignSelf: 'center' }}>{t('filters')}</span>
                           <div>
                             <select className="input-field" style={{ padding: '4px 10px', height: '32px', fontSize: '12px', width: '130px', margin: 0 }} value={filterChoreUser} onChange={(e) => setFilterChoreUser(e.target.value)}>
@@ -5716,12 +5717,11 @@ Instruções para resposta:
               })()}
 
 
-              {/* ABA 4: LISTA DE COMPRAS */}
               {activeTab === 'shopping' && (
-                <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+                <div className="animate-fade-in shopping-tab-container">
                   
                   {/* Google Keep style quick-add bar */}
-                  <div className="glass-panel" style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative' }}>
+                  <div className="glass-panel shopping-quick-add-panel">
                     <form onSubmit={handleKeepAddShoppingItem} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(236, 72, 153, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <ShoppingBag size={20} style={{ color: '#ec4899' }} />
@@ -5830,7 +5830,7 @@ Instruções para resposta:
 
                   {/* Painel de Sugestões Inteligentes de Compras (Predições Baseadas em Histórico) */}
                   {smartSuggestions.length > 0 && (
-                    <div className="glass-panel" style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div className="glass-panel shopping-suggestions-panel">
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -5905,12 +5905,12 @@ Instruções para resposta:
                   )}
 
                   {/* Exibição dos Itens da Lista de Compras */}
-                  <div className="glass-panel" style={{ padding: '24px' }}>
+                  <div className="glass-panel shopping-list-display-panel">
                     <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <ShoppingBag size={20} style={{ color: 'var(--accent-warning)' }} /> {t('sharedShoppingList')}
                     </h3>
                     
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <div className="shopping-categories-stack">
                       {['Alimentos', 'Higiene', 'Limpeza', 'Farmácia', 'Pet', 'Bebê', 'Casa & Utensílios', 'Outros', 'Sem categoria'].map(category => {
                         const itemsInCat = activeShoppingItems.filter(item => item.category === category);
                         
@@ -5969,20 +5969,20 @@ Instruções para resposta:
                         return (
                           <div
                             key={category}
-                            className="animate-slide-up"
+                            className="animate-slide-up shopping-category-container"
                             onDragOver={handleDragOver}
                             onDragEnter={(e) => { e.preventDefault(); if (draggingItemId) { setDragOverCategory(category); } }}
                             onDragLeave={() => setDragOverCategory(null)}
                             onDrop={(e) => handleDrop(e, category)}
                             style={{
-                              transition: 'all 0.3s',
-                              borderRadius: 'var(--radius-md)',
-                              padding: isHoveredGroup ? '12px' : '0px',
-                              background: isHoveredGroup ? 'rgba(255, 193, 7, 0.03)' : 'transparent',
-                              border: isHoveredGroup ? '1.5px dashed var(--accent-warning)' : '1.5px dashed transparent',
+                              padding: isHoveredGroup ? '12px' : undefined,
+                              background: isHoveredGroup ? 'rgba(255, 193, 7, 0.03)' : undefined,
+                              borderColor: isHoveredGroup ? 'var(--accent-warning)' : undefined,
+                              borderStyle: isHoveredGroup ? 'dashed' : undefined,
+                              borderWidth: isHoveredGroup ? '1.5px' : undefined,
                             }}
                           >
-                            <h4 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--accent-warning)', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <h4 className="shopping-category-title">
                               <span style={{
                                 width: '8px',
                                 height: '8px',
@@ -6001,7 +6001,7 @@ Instruções para resposta:
                                 {itemsInCat.length} {itemsInCat.length === 1 ? t('item') : t('items')}
                               </span>
                             </h4>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div className="shopping-items-list-col">
                               {itemsInCat.map(item => {
                                 const checked = item.checked === 1;
                                 const isClassifying = itemsBeingClassified.has(item.id);
@@ -6011,15 +6011,9 @@ Instruções para resposta:
                                     draggable={!isClassifying && !checked}
                                     onDragStart={(e) => handleDragStart(e, item.id)}
                                     onDragEnd={handleDragEnd}
+                                    className="shopping-item-row"
                                     style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '12px',
-                                      padding: '8px 4px',
-                                      borderBottom: '1px solid var(--border-light)',
-                                      background: 'transparent',
                                       opacity: checked ? 0.5 : draggingItemId === item.id ? 0.4 : 1,
-                                      transition: 'all 0.2s',
                                       cursor: isClassifying ? 'not-allowed' : checked ? 'default' : draggingItemId === item.id ? 'grabbing' : 'grab'
                                     }}
                                     onMouseEnter={(e) => { if (!checked && draggingItemId !== item.id) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'; }}
@@ -6044,11 +6038,11 @@ Instruções para resposta:
                                       {checked && <Check size={12} strokeWidth={3} />}
                                     </div>
                                     <div style={{ flex: 1, cursor: isClassifying ? 'default' : 'pointer' }} onClick={() => !isClassifying && handleToggleShoppingItem(item.id)}>
-                                      <p style={{ fontSize: '14px', fontWeight: '600', textDecoration: checked ? 'line-through' : 'none', margin: 0, color: 'var(--text-primary)' }}>
+                                      <p className="shopping-item-name" style={{ textDecoration: checked ? 'line-through' : 'none' }}>
                                         {item.name}
                                       </p>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
-                                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                                      <div className="shopping-item-meta">
+                                        <span>
                                           {t('addedBy')}: {item.added_by} {checked && item.checked_by && `| ${t('boughtByLabel')}: ${item.checked_by}`}
                                         </span>
                                         {isClassifying && (
@@ -6085,29 +6079,17 @@ Instruções para resposta:
                                     </div>
 
                                     {/* Quantidade em Destaque Alinhada à Direita */}
-                                    <div style={{
-                                      fontSize: '14px',
-                                      fontWeight: '700',
+                                    <div className="shopping-item-qty" style={{
                                       color: checked ? 'var(--text-muted)' : 'var(--accent-warning)',
                                       background: checked ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 193, 7, 0.08)',
-                                      border: checked ? '1px solid var(--border-light)' : '1px solid rgba(255, 193, 7, 0.18)',
-                                      borderRadius: '6px',
-                                      padding: '4px 10px',
-                                      minWidth: '45px',
-                                      textAlign: 'center',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      userSelect: 'none',
-                                      whiteSpace: 'nowrap',
-                                      transition: 'all 0.2s ease',
+                                      border: checked ? '1px solid var(--border-light)' : '1px solid rgba(255, 193, 7, 0.18)'
                                     }}>
                                       {item.quantity}
                                     </div>
 
                                     {/* Ajustadores de Quantidade (Volume-style) */}
                                     {!checked && !isClassifying && (
-                                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', marginRight: '8px' }}>
+                                      <div className="shopping-item-qty-adjust">
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();

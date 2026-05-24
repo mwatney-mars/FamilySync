@@ -29,6 +29,7 @@ import {
   Award,
   ArrowLeft,
   Palette,
+  Globe,
   Clock,
   Sun,
   CloudRain,
@@ -46,6 +47,7 @@ import {
 
 
 import { db, queueSyncOperation, generateUUID } from './db';
+import { TRANSLATIONS } from './translations';
 import type {
   Chore,
   ShoppingItem,
@@ -67,10 +69,52 @@ const getTodayStr = () => {
   return `${year}-${month}-${day}`;
 };
 
-const getPortugueseDate = (d: Date) => {
-  const daysPT = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
-  const monthsPT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-  return `${daysPT[d.getDay()]}, ${d.getDate()} de ${monthsPT[d.getMonth()]}`;
+const LOCALE_MAP: Record<string, string> = {
+  pt: 'pt-BR',
+  en: 'en-US',
+  es: 'es-ES',
+  pl: 'pl-PL',
+  de: 'de-DE',
+  fr: 'fr-FR',
+  it: 'it-IT'
+};
+
+const getLocalizedDate = (d: Date, lang: string) => {
+  const locale = LOCALE_MAP[lang] || 'pt-BR';
+  const formatter = new Intl.DateTimeFormat(locale, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long'
+  });
+  const formatted = formatter.format(d);
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+};
+
+const getLocalizedMonths = (lang: string): string[] => {
+  const locale = LOCALE_MAP[lang] || 'pt-BR';
+  const formatter = new Intl.DateTimeFormat(locale, { month: 'long' });
+  const result: string[] = [];
+  for (let m = 0; m < 12; m++) {
+    const d = new Date(2023, m, 1);
+    let monthStr = formatter.format(d);
+    monthStr = monthStr.charAt(0).toUpperCase() + monthStr.slice(1);
+    result.push(monthStr);
+  }
+  return result;
+};
+
+const getLocalizedWeekdays = (lang: string, formatStyle: 'short' | 'long' = 'short'): string[] => {
+  const locale = LOCALE_MAP[lang] || 'pt-BR';
+  const formatter = new Intl.DateTimeFormat(locale, { weekday: formatStyle });
+  const result: string[] = [];
+  for (let i = 1; i <= 7; i++) {
+    const d = new Date(2023, 0, i); // Jan 1, 2023 was a Sunday
+    let dayStr = formatter.format(d);
+    dayStr = dayStr.replace(/\.$/, ''); // Remove trailing dots from abbreviated days in French/Spanish
+    dayStr = dayStr.charAt(0).toUpperCase() + dayStr.slice(1);
+    result.push(dayStr);
+  }
+  return result;
 };
 
 const parseDateStr = (dateStr: string): Date => {
@@ -362,8 +406,18 @@ function App() {
   const [setupDisplayName, setSetupDisplayName] = useState<string>('');
   const [setupUsername, setSetupUsername] = useState<string>('');
   const [setupPassword, setSetupPassword] = useState<string>('');
+  const [setupBirthDate, setSetupBirthDate] = useState<string>('');
+  const [setupGender, setSetupGender] = useState<string>('Não Informar');
+  const [setupFamilyTitle, setSetupFamilyTitle] = useState<string>('Outro');
   const [setupError, setSetupError] = useState<string | null>(null);
   const [setupLoading, setSetupLoading] = useState<boolean>(false);
+
+  // --- ESTADO DE IDIOMA & TRADUÇÃO ---
+  const [language, setLanguage] = useState<string>('pt');
+
+  const t = (key: string): string => {
+    return TRANSLATIONS[language]?.[key] || TRANSLATIONS['pt']?.[key] || key;
+  };
 
   // --- ESTADOS DE USABILIDADE E CUSTOMIZAÇÃO ---
   const [accentTheme, setAccentTheme] = useState<string>('violet');
@@ -433,8 +487,8 @@ function App() {
     }
   }, [liveAiConfig]);
 
-  // Obter dias da semana abreviados em PT-BR
-  const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  // Obter dias da semana abreviados
+  const daysOfWeek = getLocalizedWeekdays(language, 'short');
   const currentDayName = daysOfWeek[new Date().getDay()]; // ex: "Sex"
 
   // --- CARREGAMENTO DE MEMBROS DA FAMÍLIA ---
@@ -678,6 +732,11 @@ function App() {
           setAccentTheme(storedTheme.value);
         }
         
+        const storedLanguage = await db.metadata.get('language');
+        if (storedLanguage && storedLanguage.value) {
+          setLanguage(storedLanguage.value);
+        }
+        
         const storedView = await db.metadata.get('default_calendar_view');
         if (storedView && storedView.value) {
           setDefaultCalendarView(storedView.value);
@@ -813,22 +872,27 @@ function App() {
     const cleanDisplayName = setupDisplayName.trim();
 
     if (!cleanDisplayName) {
-      setSetupError('O nome de exibição não pode ser vazio.');
+      setSetupError(t('alertDisplayNameEmpty'));
       return;
     }
 
     if (!cleanUsername) {
-      setSetupError('O nome de usuário não pode ser vazio.');
+      setSetupError(t('alertUsernameEmpty'));
       return;
     }
 
     if (cleanUsername === 'admin') {
-      setSetupError('Para sua segurança, você deve escolher um nome de usuário diferente de "admin".');
+      setSetupError(t('alertUsernameAdmin'));
+      return;
+    }
+
+    if (!setupBirthDate) {
+      setSetupError(t('alertFillAllFields'));
       return;
     }
 
     if (!setupPassword || setupPassword.trim().length < 5) {
-      setSetupError('A senha deve ter pelo menos 5 caracteres.');
+      setSetupError(t('alertPasswordMin'));
       return;
     }
 
@@ -846,7 +910,10 @@ function App() {
           body: JSON.stringify({
             username: cleanUsername,
             display_name: cleanDisplayName,
-            password: setupPassword.trim()
+            password: setupPassword.trim(),
+            birth_date: setupBirthDate,
+            gender: setupGender,
+            family_title: setupFamilyTitle
           })
         });
 
@@ -863,7 +930,7 @@ function App() {
           await db.metadata.put({ key: 'auth_token', value: data.token });
         }
         
-        showToast('Configuração inicial realizada com sucesso! O usuário "admin" padrão foi removido.', 'success');
+        showToast(t('toastSetupSuccess'), 'success');
         fetchFamilyMembers(data.token || token, backendUrl);
       } else {
         // MODO SIMULAÇÃO (OFFLINE LOCAL)
@@ -871,7 +938,10 @@ function App() {
         const updatedUser = {
           ...currentUser,
           username: cleanUsername,
-          display_name: cleanDisplayName
+          display_name: cleanDisplayName,
+          birth_date: setupBirthDate,
+          gender: setupGender,
+          family_title: setupFamilyTitle
         };
         setCurrentUser(updatedUser);
         await db.metadata.put({ key: 'user_info', value: updatedUser });
@@ -3418,17 +3488,47 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
       <div className="animate-fade-in" style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', padding: '20px', background: 'var(--bg-main)' }}>
         <div className="glass-panel animate-scale-up" style={{ width: '100%', maxWidth: '480px', padding: '36px', border: '1px solid rgba(139, 92, 246, 0.35)', boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)' }}>
           
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
+            <select
+              value={language}
+              onChange={async (e) => {
+                const newLang = e.target.value;
+                setLanguage(newLang);
+                await db.metadata.put({ key: 'language', value: newLang });
+              }}
+              className="input-field"
+              style={{
+                width: 'auto',
+                padding: '4px 12px',
+                height: '32px',
+                fontSize: '12px',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid var(--border-light)',
+                borderRadius: 'var(--radius-sm)',
+                cursor: 'pointer',
+                color: 'var(--text-primary)'
+              }}
+            >
+              <option value="pt">🇧🇷 Português</option>
+              <option value="en">🇺🇸 English</option>
+              <option value="es">🇪🇸 Español</option>
+              <option value="pl">🇵🇱 Polski</option>
+              <option value="de">🇩🇪 Deutsch</option>
+              <option value="fr">🇫🇷 Français</option>
+              <option value="it">🇮🇹 Italiano</option>
+            </select>
+          </div>
+
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
               <div style={{ fontSize: '48px', filter: 'drop-shadow(0 0 12px rgba(139, 92, 246, 0.4))' }}>🛡️</div>
             </div>
             <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--accent-warning)', textTransform: 'uppercase', letterSpacing: '2px', background: 'rgba(245, 158, 11, 0.1)', padding: '4px 12px', borderRadius: '999px' }}>
-              Segurança Obrigatória
+              {t('securityTitle')}
             </span>
-            <h1 style={{ fontSize: '26px', fontWeight: '700', marginTop: '12px', letterSpacing: '-1px' }}>Configurar Administrador</h1>
+            <h1 style={{ fontSize: '26px', fontWeight: '700', marginTop: '12px', letterSpacing: '-1px' }}>{t('setupAdmin')}</h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '8px', lineHeight: '1.5' }}>
-              Por segurança, você deve substituir o usuário administrador padrão <strong>admin</strong> e a senha padrão por credenciais personalizadas antes de começar. 
-              <strong> Isso removerá permanentemente as credenciais "admin/admin" do portal.</strong>
+              {t('setupDesc')}
             </p>
           </div>
 
@@ -3440,11 +3540,11 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
           <form onSubmit={handleForcedSetupSubmit}>
             <div style={{ marginBottom: '14px' }}>
-              <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>Nome de Exibição (Seu Nome)</label>
+              <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>{t('fullName')}</label>
               <input
                 type="text"
                 className="input-field"
-                placeholder="ex: Jorge Silva"
+                placeholder={t('fullNamePlaceholder')}
                 value={setupDisplayName}
                 onChange={(e) => setSetupDisplayName(e.target.value)}
                 required
@@ -3452,23 +3552,72 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
             </div>
             
             <div style={{ marginBottom: '14px' }}>
-              <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>Nome de Usuário (Novo Login Handle)</label>
+              <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>{t('username')}</label>
               <input
                 type="text"
                 className="input-field"
-                placeholder="ex: jorge (sem espaços/acentos)"
+                placeholder={t('usernamePlaceholder')}
                 value={setupUsername}
                 onChange={(e) => setSetupUsername(e.target.value)}
                 required
               />
             </div>
 
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>{t('birthDate')}</label>
+              <input
+                type="date"
+                className="input-field"
+                value={setupBirthDate}
+                onChange={(e) => setSetupBirthDate(e.target.value)}
+                required
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>{t('gender')}</label>
+                <select
+                  className="input-field"
+                  value={setupGender}
+                  onChange={(e) => setSetupGender(e.target.value)}
+                  style={{ height: '46px' }}
+                  required
+                >
+                  <option value="Masculino">{t('genderMale')}</option>
+                  <option value="Feminino">{t('genderFemale')}</option>
+                  <option value="Outro">{t('genderOther')}</option>
+                  <option value="Não Informar">{t('genderNone')}</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>{t('familyTitle')}</label>
+                <select
+                  className="input-field"
+                  value={setupFamilyTitle}
+                  onChange={(e) => setSetupFamilyTitle(e.target.value)}
+                  style={{ height: '46px' }}
+                  required
+                >
+                  <option value="Pai">{t('titleFather')}</option>
+                  <option value="Mãe">{t('titleMother')}</option>
+                  <option value="Filho">{t('titleSon')}</option>
+                  <option value="Filha">{t('titleDaughter')}</option>
+                  <option value="Avô">{t('titleGrandfather')}</option>
+                  <option value="Avó">{t('titleGrandmother')}</option>
+                  <option value="Tio">{t('titleUncle')}</option>
+                  <option value="Tia">{t('titleAunt')}</option>
+                  <option value="Outro">{t('titleOther')}</option>
+                </select>
+              </div>
+            </div>
+
             <div style={{ marginBottom: '22px' }}>
-              <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>Nova Senha Secreta</label>
+              <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>{t('password')}</label>
               <input
                 type="password"
                 className="input-field"
-                placeholder="No mínimo 5 caracteres"
+                placeholder={t('passwordPlaceholder')}
                 value={setupPassword}
                 onChange={(e) => setSetupPassword(e.target.value)}
                 required
@@ -3482,7 +3631,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                 className="btn-secondary"
                 style={{ flex: 1, padding: '12px' }}
               >
-                Sair
+                {t('logout')}
               </button>
               <button
                 type="submit"
@@ -3510,10 +3659,10 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ fontSize: '32px', fontWeight: '800', letterSpacing: '-1px', color: 'var(--text-primary)', lineHeight: '1', fontFamily: '"Outfit", "Inter", sans-serif' }}>
-                {currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                {currentTime.toLocaleTimeString(LOCALE_MAP[language] || 'pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
               </div>
               <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', fontWeight: '500' }}>
-                {getPortugueseDate(currentTime)}
+                {getLocalizedDate(currentTime, language)}
               </div>
             </div>
             
@@ -3934,15 +4083,9 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
               {activeTab === 'dashboard' && (() => {
                 const getGreeting = () => {
                   const hr = currentTime.getHours();
-                  if (hr >= 5 && hr < 12) return 'Bom dia';
-                  if (hr >= 12 && hr < 18) return 'Boa tarde';
-                  return 'Boa noite';
-                };
-
-                const getPortugueseDate = (d: Date) => {
-                  const daysPT = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
-                  const monthsPT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-                  return `${daysPT[d.getDay()]} , ${d.getDate()} de ${monthsPT[d.getMonth()]}`;
+                  if (hr >= 5 && hr < 12) return language === 'pt' ? 'Bom dia' : (language === 'en' ? 'Good morning' : (language === 'es' ? 'Buenos días' : (language === 'pl' ? 'Dzień dobry' : (language === 'de' ? 'Guten Morgen' : (language === 'fr' ? 'Bonjour' : 'Buongiorno')))));
+                  if (hr >= 12 && hr < 18) return language === 'pt' ? 'Boa tarde' : (language === 'en' ? 'Good afternoon' : (language === 'es' ? 'Buenas tardes' : (language === 'pl' ? 'Miłego popołudnia' : (language === 'de' ? 'Guten Tag' : (language === 'fr' ? 'Bon après-midi' : 'Buon pomeriggio')))));
+                  return language === 'pt' ? 'Boa noite' : (language === 'en' ? 'Good evening' : (language === 'es' ? 'Buenas noches' : (language === 'pl' ? 'Dobry wieczór' : (language === 'de' ? 'Guten Abend' : (language === 'fr' ? 'Bonsoir' : 'Buonasera')))));
                 };
 
                 const getWeatherInfo = () => {
@@ -3996,7 +4139,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                               {getGreeting()}, {currentUser ? (currentUser.display_name || currentUser.username) : 'Família'}!
                             </h2>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: '500' }}>
-                              {getPortugueseDate(currentTime)}
+                              {getLocalizedDate(currentTime, language)}
                             </p>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
@@ -4331,7 +4474,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                 return (
                   <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     {(() => {
-                    const monthsPT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                    const monthsPT = getLocalizedMonths(language);
                     const firstDayIndex = new Date(calendarYear, calendarMonth, 1).getDay();
                     const totalDays = new Date(calendarYear, calendarMonth + 1, 0).getDate();
                     const today = new Date();
@@ -4535,8 +4678,8 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                         {/* PERSPECTIVA 1: MENSAL (MONTH VIEW) */}
                         {calendarView === 'month' && (
                           <div className="calendar-grid-month animate-fade-in">
-                            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
-                              <div key={day} style={{ textAlign: 'center', fontWeight: '700', color: 'var(--accent-primary)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', paddingBottom: '6px', borderBottom: '1px solid var(--border-light)' }}>
+                            {getLocalizedWeekdays(language, 'short').map((day, idx) => (
+                              <div key={idx} style={{ textAlign: 'center', fontWeight: '700', color: 'var(--accent-primary)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', paddingBottom: '6px', borderBottom: '1px solid var(--border-light)' }}>
                                 {day}
                               </div>
                             ))}
@@ -4694,7 +4837,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                       style={{ borderBottom: '1px solid var(--border-light)', paddingBottom: '6px', cursor: 'pointer' }}
                                     >
                                       <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 'bold', color: isSelectedDay ? 'var(--accent-primary-hover)' : (isTodayDay ? '#fff' : 'var(--text-muted)'), margin: 0 }}>
-                                        {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][day.getDay()]}
+                                        {getLocalizedWeekdays(language, 'short')[day.getDay()]}
                                       </p>
                                       <h4 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: '2px 0 0 0' }}>
                                         {day.getDate()} {monthsPT[day.getMonth()].substring(0,3)}
@@ -5730,6 +5873,79 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                         {viewOpt.label}
                                       </p>
                                       <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, marginTop: '2px' }}>{viewOpt.desc}</p>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* SELETOR DE IDIOMA DO SISTEMA */}
+                          <div style={{ marginTop: '30px', borderTop: '1px solid var(--border-light)', paddingTop: '24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                              <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Globe size={18} style={{ color: 'var(--accent-primary)' }} />
+                              </div>
+                              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('languageAndAppearance')}</h3>
+                            </div>
+
+                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>
+                              {t('languageAndAppearanceDesc')}
+                            </p>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+                              {[
+                                { id: 'pt', label: t('portuguese'), flag: '🇧🇷' },
+                                { id: 'en', label: t('english'), flag: '🇺🇸' },
+                                { id: 'es', label: t('spanish'), flag: '🇪🇸' },
+                                { id: 'pl', label: t('polish'), flag: '🇵🇱' },
+                                { id: 'de', label: t('german'), flag: '🇩🇪' },
+                                { id: 'fr', label: t('french'), flag: '🇫🇷' },
+                                { id: 'it', label: t('italian'), flag: '🇮🇹' }
+                              ].map(langOpt => {
+                                const isSelected = language === langOpt.id;
+                                return (
+                                  <div
+                                    key={langOpt.id}
+                                    onClick={async () => {
+                                      setLanguage(langOpt.id);
+                                      await db.metadata.put({ key: 'language', value: langOpt.id });
+                                    }}
+                                    style={{
+                                      padding: '14px 18px',
+                                      borderRadius: 'var(--radius-md)',
+                                      background: isSelected ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.1)',
+                                      border: '1px solid',
+                                      borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      gap: '12px',
+                                      transition: 'all var(--transition-fast)'
+                                    }}
+                                    className="glass-panel-hover"
+                                  >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                      <span style={{ fontSize: '20px' }}>{langOpt.flag}</span>
+                                      <p style={{ fontSize: '13px', fontWeight: '700', color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)', margin: 0 }}>
+                                        {langOpt.label}
+                                      </p>
+                                    </div>
+                                    <div
+                                      style={{
+                                        width: '16px',
+                                        height: '16px',
+                                        borderRadius: '50%',
+                                        border: '2px solid',
+                                        borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        background: isSelected ? 'var(--accent-primary)' : 'transparent'
+                                      }}
+                                    >
+                                      {isSelected && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'white' }} />}
                                     </div>
                                   </div>
                                 );
@@ -6869,8 +7085,9 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                       <div>
                         <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Escolha os dias da semana</label>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => {
+                          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day, idx) => {
                             const isSelected = newChoreRecurrenceDays.includes(day);
+                            const localizedLabel = getLocalizedWeekdays(language, 'short')[idx];
                             return (
                               <button
                                 key={day}
@@ -6895,7 +7112,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                   transition: 'all 0.15s'
                                 }}
                               >
-                                {day}
+                                {localizedLabel}
                               </button>
                             );
                           })}

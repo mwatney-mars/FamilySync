@@ -3413,9 +3413,10 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
           
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '18px' }}>
-              <img src="/logo.png" alt="FamilySync Logo" style={{ width: '160px', height: 'auto' }} />
+              <img src="/logo.png" alt="FamilySync Logo" style={{ width: '96px', height: '96px', borderRadius: '24px', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.08)' }} />
             </div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '16px' }}>
+            <h1 style={{ fontSize: '32px', fontWeight: '800', marginTop: '16px', letterSpacing: '-1px', color: 'var(--text-primary)', fontFamily: '"Outfit", "Inter", sans-serif' }}>FamilySync</h1>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '8px' }}>
               Organização, gamificação e comunicação familiar criptografada e segura.
             </p>
           </div>
@@ -3726,7 +3727,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
           
           {/* Identificação de Família */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <img src="/logo.png" alt="FamilySync Logo" style={{ height: '36px', width: 'auto' }} />
+            <img src="/logo.png" alt="FamilySync Logo" style={{ height: '36px', width: '36px', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)' }} />
             <div>
               <h2 style={{ fontSize: '16px', fontWeight: '700', letterSpacing: '-0.3px' }}>
                 {family ? family.name : 'Grupo Local Demo'}

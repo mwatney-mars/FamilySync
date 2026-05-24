@@ -203,9 +203,16 @@ app.put('/api/user/profile', authenticateToken, async (req, res) => {
     // SSE Broadcast para sincronizar a família (ex: se mudou nome ou título)
     broadcastSyncEvent(currentUser.family_id, null);
 
+    const token = jwt.sign(
+      { userId: updatedUser.id, username: updatedUser.username, familyId: updatedUser.family_id, role: updatedUser.role },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
     res.json({
       message: 'Perfil atualizado com sucesso!',
-      user: updatedUser
+      user: updatedUser,
+      token
     });
   } catch (err) {
     console.error('Erro ao atualizar perfil:', err);

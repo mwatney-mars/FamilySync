@@ -358,6 +358,13 @@ function App() {
   const [profileSaveSuccess, setProfileSaveSuccess] = useState<string | null>(null);
   const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
 
+  // Estados para Configuração Inicial de Segurança (Remoção do usuário 'admin' padrão)
+  const [setupDisplayName, setSetupDisplayName] = useState<string>('');
+  const [setupUsername, setSetupUsername] = useState<string>('');
+  const [setupPassword, setSetupPassword] = useState<string>('');
+  const [setupError, setSetupError] = useState<string | null>(null);
+  const [setupLoading, setSetupLoading] = useState<boolean>(false);
+
   // --- ESTADOS DE USABILIDADE E CUSTOMIZAÇÃO ---
   const [accentTheme, setAccentTheme] = useState<string>('violet');
   const [defaultCalendarView, setDefaultCalendarView] = useState<'month' | 'week' | 'day'>('month');
@@ -794,9 +801,88 @@ function App() {
       setProfileBirthDate(currentUser.birth_date || '');
       setProfileGender(currentUser.gender || 'Não Informar');
       setProfileFamilyTitle(currentUser.family_title || 'Membro');
-      setProfilePassword(''); // Mantém campo de nova senha limpo por padrão
     }
   }, [currentUser]);
+
+  // --- SUBMISSÃO DA CONFIGURAÇÃO INICIAL DE SEGURANÇA (REMOÇÃO DO 'admin' PADRÃO) ---
+  const handleForcedSetupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSetupError(null);
+
+    const cleanUsername = setupUsername.trim().toLowerCase().replace(/\s+/g, '');
+    const cleanDisplayName = setupDisplayName.trim();
+
+    if (!cleanDisplayName) {
+      setSetupError('O nome de exibição não pode ser vazio.');
+      return;
+    }
+
+    if (!cleanUsername) {
+      setSetupError('O nome de usuário não pode ser vazio.');
+      return;
+    }
+
+    if (cleanUsername === 'admin') {
+      setSetupError('Para sua segurança, você deve escolher um nome de usuário diferente de "admin".');
+      return;
+    }
+
+    if (!setupPassword || setupPassword.trim().length < 5) {
+      setSetupError('A senha deve ter pelo menos 5 caracteres.');
+      return;
+    }
+
+    setSetupLoading(true);
+
+    try {
+      if (isAuthenticated && token) {
+        // MODO ONLINE (SERVIDOR REAL)
+        const response = await fetch(`${backendUrl}/api/user/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            username: cleanUsername,
+            display_name: cleanDisplayName,
+            password: setupPassword.trim()
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Erro ao redefinir a conta administrativa.');
+        }
+
+        // Atualizar estado e IndexedDB local cache
+        setCurrentUser(data.user);
+        await db.metadata.put({ key: 'user_info', value: data.user });
+        if (data.token) {
+          setToken(data.token);
+          await db.metadata.put({ key: 'auth_token', value: data.token });
+        }
+        
+        showToast('Configuração inicial realizada com sucesso! O usuário "admin" padrão foi removido.', 'success');
+        fetchFamilyMembers(data.token || token, backendUrl);
+      } else {
+        // MODO SIMULAÇÃO (OFFLINE LOCAL)
+        if (!currentUser) return;
+        const updatedUser = {
+          ...currentUser,
+          username: cleanUsername,
+          display_name: cleanDisplayName
+        };
+        setCurrentUser(updatedUser);
+        await db.metadata.put({ key: 'user_info', value: updatedUser });
+        showToast('Modo Simulação: Administrador inicial configurado.', 'success');
+      }
+    } catch (err: any) {
+      setSetupError(err.message);
+    } finally {
+      setSetupLoading(false);
+    }
+  };
 
   // --- SALVAR PERFIL DO USUÁRIO (REAL OU SIMULADO) ---
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -842,9 +928,13 @@ function App() {
         // Atualizar estado e IndexedDB local cache
         setCurrentUser(data.user);
         await db.metadata.put({ key: 'user_info', value: data.user });
+        if (data.token) {
+          setToken(data.token);
+          await db.metadata.put({ key: 'auth_token', value: data.token });
+        }
         
         setProfileSaveSuccess('Seu perfil foi atualizado com sucesso no servidor!');
-        fetchFamilyMembers();
+        fetchFamilyMembers(data.token || token, backendUrl);
       } else {
         // MODO SIMULAÇÃO (OFFLINE LOCAL)
         if (!currentUser) return;
@@ -3307,7 +3397,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                   O cadastro de novos membros é feito de forma segura e manual por um Administrador no painel de configurações.
                 </p>
                 <p style={{ fontSize: '11px', color: 'var(--accent-primary-hover)', margin: '8px 0 0 0', fontWeight: '600' }}>
-                  💡 Usuário administrador inicial: <strong>admin</strong> (senha: <strong>admin</strong>)
+                  💡 Administrador de primeiro acesso: <strong>admin</strong> (senha: <strong>admin</strong>) — <em>Será removido obrigatoriamente no primeiro login</em>
                 </p>
               </div>
             </form>
@@ -3317,6 +3407,93 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
               Para testar localmente sem servidor, você já pode explorar o app carregado com os dados simulados clicando na opção de fechar ou simulando login.
             </p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // SE ESTIVER AUTENTICADO MAS O USUÁRIO FOR O 'admin' PADRÃO, FORÇAR RECONFIGURAÇÃO DE SEGURANÇA IMEDIATAMENTE (REMOÇÃO DO 'admin/admin' PADRÃO)
+  if (isAuthenticated && currentUser?.username === 'admin') {
+    return (
+      <div className="animate-fade-in" style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', padding: '20px', background: 'var(--bg-main)' }}>
+        <div className="glass-panel animate-scale-up" style={{ width: '100%', maxWidth: '480px', padding: '36px', border: '1px solid rgba(139, 92, 246, 0.35)', boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)' }}>
+          
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+              <div style={{ fontSize: '48px', filter: 'drop-shadow(0 0 12px rgba(139, 92, 246, 0.4))' }}>🛡️</div>
+            </div>
+            <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--accent-warning)', textTransform: 'uppercase', letterSpacing: '2px', background: 'rgba(245, 158, 11, 0.1)', padding: '4px 12px', borderRadius: '999px' }}>
+              Segurança Obrigatória
+            </span>
+            <h1 style={{ fontSize: '26px', fontWeight: '700', marginTop: '12px', letterSpacing: '-1px' }}>Configurar Administrador</h1>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '8px', lineHeight: '1.5' }}>
+              Por segurança, você deve substituir o usuário administrador padrão <strong>admin</strong> e a senha padrão por credenciais personalizadas antes de começar. 
+              <strong> Isso removerá permanentemente as credenciais "admin/admin" do portal.</strong>
+            </p>
+          </div>
+
+          {setupError && (
+            <div className="glass-panel" style={{ border: '1px solid rgba(239, 68, 68, 0.3)', background: 'rgba(239, 68, 68, 0.05)', color: 'var(--accent-danger)', padding: '12px 16px', borderRadius: 'var(--radius-md)', marginBottom: '20px', fontSize: '13px' }}>
+              ⚠️ {setupError}
+            </div>
+          )}
+
+          <form onSubmit={handleForcedSetupSubmit}>
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>Nome de Exibição (Seu Nome)</label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="ex: Jorge Silva"
+                value={setupDisplayName}
+                onChange={(e) => setSetupDisplayName(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>Nome de Usuário (Novo Login Handle)</label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="ex: jorge (sem espaços/acentos)"
+                value={setupUsername}
+                onChange={(e) => setSetupUsername(e.target.value)}
+                required
+              />
+            </div>
+
+            <div style={{ marginBottom: '22px' }}>
+              <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>Nova Senha Secreta</label>
+              <input
+                type="password"
+                className="input-field"
+                placeholder="No mínimo 5 caracteres"
+                value={setupPassword}
+                onChange={(e) => setSetupPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="btn-secondary"
+                style={{ flex: 1, padding: '12px' }}
+              >
+                Sair
+              </button>
+              <button
+                type="submit"
+                className="btn-primary"
+                style={{ flex: 2, padding: '12px', background: 'linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-hover) 100%)' }}
+                disabled={setupLoading}
+              >
+                {setupLoading ? 'Configurando...' : 'Salvar e Ativar Portal'}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     );

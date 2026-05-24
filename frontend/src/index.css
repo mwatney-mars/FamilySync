@@ -38,6 +38,14 @@
   --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.7);
   --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.2);
 
+  /* Design Tokens para Cartões e Atividades */
+  --bg-card: rgba(255, 255, 255, 0.035);
+  --bg-card-hover: rgba(255, 255, 255, 0.07);
+  --border-card: rgba(255, 255, 255, 0.07);
+  --border-card-hover: rgba(255, 255, 255, 0.15);
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.45), var(--shadow-glow);
+
   /* Transições */
   --transition-fast: 0.15s ease;
   --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -75,6 +83,14 @@
   --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
   --shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.12);
   --shadow-glow: 0 0 20px rgba(124, 58, 237, 0.1);
+
+  /* Design Tokens para Cartões e Atividades - Light */
+  --bg-card: rgba(15, 23, 42, 0.035);
+  --bg-card-hover: rgba(15, 23, 42, 0.07);
+  --border-card: rgba(15, 23, 42, 0.09);
+  --border-card-hover: rgba(15, 23, 42, 0.18);
+  --shadow-card: 0 4px 10px rgba(15, 23, 42, 0.04);
+  --shadow-card-hover: 0 8px 20px rgba(15, 23, 42, 0.08), 0 0 15px rgba(124, 58, 237, 0.15);
 }
 
 
@@ -936,5 +952,42 @@ select.input-field option {
 .app-footer:hover {
   color: var(--text-secondary);
   background: rgba(255, 255, 255, 0.01);
+}
+
+/* Premium Separation for Dashboard Chores */
+.dashboard-chore-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-left-width: 4px;
+  border-left-style: solid;
+  border-radius: var(--radius-md); /* 14px for beautiful rounded capsule look */
+  padding: 10px 14px;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.dashboard-chore-card:hover {
+  transform: translateY(-2.5px);
+  background-color: var(--bg-card-hover);
+  border-color: var(--border-card-hover);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.dashboard-chore-card.completed {
+  opacity: 0.65;
+  background-color: rgba(16, 185, 129, 0.04) !important;
+  border-color: rgba(16, 185, 129, 0.15) !important;
+  box-shadow: none !important;
+}
+
+.dashboard-chore-card.completed:hover {
+  opacity: 0.9;
+  background-color: rgba(16, 185, 129, 0.08) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.12) !important;
 }
 

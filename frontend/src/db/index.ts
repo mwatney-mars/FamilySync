@@ -11,6 +11,7 @@ class FamilySyncDatabase extends Dexie {
   metadata!: Dexie.Table<{ key: string; value: any }, string>;
 
   ai_config!: Dexie.Table<AiConfig, string>;
+  purchase_history!: Dexie.Table<PurchaseRecord, string>;
 
   constructor() {
     super('FamilySyncDB');
@@ -24,6 +25,18 @@ class FamilySyncDatabase extends Dexie {
       sync_queue: 'id, item_id, collection, updated_at',
       metadata: 'key',
       ai_config: 'id, collection, updated_at'
+    });
+    // Upgrade do banco para a versão 3 com suporte ao histórico de compras e processamento assíncrono de IA
+    this.version(3).stores({
+      chores: 'id, collection, updated_at, deleted, completed_by',
+      shopping: 'id, collection, updated_at, deleted, category, checked, ai_status',
+      comments: 'id, collection, updated_at, chore_id, instance_date',
+      rewards: 'id, collection, updated_at, deleted',
+      points: 'id, collection, updated_at, user_id, timestamp',
+      sync_queue: 'id, item_id, collection, updated_at',
+      metadata: 'key',
+      ai_config: 'id, collection, updated_at',
+      purchase_history: 'id, collection, updated_at, name, bought_at'
     });
   }
 }
@@ -84,6 +97,20 @@ export interface ShoppingItem {
   checked_by?: string; // nome do usuário que marcou
   updated_at: number;
   deleted: number;
+  ai_status?: 'pending' | 'processed';
+}
+
+export interface PurchaseRecord {
+  id: string;
+  collection: 'purchase_history';
+  shopping_item_id?: string;
+  name: string;
+  quantity: string;
+  quantity_number: number;
+  bought_at: number;
+  bought_by: string;
+  updated_at: number;
+  deleted: number;
 }
 
 export interface ChoreComment {
@@ -123,7 +150,7 @@ export interface PointLog {
 export interface SyncQueueEntry {
   id: string; // UUID
   item_id: string; // ID do item nas tabelas acima (ex: chores.id)
-  collection: 'chores' | 'shopping' | 'comments' | 'rewards' | 'points' | 'ai_config';
+  collection: 'chores' | 'shopping' | 'comments' | 'rewards' | 'points' | 'ai_config' | 'purchase_history';
   operation: 'insert' | 'update' | 'delete';
   updated_at: number;
 }

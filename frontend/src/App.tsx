@@ -52,7 +52,8 @@ import type {
   Chore,
   ShoppingItem,
   Reward,
-  PointLog
+  PointLog,
+  PurchaseRecord
 } from './db';
 
 // URL padrão para o backend (ajustável pelo usuário se ele estiver hospedando o próprio servidor)
@@ -461,9 +462,11 @@ function App() {
   const [keepItemName, setKeepItemName] = useState<string>('');
   const [geminiApiKey, setGeminiApiKey] = useState<string>('');
   const [aiCategorizationEnabled, setAiCategorizationEnabled] = useState<boolean>(true);
-  const [itemsBeingClassified] = useState<Set<string>>(new Set());
+  const [itemsBeingClassified, setItemsBeingClassified] = useState<Set<string>>(new Set());
+  const [smartSuggestions, setSmartSuggestions] = useState<any[]>([]);
+  const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState<boolean>(false);
 
-  const [isAddingShoppingItem, setIsAddingShoppingItem] = useState<boolean>(false);
+  const [isAddingShoppingItem] = useState<boolean>(false);
   const [isEnrichingChore, setIsEnrichingChore] = useState<boolean>(false);
   const [lastEnrichedTitle, setLastEnrichedTitle] = useState<string>('');
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
@@ -1164,6 +1167,7 @@ function App() {
         else if (entry.collection === 'rewards') localItem = await db.rewards.get(entry.item_id);
         else if (entry.collection === 'points') localItem = await db.points.get(entry.item_id);
         else if (entry.collection === 'ai_config') localItem = await db.ai_config.get(entry.item_id);
+        else if (entry.collection === 'purchase_history') localItem = await db.purchase_history.get(entry.item_id);
 
         if (localItem) {
           // Armazenar os dados em formato stringificado simples
@@ -1219,6 +1223,7 @@ function App() {
           else if (collection === 'rewards') await db.rewards.delete(id);
           else if (collection === 'points') await db.points.delete(id);
           else if (collection === 'ai_config') await db.ai_config.delete(id);
+          else if (collection === 'purchase_history') await db.purchase_history.delete(id);
         } else {
           // Processar item localmente em formato stringificado simples
           try {
@@ -1229,6 +1234,7 @@ function App() {
             else if (collection === 'comments') await db.comments.put(decryptedItem);
             else if (collection === 'rewards') await db.rewards.put(decryptedItem);
             else if (collection === 'points') await db.points.put(decryptedItem);
+            else if (collection === 'purchase_history') await db.purchase_history.put(decryptedItem);
             else if (collection === 'ai_config') {
               await db.ai_config.put(decryptedItem);
               if (decryptedItem.id === 'current_ai_config') {
@@ -1272,6 +1278,45 @@ function App() {
       if (interval) clearInterval(interval);
     };
   }, [isAuthenticated, isOnline]);
+
+  // Intervalo periódico de processamento de itens de compras pendentes de classificação de IA (a cada 15s)
+  useEffect(() => {
+    let intervalId: any = null;
+    if (isAuthenticated && isOnline && aiCategorizationEnabled && geminiApiKey) {
+      processPendingShoppingItems();
+      intervalId = setInterval(processPendingShoppingItems, 15000);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isAuthenticated, isOnline, aiCategorizationEnabled, geminiApiKey]);
+
+  // Trigger do processamento de itens de compra pendentes após 4 segundos da adição (debounce)
+  useEffect(() => {
+    const pendingCount = localShopping.filter(item => item.ai_status === 'pending').length;
+    if (pendingCount === 0 || !isAuthenticated || !isOnline || !aiCategorizationEnabled || !geminiApiKey) return;
+
+    const handler = setTimeout(() => {
+      processPendingShoppingItems();
+    }, 4000);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [localShopping, isAuthenticated, isOnline, aiCategorizationEnabled, geminiApiKey]);
+
+  // Carregar sugestões salvas em cache ao entrar na aba de compras ou gerar novas
+  useEffect(() => {
+    if (activeTab === 'shopping') {
+      db.metadata.get('shop_recommendations').then(entry => {
+        if (entry && entry.value) {
+          setSmartSuggestions(entry.value);
+        } else {
+          generateSmartPurchaseSuggestions();
+        }
+      });
+    }
+  }, [activeTab, localShopping]);
 
 
   // --- FLUXOS DE AUTENTICAÇÃO E CONFIGURAÇÃO DA CHAVE E2EE ---
@@ -1950,7 +1995,8 @@ function App() {
         added_by: adderName,
         checked: 0,
         updated_at: now,
-        deleted: 0
+        deleted: 0,
+        ai_status: 'processed'
       };
 
       await db.shopping.put(newItem);
@@ -1964,39 +2010,8 @@ function App() {
       setKeepItemName('');
       setShowSuggestions(false);
     } else {
-      // NÃO ENCONTROU NO CACHE LOCAL! Usa o Gemini em tempo real se disponível
-      let category = 'Sem categoria'; // Categoria inicial padrão
-      let correctedName = name;
-      let defaultUnit: string;
-
-      if (aiCategorizationEnabled && geminiApiKey.trim()) {
-        setIsAddingShoppingItem(true);
-        try {
-          const res = await fetchRefinedItemFromGemini(name, geminiApiKey);
-          category = res.category;
-          correctedName = res.correctedName;
-          defaultUnit = res.defaultUnit || 'un';
-
-          // Gravar no cache local para que as próximas adições sejam instantâneas!
-          await db.metadata.put({
-            key: 'shop_cache:' + nameNormalized,
-            value: { category, correctedName, defaultUnit }
-          });
-        } catch (err: any) {
-          console.error('Erro na classificação em tempo real do Gemini:', err);
-          showToast(t('toastIaClassificationError').replace('{error}', err.message || t('toastConnectionError')), 'error');
-          // Fallback se a IA falhar: busca no histórico ou assume "un"
-          defaultUnit = (await getPastUnit(nameNormalized)) || 'un';
-        } finally {
-          setIsAddingShoppingItem(false);
-        }
-      } else {
-        if (aiCategorizationEnabled) {
-          showToast(t('toastIaActiveNoKey'), 'info');
-        }
-        // Fallback offline: busca no histórico ou assume "un"
-        defaultUnit = (await getPastUnit(nameNormalized)) || 'un';
-      }
+      // NÃO ENCONTROU NO CACHE LOCAL! Adiciona imediatamente como pendente para processamento assíncrono
+      const defaultUnit = (await getPastUnit(nameNormalized)) || 'un';
 
       let finalQuantity = quantity;
       if (isPurelyNumeric) {
@@ -2006,13 +2021,14 @@ function App() {
       const newItem: ShoppingItem = {
         id,
         collection: 'shopping',
-        name: correctedName,
+        name: name, // Nome original raw, corrigido depois em segundo plano
         quantity: finalQuantity,
-        category,
+        category: 'Sem categoria',
         added_by: adderName,
         checked: 0,
         updated_at: now,
-        deleted: 0
+        deleted: 0,
+        ai_status: 'pending'
       };
 
       await db.shopping.put(newItem);
@@ -2020,7 +2036,7 @@ function App() {
       if (isAuthenticated) {
         await queueSyncOperation(id, 'shopping', 'insert');
         triggerSync();
-        sendFamilyNotification(`🛒 **${currentUser?.display_name || adderName}** adicionou **"${correctedName}"** (${finalQuantity}) à lista de compras!`);
+        sendFamilyNotification(`🛒 **${currentUser?.display_name || adderName}** adicionou **"${name}"** (${finalQuantity}) à lista de compras!`);
       }
 
       setKeepItemName('');
@@ -2079,7 +2095,8 @@ function App() {
         added_by: adderName,
         checked: 0,
         updated_at: now,
-        deleted: 0
+        deleted: 0,
+        ai_status: 'processed'
       };
 
       await db.shopping.put(newItem);
@@ -2093,35 +2110,8 @@ function App() {
       setFridgeShoppingInput('');
       showToast(t('toastChoreAddedSuccess').replace('{name}', correctedName), 'success');
     } else {
-      let category = 'Sem categoria';
-      let correctedName = name;
-      let defaultUnit: string;
-
-      if (aiCategorizationEnabled && geminiApiKey.trim()) {
-        setIsAddingShoppingItem(true);
-        try {
-          const res = await fetchRefinedItemFromGemini(name, geminiApiKey);
-          category = res.category;
-          correctedName = res.correctedName;
-          defaultUnit = res.defaultUnit || 'un';
-
-          await db.metadata.put({
-            key: 'shop_cache:' + nameNormalized,
-            value: { category, correctedName, defaultUnit }
-          });
-        } catch (err: any) {
-          console.error('Erro na classificação em tempo real do Gemini:', err);
-          showToast(t('toastIaClassificationError').replace('{error}', err.message || t('toastConnectionError')), 'error');
-          defaultUnit = (await getPastUnit(nameNormalized)) || 'un';
-        } finally {
-          setIsAddingShoppingItem(false);
-        }
-      } else {
-        if (aiCategorizationEnabled) {
-          showToast(t('toastIaActiveNoKey'), 'info');
-        }
-        defaultUnit = (await getPastUnit(nameNormalized)) || 'un';
-      }
+      // NÃO ENCONTROU NO CACHE LOCAL! Adiciona imediatamente como pendente no modo Geladeira
+      const defaultUnit = (await getPastUnit(nameNormalized)) || 'un';
 
       let finalQuantity = quantity;
       if (isPurelyNumeric) {
@@ -2131,13 +2121,14 @@ function App() {
       const newItem: ShoppingItem = {
         id,
         collection: 'shopping',
-        name: correctedName,
+        name: name,
         quantity: finalQuantity,
-        category,
+        category: 'Sem categoria',
         added_by: adderName,
         checked: 0,
         updated_at: now,
-        deleted: 0
+        deleted: 0,
+        ai_status: 'pending'
       };
 
       await db.shopping.put(newItem);
@@ -2145,11 +2136,11 @@ function App() {
       if (isAuthenticated) {
         await queueSyncOperation(id, 'shopping', 'insert');
         triggerSync();
-        sendFamilyNotification(`🛒 **${currentUser?.display_name || adderName}** adicionou **"${correctedName}"** (${finalQuantity}) à lista de compras via Painel Geladeira!`);
+        sendFamilyNotification(`🛒 **${currentUser?.display_name || adderName}** adicionou **"${name}"** (${finalQuantity}) à lista de compras via Painel Geladeira!`);
       }
 
       setFridgeShoppingInput('');
-      showToast(t('toastChoreAddedSuccess').replace('{name}', correctedName), 'success');
+      showToast(t('toastChoreAddedSuccess').replace('{name}', name), 'success');
     }
   };
 
@@ -2185,7 +2176,8 @@ function App() {
       added_by: adderName,
       checked: 0,
       updated_at: now,
-      deleted: 0
+      deleted: 0,
+      ai_status: 'processed'
     };
 
     await db.shopping.put(newItem);
@@ -2278,6 +2270,49 @@ function App() {
       checked_by: isChecked ? undefined : checkerName,
       updated_at: now
     });
+
+    if (!isChecked) {
+      // transição de desmarcado para marcado (compra realizada)
+      const parseQtyNumber = (qtyStr: string): number => {
+        const match = qtyStr.match(/^(\d+(?:\.\d+)?)/);
+        return match ? parseFloat(match[1]) : 1;
+      };
+      const qtyNum = parseQtyNumber(item.quantity || '');
+      const recordId = generateUUID();
+      const record: PurchaseRecord = {
+        id: recordId,
+        collection: 'purchase_history',
+        shopping_item_id: item.id,
+        name: item.name,
+        quantity: item.quantity || '1 un',
+        quantity_number: qtyNum,
+        bought_at: now,
+        bought_by: checkerName,
+        updated_at: now,
+        deleted: 0
+      };
+      await db.purchase_history.put(record);
+
+      if (isAuthenticated) {
+        await queueSyncOperation(recordId, 'purchase_history', 'insert');
+      }
+    } else {
+      // transição de marcado para desmarcado (cancelar compra)
+      const linkedRecords = await db.purchase_history
+        .where('shopping_item_id')
+        .equals(item.id)
+        .toArray();
+
+      for (const rec of linkedRecords) {
+        await db.purchase_history.update(rec.id, {
+          deleted: 1,
+          updated_at: now
+        });
+        if (isAuthenticated) {
+          await queueSyncOperation(rec.id, 'purchase_history', 'update');
+        }
+      }
+    }
 
     if (isAuthenticated) {
       await queueSyncOperation(itemId, 'shopping', 'update');
@@ -2689,6 +2724,384 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
     }
 
     throw new Error('Não foi possível obter uma resposta de tarefa válida do Gemini');
+  };
+
+  // Classificador em lote com correção ortográfica e categoria/unidade padrão via Gemini
+  const fetchBatchRefinedItemsFromGemini = async (
+    items: { id: string; name: string }[],
+    apiKey: string
+  ): Promise<Record<string, { category: string; correctedName: string; defaultUnit: string }>> => {
+    if (items.length === 0) return {};
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const itemsJsonStr = JSON.stringify(items.map(item => ({ id: item.id, name: item.name })));
+
+    const prompt = `Você é um assistente de organização doméstica inteligente.
+Você receberá um array JSON contendo itens da lista de compras (cada um com "id" e "name").
+Para cada item do array, você deve classificar o produto, corrigir qualquer erro de digitação, ortografia, concordância ou acentuação no nome do item ("name"), e também determinar a unidade de medida padrão/típica em português brasileiro (ex: "un", "kg", "g", "l", "ml", "pct", "cx", "gf").
+
+Lista de itens:
+${itemsJsonStr}
+
+Categorias válidas do sistema: "Alimentos", "Higiene", "Limpeza", "Farmácia", "Pet", "Bebê", "Casa & Utensílios", "Outros".
+
+Siga estritamente as regras abaixo:
+1. "categoria" deve ser exatamente um dos oito valores: "Alimentos", "Higiene", "Limpeza", "Farmácia", "Pet", "Bebê", "Casa & Utensílios" ou "Outros".
+2. "nomeCorrigido" deve ser o nome do item corrigido ortograficamente em português, com acentuação correta e capitalização adequada (iniciando com maiúscula), por exemplo: "sabao em po" vira "Sabão em pó", "leiti" vira "Leite".
+3. "unidadePadrao" deve ser a abreviação em letras minúsculas da unidade de medida mais típica para esse produto (ex: "l" para Leite, "kg" para Carne/Arroz, "un" para Banana/Sabonete/Pão/Shampoo, "cx" para Ovos, "pct" para Café/Biscoito, "g" para Sal, "gf" para Óleo).
+4. Para utilidades domésticas em geral, ferramentas, ferragens, pilhas, lâmpadas ou manutenção doméstica (como "chave de roda", "martelo", "pilha", "lâmpada", "fita isolante"), classifique estritamente na categoria "Casa & Utensílios".
+5. Para itens destinados a animais de estimação, classifique na categoria "Pet".
+6. Para itens destinados a bebês e crianças, classifique na categoria "Bebê".
+7. Para itens diversos que não se enquadram nas anteriores, use "Outros".
+8. Responda APENAS com um array JSON válido contendo objetos no formato abaixo, correspondendo exatamente ao id de cada item enviado, sem markdown, sem blocos de código (como \`\`\`json), sem explicações:
+[
+  {
+    "id": "id_do_item",
+    "categoria": "Nome da Categoria",
+    "nomeCorrigido": "Nome do Item Corrigido",
+    "unidadePadrao": "un"
+  }
+]`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          responseMimeType: "application/json"
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erro na API do Gemini: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    const result: Record<string, { category: string; correctedName: string; defaultUnit: string }> = {};
+
+    if (text) {
+      try {
+        const parsedArray = JSON.parse(text);
+        if (Array.isArray(parsedArray)) {
+          const validCategories = ['Alimentos', 'Higiene', 'Limpeza', 'Farmácia', 'Pet', 'Bebê', 'Casa & Utensílios', 'Outros'];
+          parsedArray.forEach((parsed: any) => {
+            if (parsed && parsed.id) {
+              let category = parsed.categoria || parsed.category || 'Alimentos';
+              const matched = validCategories.find(cat => cat.toLowerCase() === category.toLowerCase().trim());
+              category = matched || 'Alimentos';
+
+              const originalItem = items.find(it => it.id === parsed.id);
+              const originalName = originalItem ? originalItem.name : '';
+
+              let correctedName = parsed.nomeCorrigido || parsed.correctedName || originalName;
+              if (correctedName) {
+                correctedName = correctedName.trim();
+              } else {
+                correctedName = originalName;
+              }
+
+              let defaultUnit = parsed.unidadePadrao || parsed.defaultUnit || 'un';
+              defaultUnit = defaultUnit.toLowerCase().trim();
+
+              result[parsed.id] = { category, correctedName, defaultUnit };
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Falha ao parsear resposta JSON em lote do Gemini:', err);
+      }
+    }
+    return result;
+  };
+
+  // Processador em segundo plano de itens de compra pendentes
+  const processPendingShoppingItems = async () => {
+    if (!isOnline || !aiCategorizationEnabled || !geminiApiKey) {
+      return;
+    }
+
+    const pendingItems = await db.shopping
+      .filter(item => item.ai_status === 'pending' && item.deleted === 0)
+      .toArray();
+
+    if (pendingItems.length === 0) return;
+
+    // Filtra itens que já estão ativamente sendo classificados
+    const itemsToProcess = pendingItems.filter(item => !itemsBeingClassified.has(item.id));
+    if (itemsToProcess.length === 0) return;
+
+    // Adiciona na lista de classificação ativa
+    setItemsBeingClassified(prev => {
+      const next = new Set(prev);
+      itemsToProcess.forEach(item => next.add(item.id));
+      return next;
+    });
+
+    try {
+      const results = await fetchBatchRefinedItemsFromGemini(
+        itemsToProcess.map(it => ({ id: it.id, name: it.name })),
+        geminiApiKey
+      );
+
+      const now = Date.now();
+
+      for (const item of itemsToProcess) {
+        const classification = results[item.id];
+        if (classification) {
+          const { category, correctedName, defaultUnit } = classification;
+
+          const parseQtyNumber = (qtyStr: string): number => {
+            const match = qtyStr.match(/^(\d+(?:\.\d+)?)/);
+            return match ? parseFloat(match[1]) : 1;
+          };
+          const qtyNum = parseQtyNumber(item.quantity);
+          const hasOnlyUn = item.quantity.toLowerCase().includes('un');
+          let finalQuantity = item.quantity;
+          if (hasOnlyUn && defaultUnit && defaultUnit !== 'un') {
+            finalQuantity = `${qtyNum} ${defaultUnit}`;
+          }
+
+          await db.shopping.update(item.id, {
+            name: correctedName,
+            category,
+            quantity: finalQuantity,
+            ai_status: 'processed',
+            updated_at: now
+          });
+
+          const normalizeText = (str: string): string => {
+            return str
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .toLowerCase()
+              .trim();
+          };
+          const nameNormalized = normalizeText(correctedName);
+          const origNormalized = normalizeText(item.name);
+
+          await db.metadata.put({
+            key: 'shop_cache:' + nameNormalized,
+            value: { category, correctedName, defaultUnit }
+          });
+          if (nameNormalized !== origNormalized) {
+            await db.metadata.put({
+              key: 'shop_cache:' + origNormalized,
+              value: { category, correctedName, defaultUnit }
+            });
+          }
+
+          if (isAuthenticated) {
+            await queueSyncOperation(item.id, 'shopping', 'update');
+          }
+        }
+      }
+
+      if (isAuthenticated && Object.keys(results).length > 0) {
+        triggerSync();
+      }
+    } catch (err) {
+      console.error('Erro ao processar itens pendentes em lote:', err);
+    } finally {
+      setItemsBeingClassified(prev => {
+        const next = new Set(prev);
+        itemsToProcess.forEach(item => next.delete(item.id));
+        return next;
+      });
+    }
+  };
+
+  // Motor Inteligente de Sugestões de Compra
+  const generateSmartPurchaseSuggestions = async () => {
+    setIsGeneratingSuggestions(true);
+    try {
+      const history = await db.purchase_history
+        .filter(record => record.deleted === 0)
+        .toArray();
+
+      const activeItemNames = new Set(
+        localShopping
+          .filter(item => item.checked === 0 && item.deleted === 0)
+          .map(item => item.name.toLowerCase().trim())
+      );
+
+      // Chamada remota ao Gemini se estiver online e configurado
+      if (isOnline && aiCategorizationEnabled && geminiApiKey && history.length >= 3) {
+        try {
+          const suggestions = await fetchSmartSuggestionsFromGemini(history, Array.from(activeItemNames), geminiApiKey);
+          if (suggestions && suggestions.length > 0) {
+            setSmartSuggestions(suggestions);
+            await db.metadata.put({ key: 'shop_recommendations', value: suggestions });
+            setIsGeneratingSuggestions(false);
+            return;
+          }
+        } catch (aiErr) {
+          console.error('Falha ao gerar sugestões via Gemini, recorrendo a heurística local:', aiErr);
+        }
+      }
+
+      // Fallback Heurístico local (se offline, sem chave, ou se tiver menos de 3 registros no histórico)
+      const frequencyMap: Record<string, { count: number; lastBought: number; quantity: string; category: string }> = {};
+      
+      for (const rec of history) {
+        const key = rec.name.toLowerCase().trim();
+        if (activeItemNames.has(key)) continue;
+
+        if (!frequencyMap[key]) {
+          frequencyMap[key] = {
+            count: 0,
+            lastBought: 0,
+            quantity: rec.quantity || '1 un',
+            category: 'Alimentos'
+          };
+        }
+
+        frequencyMap[key].count += rec.quantity_number || 1;
+        if (rec.bought_at > frequencyMap[key].lastBought) {
+          frequencyMap[key].lastBought = rec.bought_at;
+          frequencyMap[key].quantity = rec.quantity || frequencyMap[key].quantity;
+        }
+      }
+
+      const sortedKeys = Object.keys(frequencyMap).sort((a, b) => frequencyMap[b].count - frequencyMap[a].count);
+      const suggestions: any[] = [];
+
+      for (const key of sortedKeys.slice(0, 5)) {
+        const itemInfo = frequencyMap[key];
+        const historyMatch = history.find(rec => rec.name.toLowerCase().trim() === key);
+        const displayName = historyMatch ? historyMatch.name : (key.charAt(0).toUpperCase() + key.slice(1));
+        
+        const cacheEntry = await db.metadata.get('shop_cache:' + key);
+        const category = cacheEntry?.value?.category || itemInfo.category;
+
+        const daysAgo = Math.floor((Date.now() - itemInfo.lastBought) / (1000 * 60 * 60 * 24));
+        let reason = '';
+        if (daysAgo === 0) {
+          reason = language === 'en' ? 'Bought today' : 'Comprado hoje';
+        } else if (daysAgo === 1) {
+          reason = language === 'en' ? 'Bought yesterday' : 'Comprado ontem';
+        } else {
+          reason = language === 'en' ? `Bought ${daysAgo} days ago` : `Comprado há ${daysAgo} dias`;
+        }
+
+        suggestions.push({
+          name: displayName,
+          quantity: itemInfo.quantity,
+          category: category,
+          reason: reason
+        });
+      }
+
+      setSmartSuggestions(suggestions);
+      await db.metadata.put({ key: 'shop_recommendations', value: suggestions });
+    } catch (err) {
+      console.error('Erro ao gerar sugestões inteligentes de compras:', err);
+    } finally {
+      setIsGeneratingSuggestions(false);
+    }
+  };
+
+  // Chamada remota ao Gemini para predições de compras baseadas em histórico
+  const fetchSmartSuggestionsFromGemini = async (
+    history: PurchaseRecord[],
+    activeItemNames: string[],
+    apiKey: string
+  ): Promise<any[]> => {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+    const summaryMap: Record<string, { purchaseDates: string[]; quantities: string[] }> = {};
+    history.forEach(rec => {
+      const key = rec.name.trim();
+      if (!summaryMap[key]) {
+        summaryMap[key] = { purchaseDates: [], quantities: [] };
+      }
+      const dateStr = new Date(rec.bought_at).toISOString().split('T')[0];
+      summaryMap[key].purchaseDates.push(dateStr);
+      summaryMap[key].quantities.push(rec.quantity);
+    });
+
+    const prompt = `Você é um motor de IA inteligente para lista de compras residenciais.
+Você analisará o histórico de compras de supermercado de uma família e preverá de 3 a 5 itens que eles provavelmente precisam comprar agora.
+Use sua inteligência para identificar padrões (ex: se eles compram leite toda semana, e a última compra foi há 9 dias, eles provavelmente precisam de leite; se compram sabão em pó a cada 30 dias e a última foi há 28 dias, eles precisam de sabão).
+
+Histórico de compras da família (agrupado por produto):
+${JSON.stringify(summaryMap, null, 2)}
+
+Itens que JÁ estão na lista de compras ativa da família (NÃO os sugira de forma alguma):
+${JSON.stringify(activeItemNames)}
+
+Categorias válidas do sistema: "Alimentos", "Higiene", "Limpeza", "Farmácia", "Pet", "Bebê", "Casa & Utensílios", "Outros".
+
+Instruções para resposta:
+1. Retorne de 3 a 5 sugestões.
+2. Cada sugestão deve conter:
+   - "name": Nome do produto (correto ortograficamente, ex: "Leite desnatado")
+   - "quantity": Quantidade padrão recomendada com unidade (ex: "4 l", "1 kg")
+   - "category": Categoria correspondente (exatamente um dos oito valores: "Alimentos", "Higiene", "Limpeza", "Farmácia", "Pet", "Bebê", "Casa & Utensílios" ou "Outros")
+   - "reason": Uma frase amigável explicando por que você está sugerindo esse item (ex: "Comprado a cada 15 dias, última compra há 18 dias" ou "Consumo frequente registrado"). Use o idioma português brasileiro.
+3. Responda APENAS com um array JSON válido, sem markdown, sem blocos de código (como \`\`\`json), sem explicações adicionais fora do JSON:
+[
+  {
+    "name": "Nome do item",
+    "quantity": "2 un",
+    "category": "Alimentos",
+    "reason": "Explicação amigável"
+  }
+]`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.2,
+          responseMimeType: "application/json"
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erro na API do Gemini ao gerar sugestões: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+    if (text) {
+      try {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      } catch (err) {
+        console.error('Falha ao parsear sugestões do Gemini:', err);
+      }
+    }
+    return [];
   };
 
   // Busca por histórico de tarefa similar concluída/adicionada no passado para herdar dados (fallback de IA)
@@ -5259,6 +5672,116 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                     </form>
                   </div>
 
+                  {/* Painel de Sugestões Inteligentes de Compras (Predições Baseadas em Histórico) */}
+                  {smartSuggestions.length > 0 && (
+                    <div className="glass-panel" style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {t('smartRecommendationsTitle')}
+                          </span>
+                        </div>
+                        <button
+                          onClick={generateSmartPurchaseSuggestions}
+                          disabled={isGeneratingSuggestions}
+                          className="glass-panel-hover"
+                          style={{
+                            border: 'none',
+                            background: 'rgba(255,255,255,0.04)',
+                            color: 'var(--text-secondary)',
+                            padding: '6px 12px',
+                            borderRadius: '12px',
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <RefreshCw size={12} className={isGeneratingSuggestions ? "animate-spin" : ""} />
+                          {t('recalculate')}
+                        </button>
+                      </div>
+
+                      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
+                        {t('smartRecommendationsDesc')}
+                      </p>
+
+                      {isGeneratingSuggestions ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', color: 'var(--text-secondary)', fontSize: '13px' }}>
+                          <RefreshCw size={16} className="animate-spin" style={{ color: '#ec4899' }} />
+                          {t('generatingRecommendations')}
+                        </div>
+                      ) : (
+                        <div style={{
+                          display: 'flex',
+                          gap: '12px',
+                          overflowX: 'auto',
+                          paddingBottom: '8px',
+                          scrollbarWidth: 'thin',
+                          WebkitOverflowScrolling: 'touch'
+                        }}>
+                          {smartSuggestions.map((suggest, idx) => (
+                            <div
+                              key={idx}
+                              style={{
+                                flexShrink: 0,
+                                width: '190px',
+                                padding: '12px 14px',
+                                borderRadius: '12px',
+                                background: 'rgba(255, 255, 255, 0.02)',
+                                border: '1px solid var(--border-light)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '8px',
+                                transition: 'transform 0.2s, box-shadow 0.2s',
+                                cursor: 'default'
+                              }}
+                            >
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {suggest.name}
+                                </span>
+                                <span style={{ fontSize: '11px', color: 'var(--accent-warning)', fontWeight: '600' }}>
+                                  {suggest.quantity || '1 un'}
+                                </span>
+                              </div>
+                              
+                              <span style={{ fontSize: '10px', color: 'var(--text-secondary)', minHeight: '32px', display: 'flex', alignItems: 'center', lineHeight: '1.3' }}>
+                                {suggest.reason}
+                              </span>
+
+                              <button
+                                onClick={() => handleQuickAddSuggestion({
+                                  name: suggest.name,
+                                  quantity: suggest.quantity || '1 un',
+                                  category: suggest.category || 'Alimentos'
+                                })}
+                                style={{
+                                  border: 'none',
+                                  background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(219, 39, 119, 0.15))',
+                                  color: '#ec4899',
+                                  padding: '6px 10px',
+                                  borderRadius: '8px',
+                                  fontSize: '11px',
+                                  fontWeight: '700',
+                                  cursor: 'pointer',
+                                  textAlign: 'center',
+                                  width: '100%',
+                                  transition: 'all 0.2s'
+                                }}
+                              >
+                                {t('addToList')}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Exibição dos Itens da Lista de Compras */}
                   <div className="glass-panel" style={{ padding: '24px' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -5418,6 +5941,21 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                             gap: '4px'
                                           }}>
                                             <Wand2 size={10} className="animate-pulse" /> {t('classifyingAi')}
+                                          </span>
+                                        )}
+                                        {!isClassifying && item.ai_status === 'pending' && (
+                                          <span style={{
+                                            fontSize: '10px',
+                                            fontWeight: '700',
+                                            color: '#9ca3af',
+                                            background: 'rgba(156, 163, 175, 0.1)',
+                                            padding: '2px 8px',
+                                            borderRadius: '10px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '4px'
+                                          }}>
+                                            {t('aiPending')}
                                           </span>
                                         )}
                                       </div>

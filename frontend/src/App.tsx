@@ -8126,7 +8126,13 @@ Instruções para resposta:
             }}
           />
           <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', lineHeight: '1.4' }}>
-            {toast.message}
+            {toast.message.split('**').map((part, idx) =>
+              idx % 2 === 1 ? (
+                <strong key={idx} style={{ fontWeight: '700', color: 'var(--text-primary)' }}>{part}</strong>
+              ) : (
+                part
+              )
+            )}
           </span>
           <button
             onClick={() => setToast({ message: '', type: null, id: null })}

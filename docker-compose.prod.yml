@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  familysync:
+    image: gutolm/familysync:latest
+    container_name: familysync-app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - DATABASE_PATH=/data/familysync.db
+      - JWT_SECRET=FamilySyncSecretKey_SuperSecure123! # Recomendado alterar para uma chave forte!
+    volumes:
+      - familysync-data:/data
+
+volumes:
+  familysync-data:
+    driver: local

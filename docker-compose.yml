@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  familysync:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: familysync-app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - DATABASE_PATH=/data/familysync.db
+      - JWT_SECRET=FamilySyncSecretKey_SuperSecure123!
+    volumes:
+      - familysync-data:/data
+
+volumes:
+  familysync-data:
+    driver: local

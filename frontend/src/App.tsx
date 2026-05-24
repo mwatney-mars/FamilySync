@@ -90,6 +90,21 @@ const getLocalizedDate = (d: Date, lang: string) => {
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 };
 
+const getCategoryTranslationKey = (category: string): string => {
+  switch (category) {
+    case 'Alimentos': return 'categoryAlimentos';
+    case 'Higiene': return 'categoryHigiene';
+    case 'Limpeza': return 'categoryLimpeza';
+    case 'Farmácia': return 'categoryFarmacia';
+    case 'Pet': return 'categoryPet';
+    case 'Bebê': return 'categoryBebe';
+    case 'Casa & Utensílios': return 'categoryCasaUtensilios';
+    case 'Outros': return 'categoryOutros';
+    case 'Sem categoria': return 'categorySemCategoria';
+    default: return 'categorySemCategoria';
+  }
+};
+
 const getLocalizedMonths = (lang: string): string[] => {
   const locale = LOCALE_MAP[lang] || 'en-US';
   const formatter = new Intl.DateTimeFormat(locale, { month: 'long' });
@@ -232,24 +247,29 @@ const isChoreActiveOnDate = (chore: Chore, dateStr: string): boolean => {
   return false;
 };
 
-const getMedicationDoseOnDate = (chore: Chore, dateStr: string): string => {
+const getMedicationDoseOnDate = (chore: Chore, dateStr: string, language: string = 'en'): string => {
+  const noDoseStr = TRANSLATIONS[language]?.['noDose'] || TRANSLATIONS['en']?.['noDose'] || 'Sem dose';
   if (!chore.is_medication) return '';
   const todayStr = getTodayStr();
   
   if (chore.medication_cycle && chore.medication_cycle.length > 0) {
     const startDateStr = chore.start_date || (chore.completed_at ? new Date(chore.completed_at).toISOString().split('T')[0] : todayStr);
-    if (dateStr < startDateStr) return 'Sem dose';
+    if (dateStr < startDateStr) return noDoseStr;
     const startDate = parseDateStr(startDateStr);
     const targetDate = parseDateStr(dateStr);
     const daysDiff = getDaysDiff(startDate, targetDate);
     const index = daysDiff % chore.medication_cycle.length;
-    return chore.medication_cycle[index] || 'Sem dose';
+    const val = chore.medication_cycle[index];
+    if (val === 'Sem dose') return noDoseStr;
+    return val || noDoseStr;
   }
   
   if (chore.medication_dosages) {
     const daysAbbr = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     const targetDayName = daysAbbr[parseDateStr(dateStr).getDay()];
-    return chore.medication_dosages[targetDayName] || 'Sem dose';
+    const val = chore.medication_dosages[targetDayName];
+    if (val === 'Sem dose') return noDoseStr;
+    return val || noDoseStr;
   }
   
   return '1 dose';
@@ -406,8 +426,6 @@ function App() {
   const [setupDisplayName, setSetupDisplayName] = useState<string>('');
   const [setupUsername, setSetupUsername] = useState<string>('');
   const [setupPassword, setSetupPassword] = useState<string>('');
-  const [setupBirthDate, setSetupBirthDate] = useState<string>('');
-  const [setupGender, setSetupGender] = useState<string>('Não Informar');
   const [setupFamilyTitle, setSetupFamilyTitle] = useState<string>('Outro');
   const [setupError, setSetupError] = useState<string | null>(null);
   const [setupLoading, setSetupLoading] = useState<boolean>(false);
@@ -459,7 +477,8 @@ function App() {
   const [showApiKey, setShowApiKey] = useState<boolean>(false);
 
   // --- CONSULTAS AO BANCO LOCAL DE DADOS (LIVE QUERIES) ---
-  const localChores = useLiveQuery(() => db.chores.where('deleted').equals(0).toArray()) || [];
+  const rawChores = useLiveQuery(() => db.chores.where('deleted').equals(0).toArray());
+  const localChores = useMemo(() => rawChores || [], [rawChores]);
   const visibleChores = useMemo(() => {
     if (!currentUser) return [];
     if (currentUser.role === 'admin') return localChores;
@@ -471,9 +490,11 @@ function App() {
     });
   }, [localChores, currentUser]);
 
-  const localShopping = useLiveQuery(() => db.shopping.where('deleted').equals(0).toArray()) || [];
+  const rawShopping = useLiveQuery(() => db.shopping.where('deleted').equals(0).toArray());
+  const localShopping = useMemo(() => rawShopping || [], [rawShopping]);
   const localRewards = useLiveQuery(() => db.rewards.where('deleted').equals(0).toArray()) || [];
-  const localPoints = useLiveQuery(() => db.points.orderBy('timestamp').toArray()) || [];
+  const rawPoints = useLiveQuery(() => db.points.orderBy('timestamp').toArray());
+  const localPoints = useMemo(() => rawPoints || [], [rawPoints]);
   const stickyNotesData = useLiveQuery(() => db.metadata.get('family_sticky_notes'));
   const stickyNotes = useMemo(() => stickyNotesData?.value || [], [stickyNotesData]);
 
@@ -481,10 +502,12 @@ function App() {
 
   useEffect(() => {
     if (liveAiConfig) {
-      setGeminiApiKey(liveAiConfig.gemini_api_key || '');
-      setAiCategorizationEnabled(!!liveAiConfig.ai_categorization_enabled);
-      setAiConfigApiKey(liveAiConfig.gemini_api_key || '');
-      setAiConfigEnabled(!!liveAiConfig.ai_categorization_enabled);
+      Promise.resolve().then(() => {
+        setGeminiApiKey(liveAiConfig.gemini_api_key || '');
+        setAiCategorizationEnabled(!!liveAiConfig.ai_categorization_enabled);
+        setAiConfigApiKey(liveAiConfig.gemini_api_key || '');
+        setAiConfigEnabled(!!liveAiConfig.ai_categorization_enabled);
+      });
     }
   }, [liveAiConfig]);
 
@@ -541,6 +564,32 @@ function App() {
       setCurrentTime(new Date());
     }, 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  // --- DETECÇÃO NATIVA DE CONECTIVIDADE DE REDE ---
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      showToast(t('syncStatusOnline') || 'Online', 'success');
+      setTimeout(triggerSync, 500);
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      showToast(t('syncStatusOffline') || 'Offline', 'error');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Inicializar de acordo com a conectividade real do navegador
+    if (navigator.onLine === false) {
+      setIsOnline(false);
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   // --- INICIALIZAÇÃO E CARREGAMENTO DE METADADOS ---
@@ -688,7 +737,7 @@ function App() {
             localStorage.clear();
             
             // Exibir notificação de encerramento de sessão
-            showToast('O administrador reiniciou o banco de dados. Sua sessão foi encerrada de forma segura.', 'error');
+            showToast(t('toastDbResetByAdmin'), 'error');
             
             // Redirecionar sutilmente após 2.5 segundos
             setTimeout(() => {
@@ -837,7 +886,7 @@ function App() {
     setAccentTheme(themeName);
     try {
       await db.metadata.put({ key: 'accent_theme', value: themeName });
-      showToast('Tema visual atualizado com sucesso!', 'success');
+      showToast(t('toastThemeUpdated'), 'success');
     } catch (err) {
       console.error('Erro ao salvar tema:', err);
     }
@@ -847,7 +896,7 @@ function App() {
     setDefaultCalendarView(viewName);
     try {
       await db.metadata.put({ key: 'default_calendar_view', value: viewName });
-      showToast('Visualização padrão do calendário atualizada!', 'success');
+      showToast(t('toastCalendarViewUpdated'), 'success');
     } catch (err) {
       console.error('Erro ao salvar visualização padrão:', err);
     }
@@ -871,12 +920,14 @@ function App() {
   // --- SINCRONIZAR CAMPOS DO FORMULÁRIO DE PERFIL COM USUÁRIO ATUAL ---
   useEffect(() => {
     if (currentUser) {
-      setProfileUsername(currentUser.username || '');
-      setProfileDisplayName(currentUser.display_name || currentUser.username || '');
-      setProfileEmail(currentUser.email || '');
-      setProfileBirthDate(currentUser.birth_date || '');
-      setProfileGender(currentUser.gender || 'Não Informar');
-      setProfileFamilyTitle(currentUser.family_title || 'Membro');
+      Promise.resolve().then(() => {
+        setProfileUsername(currentUser.username || '');
+        setProfileDisplayName(currentUser.display_name || currentUser.username || '');
+        setProfileEmail(currentUser.email || '');
+        setProfileBirthDate(currentUser.birth_date || '');
+        setProfileGender(currentUser.gender || 'Não Informar');
+        setProfileFamilyTitle(currentUser.family_title || 'Membro');
+      });
     }
   }, [currentUser]);
 
@@ -903,11 +954,6 @@ function App() {
       return;
     }
 
-    if (!setupBirthDate) {
-      setSetupError(t('alertFillAllFields'));
-      return;
-    }
-
     if (!setupPassword || setupPassword.trim().length < 5) {
       setSetupError(t('alertPasswordMin'));
       return;
@@ -928,8 +974,8 @@ function App() {
             username: cleanUsername,
             display_name: cleanDisplayName,
             password: setupPassword.trim(),
-            birth_date: setupBirthDate,
-            gender: setupGender,
+            birth_date: '',
+            gender: '',
             family_title: setupFamilyTitle
           })
         });
@@ -956,13 +1002,13 @@ function App() {
           ...currentUser,
           username: cleanUsername,
           display_name: cleanDisplayName,
-          birth_date: setupBirthDate,
-          gender: setupGender,
+          birth_date: '',
+          gender: '',
           family_title: setupFamilyTitle
         };
         setCurrentUser(updatedUser);
         await db.metadata.put({ key: 'user_info', value: updatedUser });
-        showToast('Modo Simulação: Administrador inicial configurado.', 'success');
+        showToast(t('toastSimulationAdminConfigured'), 'success');
       }
     } catch (err: any) {
       setSetupError(err.message);
@@ -1281,13 +1327,13 @@ function App() {
     await db.metadata.put({ key: 'family_sticky_notes', value: currentNotes });
     setNewStickyText('');
     setIsAddingSticky(false);
-    showToast('Aviso publicado no mural!', 'success');
+    showToast(t('toastStickyNotePublished'), 'success');
   };
 
   const handleDeleteStickyNote = async (id: string) => {
     const currentNotes = stickyNotes.filter((note: any) => note.id !== id);
     await db.metadata.put({ key: 'family_sticky_notes', value: currentNotes });
-    showToast('Aviso removido!', 'info');
+    showToast(t('toastStickyNoteRemoved'), 'info');
   };
 
   // --- OPERAÇÕES DA APP (METODOS COM FILA DE SYNC SE ESTIVER OFFLINE) ---
@@ -1418,7 +1464,7 @@ function App() {
     const isOwner = currentUser && (chore.assigned_to === currentUser.username || chore.co_responsible === currentUser.username);
     
     if (!isAdmin && !isOwner) {
-      showToast('Apenas administradores ou responsáveis por esta tarefa podem editá-la.', 'error');
+      showToast(t('toastChoreEditPermission'), 'error');
       return;
     }
 
@@ -1450,7 +1496,7 @@ function App() {
         const isOwner = currentUser && (chore.assigned_to === currentUser.username || chore.co_responsible === currentUser.username);
         
         if (!isAdmin && !isOwner) {
-          showToast('Apenas administradores ou responsáveis por esta tarefa podem excluí-la.', 'error');
+          showToast(t('toastChoreDeletePermission'), 'error');
           return;
         }
       }
@@ -1461,12 +1507,12 @@ function App() {
         await queueSyncOperation(choreId, 'chores', 'update');
         triggerSync();
       }
-      showToast('Atividade excluída com sucesso!', 'success');
+      showToast(t('toastChoreDeletedSuccess'), 'success');
       resetChoreForm();
       setShowChoreFormModal(false);
     } catch (err) {
       console.error('Erro ao excluir atividade:', err);
-      showToast('Erro ao excluir atividade.', 'error');
+      showToast(t('toastChoreDeleteError'), 'error');
     }
   };
 
@@ -1719,7 +1765,7 @@ function App() {
         if (val.is_medication) {
           setNewChoreMedCycle(val.medication_cycle || ['1 dose']);
         }
-        showToast('Sugestões de tarefa carregadas do cache local.', 'success');
+        showToast(t('toastTaskSuggestionsLocal'), 'success');
         return;
       }
 
@@ -1813,7 +1859,7 @@ function App() {
         }
       });
 
-      showToast('Campos sugeridos com base no histórico local.', 'info');
+      showToast(t('toastChoreHistorySuggested'), 'info');
     } else {
       // 4. Sem histórico local, aplicar heurísticas estáticas simples
       const medKeywords = ['remedio', 'medicacao', 'paracetamol', 'dipirona', 'ibuprofeno', 'dose', 'tomar', 'aspirina', 'vitamina', 'ritalina', 'comprimido', 'gotas'];
@@ -1912,7 +1958,7 @@ function App() {
       // NÃO ENCONTROU NO CACHE LOCAL! Usa o Gemini em tempo real se disponível
       let category = 'Sem categoria'; // Categoria inicial padrão
       let correctedName = name;
-      let defaultUnit = 'un';
+      let defaultUnit: string;
 
       if (aiCategorizationEnabled && geminiApiKey.trim()) {
         setIsAddingShoppingItem(true);
@@ -2040,7 +2086,7 @@ function App() {
     } else {
       let category = 'Sem categoria';
       let correctedName = name;
-      let defaultUnit = 'un';
+      let defaultUnit: string;
 
       if (aiCategorizationEnabled && geminiApiKey.trim()) {
         setIsAddingShoppingItem(true);
@@ -2248,7 +2294,7 @@ function App() {
 
     const rawQty = (item.quantity || '').trim();
     const match = rawQty.match(/^(\d+)(.*)$/);
-    let newQty = '';
+    let newQty: string;
 
     if (match) {
       const num = parseInt(match[1], 10);
@@ -2687,7 +2733,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
   const handleSaveGeminiConfig = async (apiKey: string, enabled: boolean) => {
     try {
       if (currentUser?.role !== 'admin') {
-        showToast('Apenas administradores podem gerenciar as configurações de IA.', 'error');
+        showToast(t('toastAdminOnlyAi'), 'error');
         return;
       }
 
@@ -2712,10 +2758,10 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
         triggerSync();
       }
       
-      showToast('Configurações de Inteligência Artificial salvas!', 'success');
+      showToast(t('toastAiSettingsSaved'), 'success');
     } catch (err) {
-      console.error('Erro ao salvar chaves de IA:', err);
-      showToast('Falha ao salvar configurações de IA.', 'error');
+      console.error(err);
+      showToast(t('toastAiSettingsSaveError'), 'error');
     }
   };
 
@@ -2728,15 +2774,15 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
         .map(item => item.key);
 
       if (cacheKeys.length === 0) {
-        showToast('Nenhum item encontrado no cache de IA local.', 'info');
+        showToast(t('toastNoAiCache'), 'info');
         return;
       }
 
       await Promise.all(cacheKeys.map(key => db.metadata.delete(key)));
-      showToast(`${cacheKeys.length} itens de classificação/autocompletar removidos do cache de IA local.`, 'success');
+      showToast(t('toastAiCacheCleared').replace('{count}', String(cacheKeys.length)), 'success');
     } catch (err) {
       console.error('Erro ao limpar cache de IA:', err);
-      showToast('Erro ao limpar o cache de IA local.', 'error');
+      showToast(t('toastAiCacheClearError'), 'error');
     }
   };
 
@@ -2781,11 +2827,11 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
   // --- FUNÇÕES DE ADMINISTRAÇÃO DA FAMÍLIA ---
   const handleUpdateFamilyName = async (name: string) => {
     if (!name || !name.trim()) {
-      showToast('O nome da família não pode ser vazio.', 'error');
+      showToast(t('toastFamilyNameEmpty'), 'error');
       return;
     }
     if (!isOnline || !token) {
-      showToast('Você precisa estar online para alterar as configurações no servidor.', 'error');
+      showToast(t('toastNeedOnlineToChangeSettings'), 'error');
       return;
     }
     try {
@@ -2815,7 +2861,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!addMemUsername.trim() || !addMemPassword.trim()) {
-      showToast('Por favor, preencha todos os campos obrigatórios (Nome de Usuário e Senha).', 'error');
+      showToast(t('toastFillRequiredFields'), 'error');
       return;
     }
 
@@ -2844,17 +2890,17 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
         setAddMemRole('user');
         setAddMemTitle('Filho');
 
-        showToast('Membro demonstrativo adicionado com sucesso!', 'success');
+        showToast(t('toastDemoMemberAdded'), 'success');
       } catch (err) {
         console.error(err);
-        showToast('Erro ao salvar membro demonstrativo.', 'error');
+        showToast(t('toastDemoMemberError'), 'error');
       }
       return;
     }
 
     // MODO ONLINE
     if (!isOnline || !token) {
-      showToast('Você precisa estar online para adicionar membros.', 'error');
+      showToast(t('toastNeedOnlineToManageMembers'), 'error');
       return;
     }
 
@@ -2874,7 +2920,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
       });
 
       if (response.ok) {
-        showToast('Integrante adicionado com sucesso!', 'success');
+        showToast(t('toastMemberAddSuccess'), 'success');
         setAddMemUsername('');
         setAddMemPassword('');
         setAddMemRole('user');
@@ -2892,7 +2938,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
   const handleUpdateMember = async (memberId: string, role?: string, familyTitle?: string) => {
     if (!isOnline || !token) {
-      showToast('Você precisa estar online para gerenciar membros.', 'error');
+      showToast(t('toastNeedOnlineToManageMembers'), 'error');
       return;
     }
     try {
@@ -2918,14 +2964,14 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
   const handleEvictMember = async (memberId: string) => {
     if (memberId === currentUser?.id) {
-      showToast('Você não pode se remover da própria família.', 'error');
+      showToast(t('toastCannotRemoveSelf'), 'error');
       return;
     }
-    if (!confirm('Deseja realmente remover este integrante da família? Ele perderá acesso às rotinas compartilhadas.')) {
+    if (!confirm(t('confirmRemoveMember'))) {
       return;
     }
     if (!isOnline || !token) {
-      showToast('Você precisa estar online para gerenciar membros.', 'error');
+      showToast(t('toastNeedOnlineToManageMembers'), 'error');
       return;
     }
     try {
@@ -2949,11 +2995,11 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
   };
 
   const handleResetPoints = async () => {
-    if (!confirm('Deseja realmente ZERAR todas as pontuações e logs de XP de TODOS os membros da família? Esta ação é irreversível.')) {
+    if (!confirm(t('confirmResetScores'))) {
       return;
     }
     if (!isOnline || !token) {
-      showToast('Você precisa estar online para redefinir as pontuações.', 'error');
+      showToast(t('toastNeedOnlineToResetScores'), 'error');
       return;
     }
     try {
@@ -3055,7 +3101,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
       let backupData;
       try {
         backupData = JSON.parse(text);
-      } catch (e) {
+      } catch {
         showToast(t('toastInvalidJson'), 'error');
         return;
       }
@@ -3159,23 +3205,23 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
   const handleRestoreLocalBackup = async (backupId: string) => {
     if (!isOnline || !token) {
-      showToast('Você precisa estar online para restaurar o backup.', 'error');
+      showToast(t('toastNeedOnlineToRestoreBackup'), 'error');
       return;
     }
-    if (!confirm('ATENÇÃO: Restaurar este backup local substituirá os dados atuais do servidor e de todos os dispositivos. Continuar?')) {
+    if (!confirm(t('confirmRestoreBackup'))) {
       return;
     }
     try {
       const backupObj = await db.metadata.get(backupId);
       if (!backupObj || !backupObj.value) {
-        showToast('Dados do backup local não encontrados ou corrompidos.', 'error');
+        showToast(t('toastLocalBackupNotFound'), 'error');
         return;
       }
       
       const backupData = backupObj.value;
       const text = JSON.stringify(backupData);
       
-      showToast('Restaurando backup local no servidor...', 'info');
+      showToast(t('toastRestoringLocalBackup'), 'info');
       const response = await fetch(`${backendUrl}/api/family/backup/import`, {
         method: 'POST',
         headers: {
@@ -3211,7 +3257,9 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
   useEffect(() => {
     if (isAuthenticated) {
-      loadLocalBackupsIndex();
+      Promise.resolve().then(() => {
+        loadLocalBackupsIndex();
+      });
     }
   }, [isAuthenticated]);
 
@@ -3481,7 +3529,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="ex: admin"
+                  placeholder={t('loginUsernamePlaceholder')}
                   value={loginUsername}
                   onChange={(e) => setLoginUsername(e.target.value)}
                   required
@@ -3610,52 +3658,24 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
             </div>
 
             <div style={{ marginBottom: '14px' }}>
-              <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>{t('birthDate')}</label>
-              <input
-                type="date"
+              <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>{t('familyTitle')}</label>
+              <select
                 className="input-field"
-                value={setupBirthDate}
-                onChange={(e) => setSetupBirthDate(e.target.value)}
+                value={setupFamilyTitle}
+                onChange={(e) => setSetupFamilyTitle(e.target.value)}
+                style={{ height: '46px' }}
                 required
-              />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-              <div>
-                <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>{t('gender')}</label>
-                <select
-                  className="input-field"
-                  value={setupGender}
-                  onChange={(e) => setSetupGender(e.target.value)}
-                  style={{ height: '46px' }}
-                  required
-                >
-                  <option value="Masculino">{t('genderMale')}</option>
-                  <option value="Feminino">{t('genderFemale')}</option>
-                  <option value="Outro">{t('genderOther')}</option>
-                  <option value="Não Informar">{t('genderNone')}</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>{t('familyTitle')}</label>
-                <select
-                  className="input-field"
-                  value={setupFamilyTitle}
-                  onChange={(e) => setSetupFamilyTitle(e.target.value)}
-                  style={{ height: '46px' }}
-                  required
-                >
-                  <option value="Pai">{t('titleFather')}</option>
-                  <option value="Mãe">{t('titleMother')}</option>
-                  <option value="Filho">{t('titleSon')}</option>
-                  <option value="Filha">{t('titleDaughter')}</option>
-                  <option value="Avô">{t('titleGrandfather')}</option>
-                  <option value="Avó">{t('titleGrandmother')}</option>
-                  <option value="Tio">{t('titleUncle')}</option>
-                  <option value="Tia">{t('titleAunt')}</option>
-                  <option value="Outro">{t('titleOther')}</option>
-                </select>
-              </div>
+              >
+                <option value="Pai">{t('titleFather')}</option>
+                <option value="Mãe">{t('titleMother')}</option>
+                <option value="Filho">{t('titleSon')}</option>
+                <option value="Filha">{t('titleDaughter')}</option>
+                <option value="Avô">{t('titleGrandfather')}</option>
+                <option value="Avó">{t('titleGrandmother')}</option>
+                <option value="Tio">{t('titleUncle')}</option>
+                <option value="Tia">{t('titleAunt')}</option>
+                <option value="Outro">{t('titleOther')}</option>
+              </select>
             </div>
 
             <div style={{ marginBottom: '22px' }}>
@@ -3685,7 +3705,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                 style={{ flex: 2, padding: '12px', background: 'linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-hover) 100%)' }}
                 disabled={setupLoading}
               >
-                {setupLoading ? 'Configurando...' : 'Salvar e Ativar Portal'}
+                {setupLoading ? t('saving') : t('saveAndActivate')}
               </button>
             </div>
           </form>
@@ -3718,15 +3738,15 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
               <h1 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
                 {(() => {
                   const hr = currentTime.getHours();
-                  if (hr >= 6 && hr < 12) return '🌅 Bom dia, Família!';
-                  if (hr >= 12 && hr < 18) return '☀️ Boa tarde, Família!';
-                  return '🌙 Boa noite, Família!';
+                  if (hr >= 6 && hr < 12) return '🌅 ' + t('greetingMorning');
+                  if (hr >= 12 && hr < 18) return '☀️ ' + t('greetingAfternoon');
+                  return '🌙 ' + t('greetingEvening');
                 })()}
               </h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                 <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: isOnline ? 'var(--accent-success)' : 'var(--accent-danger)', boxShadow: isOnline ? '0 0 8px var(--accent-success)' : '0 0 8px var(--accent-danger)' }}></span>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                  {isOnline ? 'On-line • Sincronizado' : 'Modo Offline'}
+                  {isOnline ? t('syncStatusOnline') : t('syncStatusOffline')}
                 </span>
               </div>
             </div>
@@ -3742,10 +3762,10 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
               }}
               className="btn-secondary"
               style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}
-              title="Alternar Conexão"
+              title={t('toggleConnection')}
             >
               {isOnline ? <Wifi size={13} style={{ color: 'var(--accent-success)' }} /> : <WifiOff size={13} style={{ color: 'var(--accent-danger)' }} />}
-              <span>{isOnline ? 'Online' : 'Offline'}</span>
+              <span>{isOnline ? t('syncStatusOnline') : t('syncStatusOffline')}</span>
             </button>
 
             {/* Exit Panel button */}
@@ -3775,7 +3795,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
         <header className="main-header glass-panel">
           
           {/* Identificação de Família */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="header-identity" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <img src="/logo.png" alt="FamilySync Logo" style={{ height: '36px', width: '36px', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)' }} />
             <div>
               <h2 style={{ fontSize: '16px', fontWeight: '700', letterSpacing: '-0.3px' }}>
@@ -3787,24 +3807,24 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
             </div>
           </div>
 
-          {/* Simuladores de Geolocalização e NFC e Internet */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px' }}>
-            
-            {/* Barra de Progresso do Dia Selecionado */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-light)', padding: '4px 10px', borderRadius: 'var(--radius-md)', minHeight: '32px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '700', whiteSpace: 'nowrap' }}>
-                Progresso: <span style={{ color: selectedDateProgress.percentage === 100 ? 'var(--accent-success)' : selectedDateProgress.percentage > 30 ? 'var(--accent-info)' : 'var(--accent-primary-hover)' }}>{selectedDateProgress.percentage}%</span>
-              </span>
-              <div style={{ width: '80px', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
-                <div style={{ width: `${selectedDateProgress.percentage}%`, height: '100%', background: selectedDateProgress.percentage === 100 ? 'var(--accent-success)' : selectedDateProgress.percentage > 30 ? 'var(--accent-info)' : 'var(--accent-primary)', borderRadius: '3px', transition: 'width 0.4s ease' }} />
-              </div>
-              {selectedDateProgress.total > 0 && (
-                <span className="hide-on-mobile" style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 'bold' }}>
-                  ({selectedDateProgress.completed}/{selectedDateProgress.total})
-                </span>
-              )}
+          {/* Barra de Progresso do Dia Selecionado */}
+          <div className="header-progress-container">
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '700', whiteSpace: 'nowrap' }}>
+              {t('progressLabel')}: <span style={{ color: selectedDateProgress.percentage === 100 ? 'var(--accent-success)' : selectedDateProgress.percentage > 30 ? 'var(--accent-info)' : 'var(--accent-primary-hover)' }}>{selectedDateProgress.percentage}%</span>
+            </span>
+            <div style={{ width: '80px', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
+              <div style={{ width: `${selectedDateProgress.percentage}%`, height: '100%', background: selectedDateProgress.percentage === 100 ? 'var(--accent-success)' : selectedDateProgress.percentage > 30 ? 'var(--accent-info)' : 'var(--accent-primary)', borderRadius: '3px', transition: 'width 0.4s ease' }} />
             </div>
+            {selectedDateProgress.total > 0 && (
+              <span className="hide-on-mobile" style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 'bold' }}>
+                ({selectedDateProgress.completed}/{selectedDateProgress.total})
+              </span>
+            )}
+          </div>
 
+          {/* Simuladores de Geolocalização e NFC e Internet */}
+          <div className="header-actions">
+            
             {/* Conexão Simulada */}
             <button
               onClick={() => {
@@ -3813,17 +3833,17 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
               }}
               className="btn-secondary"
               style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', background: isOnline ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)', borderColor: isOnline ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)' }}
-              title="Clique para alternar entre Online e Offline para testar o sistema offline-first"
+              title={t('toggleConnectionDesc')}
             >
               {isOnline ? (
                 <>
                   <Wifi size={14} style={{ color: 'var(--accent-success)' }} />
-                  <span className="hide-on-mobile" style={{ color: 'var(--accent-success)', fontWeight: '600' }}>Online</span>
+                  <span className="hide-on-mobile" style={{ color: 'var(--accent-success)', fontWeight: '600' }}>{t('syncStatusOnline')}</span>
                 </>
               ) : (
                 <>
                   <WifiOff size={14} style={{ color: 'var(--accent-danger)' }} />
-                  <span className="hide-on-mobile" style={{ color: 'var(--accent-danger)', fontWeight: '600' }}>Offline</span>
+                  <span className="hide-on-mobile" style={{ color: 'var(--accent-danger)', fontWeight: '600' }}>{t('syncStatusOffline')}</span>
                 </>
               )}
             </button>
@@ -3835,7 +3855,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                 disabled={isSyncing}
                 className="btn-secondary"
                 style={{ padding: '6px', borderRadius: '50%', minWidth: '32px', height: '32px' }}
-                title="Forçar sincronização com a nuvem"
+                title={t('forceSync')}
               >
                 <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} style={{ animation: isSyncing ? 'pulseGlow 1.5s infinite' : 'none' }} />
               </button>
@@ -3844,7 +3864,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
             {/* Modo Geladeira (Tablet) */}
             <button
               onClick={() => setIsFridgeMode(!isFridgeMode)}
-              className="btn-secondary"
+              className="btn-secondary hide-on-mobile"
               style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', background: isFridgeMode ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.04)', borderColor: isFridgeMode ? 'var(--accent-primary)' : 'var(--border-light)' }}
               title={t('toggleFridgeMode')}
             >
@@ -3863,7 +3883,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
             </button>
 
             {/* Logout */}
-            <button onClick={handleLogout} className="btn-secondary" style={{ padding: '6px', borderRadius: '50%', minWidth: '32px', height: '32px' }} title="Desconectar do FamilySync">
+            <button onClick={handleLogout} className="btn-secondary" style={{ padding: '6px', borderRadius: '50%', minWidth: '32px', height: '32px' }} title={t('disconnectFromApp')}>
               <LogOut size={13} style={{ color: 'var(--text-secondary)' }} />
             </button>
 
@@ -3874,7 +3894,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
 
       {/* CONTEÚDO PRINCIPAL DO APP */}
-      <main style={{ flex: 1, padding: isFridgeMode ? '16px' : '24px', maxWidth: '1400px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <main className="main-content" style={{ padding: isFridgeMode ? '16px' : undefined }}>
         
         {/* SE FOR MODO GELADEIRA (FRIDGE TV MODE) */}
         {isFridgeMode ? (
@@ -3909,7 +3929,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
                   return sortedTasks.map(chore => {
                     const completed = isChoreCompletedOnDate(chore, todayStr);
-                    const dose = getMedicationDoseOnDate(chore, todayStr);
+                    const dose = getMedicationDoseOnDate(chore, todayStr, language);
                     return (
                       <div
                         key={chore.id}
@@ -4091,7 +4111,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                       </div>
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: '14px', fontWeight: '600' }}>{stats.displayName || name}</p>
-                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Nível {stats.level}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{t('levelLabel').replace('{level}', String(stats.level))}</span>
                       </div>
                       <span className="badge-xp" style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-success)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
                         {stats.points} XP
@@ -4106,19 +4126,19 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
           // SE FOR MODO COMPLETO (SPA MULTIABA COMPLETA)
           <>
             {/* ABAS DE NAVEGAÇÃO SUPERIOR (Responsivas para Mobile) */}
-            <nav className="glass-panel" style={{ padding: '4px', display: 'flex', overflowX: 'auto', gap: '4px' }}>
-              <button onClick={() => setActiveTab('dashboard')} className={activeTab === 'dashboard' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap' }}>
-                <LayoutDashboard size={16} /> <span style={{ marginLeft: '4px' }}>{t('dashboard')}</span>
+            <nav className="glass-panel main-nav">
+              <button onClick={() => setActiveTab('dashboard')} className={activeTab === 'dashboard' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <LayoutDashboard size={16} /> <span className="nav-btn-text" style={{ marginLeft: '4px' }}>{t('dashboard')}</span>
               </button>
-              <button onClick={() => setActiveTab('calendar')} className={activeTab === 'calendar' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap' }}>
-                <CalendarIcon size={16} /> <span style={{ marginLeft: '4px' }}>{t('calendar')}</span>
+              <button onClick={() => setActiveTab('calendar')} className={activeTab === 'calendar' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CalendarIcon size={16} /> <span className="nav-btn-text" style={{ marginLeft: '4px' }}>{t('calendar')}</span>
               </button>
-              <button onClick={() => setActiveTab('shopping')} className={activeTab === 'shopping' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap' }}>
-                <ShoppingCart size={16} /> <span style={{ marginLeft: '4px' }}>{t('shoppingList')}</span>
+              <button onClick={() => setActiveTab('shopping')} className={activeTab === 'shopping' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <ShoppingCart size={16} /> <span className="nav-btn-text" style={{ marginLeft: '4px' }}>{t('shoppingList')}</span>
               </button>
 
-              <button onClick={() => setActiveTab('gamification')} className={activeTab === 'gamification' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap' }}>
-                <Trophy size={16} /> <span style={{ marginLeft: '4px' }}>{t('gamification')}</span>
+              <button onClick={() => setActiveTab('gamification')} className={activeTab === 'gamification' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Trophy size={16} /> <span className="nav-btn-text" style={{ marginLeft: '4px' }}>{t('gamification')}</span>
               </button>
             </nav>
 
@@ -4129,9 +4149,9 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
               {activeTab === 'dashboard' && (() => {
                 const getGreeting = () => {
                   const hr = currentTime.getHours();
-                  if (hr >= 5 && hr < 12) return language === 'pt' ? 'Bom dia' : (language === 'en' ? 'Good morning' : (language === 'es' ? 'Buenos días' : (language === 'pl' ? 'Dzień dobry' : (language === 'de' ? 'Guten Morgen' : (language === 'fr' ? 'Bonjour' : 'Buongiorno')))));
-                  if (hr >= 12 && hr < 18) return language === 'pt' ? 'Boa tarde' : (language === 'en' ? 'Good afternoon' : (language === 'es' ? 'Buenas tardes' : (language === 'pl' ? 'Miłego popołudnia' : (language === 'de' ? 'Guten Tag' : (language === 'fr' ? 'Bon après-midi' : 'Buon pomeriggio')))));
-                  return language === 'pt' ? 'Boa noite' : (language === 'en' ? 'Good evening' : (language === 'es' ? 'Buenas noches' : (language === 'pl' ? 'Dobry wieczór' : (language === 'de' ? 'Guten Abend' : (language === 'fr' ? 'Bonsoir' : 'Buonasera')))));
+                  if (hr >= 5 && hr < 12) return t('greetingMorning');
+                  if (hr >= 12 && hr < 18) return t('greetingAfternoon');
+                  return t('greetingEvening');
                 };
 
                 const getWeatherInfo = () => {
@@ -4139,28 +4159,28 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                   if (hr >= 6 && hr < 12) {
                     return {
                       temp: '22°C',
-                      desc: 'Manhã Fresca',
+                      desc: t('weatherMorning'),
                       icon: <Sun className="animate-pulse" size={24} style={{ color: 'var(--accent-warning)' }} />,
                       glow: 'rgba(245, 158, 11, 0.15)'
                     };
                   } else if (hr >= 12 && hr < 18) {
                     return {
                       temp: '26°C',
-                      desc: 'Tarde Ensolarada',
+                      desc: t('weatherAfternoon'),
                       icon: <Sun size={24} style={{ color: 'var(--accent-warning)', animation: 'spin 20s linear infinite' }} />,
                       glow: 'rgba(245, 158, 11, 0.15)'
                     };
                   } else if (hr >= 18 && hr < 22) {
                     return {
                       temp: '20°C',
-                      desc: 'Noite Estrelada',
+                      desc: t('weatherEvening'),
                       icon: <Sparkles size={24} style={{ color: 'var(--accent-primary-hover)' }} />,
                       glow: 'rgba(139, 92, 246, 0.15)'
                     };
                   } else {
                     return {
                       temp: '17°C',
-                      desc: 'Noite Confortável',
+                      desc: t('weatherNight'),
                       icon: <CloudRain size={24} style={{ color: 'var(--accent-info)' }} />,
                       glow: 'rgba(6, 182, 212, 0.15)'
                     };
@@ -4179,7 +4199,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <div>
                             <span className="badge-xp" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)', border: '1px solid var(--border-light)', fontSize: '10px' }}>
-                              🏠 Central de Controle
+                              🏠 {t('controlCenter')}
                             </span>
                             <h2 style={{ fontSize: '24px', fontWeight: '800', marginTop: '8px', marginBottom: '2px', color: '#fff' }}>
                               {getGreeting()}, {currentUser ? (currentUser.display_name || currentUser.username) : 'Família'}!
@@ -4200,9 +4220,6 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid var(--border-light)', paddingTop: '14px', fontSize: '20px', fontWeight: '700', color: 'var(--accent-primary-hover)' }}>
                           <Clock size={20} style={{ color: 'var(--accent-primary)' }} />
                           <span>{currentTime.toLocaleTimeString(LOCALE_MAP[language] || 'en-US')}</span>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500', marginLeft: 'auto' }}>
-                            Sistema 100% Sincronizado
-                          </span>
                         </div>
                       </div>
 
@@ -4212,9 +4229,9 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                           <div>
                             <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <Pin size={18} style={{ color: 'var(--accent-danger)', transform: 'rotate(15deg)' }} />
-                              <span>Mural de Avisos</span>
+                              <span>{t('stickyNotesTitle')}</span>
                             </h3>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '12px', margin: 0 }}>Recados rápidos e bilhetes para a casa.</p>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '12px', margin: 0 }}>{t('stickyNotesDesc')}</p>
                           </div>
                           
                           {!isAddingSticky ? (
@@ -4223,7 +4240,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                               className="btn-primary"
                               style={{ padding: '6px 12px', fontSize: '11px', borderRadius: 'var(--radius-sm)' }}
                             >
-                              + Bilhete
+                              {t('addNote')}
                             </button>
                           ) : (
                             <button
@@ -4231,7 +4248,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                               className="btn-secondary"
                               style={{ padding: '6px 12px', fontSize: '11px', borderRadius: 'var(--radius-sm)' }}
                             >
-                              Cancelar
+                              {t('cancel')}
                             </button>
                           )}
                         </div>
@@ -4240,7 +4257,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                           <div className="animate-scale-up" style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <textarea
                               className="input-field"
-                              placeholder="Escreva um recado rápido (máx 80 caracteres)..."
+                              placeholder={t('notePlaceholder')}
                               maxLength={80}
                               value={newStickyText}
                               onChange={(e) => setNewStickyText(e.target.value)}
@@ -4279,7 +4296,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                 className="btn-primary"
                                 style={{ padding: '6px 12px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}
                               >
-                                Publicar
+                                {t('publish')}
                               </button>
                             </div>
                           </div>
@@ -4288,7 +4305,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                         <div className="sticky-notes-container" style={{ maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
                           {stickyNotes.length === 0 ? (
                             <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic' }}>
-                              📌 Mural vazio. Deixe o primeiro aviso para a família!
+                              📌 {t('emptyBoardMessage')}
                             </div>
                           ) : (
                             stickyNotes.map((note: any) => (
@@ -4429,7 +4446,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                 {cat.items.map(chore => {
                                   const completed = isChoreCompletedOnDate(chore, selectedDateStr);
                                   const isMed = !!chore.is_medication;
-                                  const dose = isMed ? getMedicationDoseOnDate(chore, selectedDateStr) : '';
+                                  const dose = isMed ? getMedicationDoseOnDate(chore, selectedDateStr, language) : '';
 
                                   return (
                                     <div
@@ -4476,7 +4493,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                           )}
                                         </div>
                                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Responsável: <strong>{chore.assigned_to === 'all' ? 'Todos' : chore.assigned_to}</strong></span>
+                                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{t('responsibleLabel')} <strong>{chore.assigned_to === 'all' ? t('allLabel') : (chore.assigned_to === currentUser?.username ? t('youLabel') : chore.assigned_to)}</strong></span>
                                           {isMed && dose && (
                                             <span style={{ fontSize: '10px', color: 'var(--accent-info)' }}>({dose})</span>
                                           )}
@@ -4619,7 +4636,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                     };
 
                     // Formatar o cabeçalho temporal conforme a perspectiva
-                    let dateHeaderTitle = '';
+                    let dateHeaderTitle: string;
                     if (calendarView === 'month') {
                       const dummyDate = new Date(calendarYear, calendarMonth, 1);
                       const monthStr = dummyDate.toLocaleDateString(language === 'pt' ? 'pt-BR' : language, { month: 'long' });
@@ -4773,7 +4790,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                 >
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <span style={{ fontSize: '11px', fontWeight: isTodayCell || isSelectedCell ? '700' : '500', color: isSelectedCell ? 'var(--accent-primary-hover)' : (isTodayCell ? '#fff' : 'var(--text-secondary)') }}>
-                                      {dayNumber} {isTodayCell && '(Hoje)'}
+                                      {dayNumber} {isTodayCell && `(${t('today')})`}
                                     </span>
                                     {totalCount > 0 && (
                                       <span style={{ fontSize: '9px', fontWeight: 'bold', color: progressPercent === 100 ? 'var(--accent-success)' : 'var(--text-muted)' }}>
@@ -4821,7 +4838,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                     })}
                                     {choresOnThisDay.length > 3 && (
                                       <div style={{ fontSize: '8px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '2px', fontWeight: 'bold' }}>
-                                        + {choresOnThisDay.length - 3} mais
+                                        + {choresOnThisDay.length - 3} {t('more')}
                                       </div>
                                     )}
                                   </div>
@@ -4909,7 +4926,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                     {/* Lista vertical de tarefas na semana */}
                                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', maxHeight: '160px' }}>
                                       {choresOnThisDay.length === 0 ? (
-                                        <p style={{ fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic', margin: 'auto 0', textAlign: 'center' }}>Vazio</p>
+                                        <p style={{ fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic', margin: 'auto 0', textAlign: 'center' }}>{t('empty')}</p>
                                       ) : (
                                         choresOnThisDay.map(chore => {
                                           const completed = isChoreCompletedOnDate(chore, cellDateStr);
@@ -4946,7 +4963,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                                 onClick={async (e) => {
                                                   e.stopPropagation();
                                                   await handleCompleteChore(chore.id, cellDateStr);
-                                                  showToast(`${completed ? 'Reabriu' : 'Concluiu'}: "${chore.title}"!`, completed ? 'info' : 'success');
+                                                  showToast(`${completed ? t('reopened') : t('completed')}: "${chore.title}"!`, completed ? 'info' : 'success');
                                                 }}
                                                 style={{
                                                   width: '12px',
@@ -5047,7 +5064,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                           ) : (
                                             <>
                                               <CalendarIcon size={12} style={{ color: 'var(--text-secondary)', marginBottom: '2px' }} />
-                                              <span style={{ fontSize: '10px', fontWeight: '600', color: 'var(--text-muted)' }}>Flexível</span>
+                                              <span style={{ fontSize: '10px', fontWeight: '600', color: 'var(--text-muted)' }}>{t('flexible')}</span>
                                             </>
                                           )}
                                         </div>
@@ -5059,15 +5076,15 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                               {chore.title}
                                             </h4>
                                             <span style={{ fontSize: '8px', background: isMed ? 'rgba(6, 182, 212, 0.12)' : 'rgba(139, 92, 246, 0.12)', color: isMed ? 'var(--accent-info)' : 'var(--accent-primary-hover)', padding: '1px 5px', borderRadius: '10px', fontWeight: 'bold' }}>
-                                              {isMed ? 'Remédio' : 'Rotina'}
+                                              {isMed ? t('medication') : t('routine')}
                                             </span>
                                           </div>
                                           <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '0 0 4px 0', lineBreak: 'anywhere' }}>
-                                            {chore.description || 'Sem descrição.'}
+                                            {chore.description || t('noDescription')}
                                           </p>
                                           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                             <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                                              👤 {chore.assigned_to === 'all' ? 'Toda a Família' : chore.assigned_to}
+                                              👤 {chore.assigned_to === 'all' ? t('allFamily') : chore.assigned_to}
                                             </span>
                                             <span className="badge-xp" style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-success)', border: '1px solid rgba(16, 185, 129, 0.2)', fontSize: '9px', padding: '0 4px' }}>
                                               ★ {chore.points_worth} XP
@@ -5080,12 +5097,12 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                           onClick={async (e) => {
                                             e.stopPropagation();
                                             await handleCompleteChore(chore.id, cellDateStr);
-                                            showToast(`${completed ? 'Reabriu' : 'Concluiu'}: "${chore.title}"!`, completed ? 'info' : 'success');
+                                            showToast(`${completed ? t('reopened') : t('completed')}: "${chore.title}"!`, completed ? 'info' : 'success');
                                           }}
                                           className={completed ? 'btn-secondary' : 'btn-primary'}
                                           style={{ padding: '6px 10px', fontSize: '10px', background: completed ? 'rgba(16, 185, 129, 0.15)' : 'var(--accent-primary)', borderColor: completed ? 'var(--accent-success)' : 'transparent', color: completed ? 'var(--accent-success)' : '#fff', fontWeight: '700' }}
                                         >
-                                          {completed ? 'Feito ✓' : 'Fazer'}
+                                          {completed ? t('doneCheck') : t('doAction')}
                                         </button>
                                       </div>
                                     );
@@ -5118,7 +5135,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                         <input
                           type="text"
                           className="input-field"
-                          placeholder={isAddingShoppingItem ? "Classificando com IA..." : "Adicione um item (ex: '2 un leite', 'sabonete', '1kg arroz')..."}
+                          placeholder={isAddingShoppingItem ? t('shoppingInputClassifying') : t('shoppingInputPlaceholder')}
                           value={keepItemName}
                           disabled={isAddingShoppingItem}
                           onChange={(e) => {
@@ -5269,9 +5286,9 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                               category === 'Casa & Utensílios' ? '#14b8a6' :
                                               category === 'Sem categoria' ? '#9ca3af' : '#6b7280'
                                 }} />
-                                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)' }}>{category}</span>
+                                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)' }}>{t(getCategoryTranslationKey(category))}</span>
                               </div>
-                              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Solte aqui para categorizar</span>
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('dropToCategorize')}</span>
                             </div>
                           );
                         }
@@ -5283,7 +5300,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                             key={category}
                             className="animate-slide-up"
                             onDragOver={handleDragOver}
-                            onDragEnter={(e) => { e.preventDefault(); draggingItemId && setDragOverCategory(category); }}
+                            onDragEnter={(e) => { e.preventDefault(); if (draggingItemId) { setDragOverCategory(category); } }}
                             onDragLeave={() => setDragOverCategory(null)}
                             onDrop={(e) => handleDrop(e, category)}
                             style={{
@@ -5308,9 +5325,9 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                             category === 'Casa & Utensílios' ? '#14b8a6' :
                                             category === 'Sem categoria' ? '#9ca3af' : '#6b7280'
                               }} />
-                              {category}
+                              {t(getCategoryTranslationKey(category))}
                               <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 'normal', marginLeft: 'auto' }}>
-                                {itemsInCat.length} {itemsInCat.length === 1 ? 'item' : 'itens'}
+                                {itemsInCat.length} {itemsInCat.length === 1 ? t('item') : t('items')}
                               </span>
                             </h4>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -5360,7 +5377,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                       </p>
                                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
                                         <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                                          Criado por: {item.added_by} {checked && item.checked_by && `| Comprado por: ${item.checked_by}`}
+                                          {t('addedBy')}: {item.added_by} {checked && item.checked_by && `| ${t('boughtByLabel')}: ${item.checked_by}`}
                                         </span>
                                         {isClassifying && (
                                           <span className="shimmer" style={{
@@ -5374,7 +5391,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                             alignItems: 'center',
                                             gap: '4px'
                                           }}>
-                                            <Wand2 size={10} className="animate-pulse" /> IA Classificando...
+                                            <Wand2 size={10} className="animate-pulse" /> {t('classifyingAi')}
                                           </span>
                                         )}
                                       </div>
@@ -5523,7 +5540,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                   <div className="glass-panel" style={{ padding: '24px' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Trophy size={18} style={{ color: 'var(--accent-warning)' }} />
-                      <span>Quadro de Honra Familiar</span>
+                      <span>{t('leaderboardTitle')}</span>
                     </h3>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -5540,12 +5557,12 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                   </span>
                                   <span style={{ fontWeight: '600', fontSize: '15px' }}>{stats.displayName || name}</span>
                                 </div>
-                                <span className="badge-xp">{stats.points} total XP</span>
+                                <span className="badge-xp">{stats.points} {t('totalXpLabel')}</span>
                               </div>
 
                               {/* Progress bar de nível */}
                               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                                <span>Lvl {stats.level}</span>
+                                <span>{t('levelLabel').replace('{level}', String(stats.level))}</span>
                                 <span>{stats.points % 150} / 150 XP</span>
                               </div>
                               <div style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
@@ -5569,13 +5586,9 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                       <div className="glass-panel" style={{ padding: '8px 16px', border: '1px solid var(--border-focus)', display: 'flex', alignItems: 'center', gap: '8px', height: 'fit-content' }}>
                         <Coins size={16} style={{ color: 'var(--accent-warning)' }} />
                         <span style={{ fontSize: '13px', fontWeight: '700' }}>
-                          {t('yourBalance').split('{points}')[0]}
-                          <strong style={{ color: 'var(--accent-success)' }}>
-                            {localPoints
+                          {t('yourBalance').replace('{points}', String(localPoints
                               .filter(p => p.user_id === (currentUser ? currentUser.id : 'demo-user-child'))
-                              .reduce((acc, p) => acc + p.points, 0)}
-                          </strong>
-                          {t('yourBalance').split('{points}')[1] || ' XP'}
+                              .reduce((acc, p) => acc + p.points, 0)))}
                         </span>
                       </div>
                     </div>
@@ -5614,14 +5627,14 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                               className="btn-primary"
                               style={{ padding: '6px 12px', fontSize: '11px', background: 'linear-gradient(135deg, var(--accent-success), #047857)' }}
                             >
-                              Resgatar
+                              {t('redeem')}
                             </button>
                           </div>
                         </div>
                       ))}
                       {localRewards.length === 0 && (
                         <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
-                          Nenhuma recompensa cadastrada ainda.
+                          {t('noRewardsYet')}
                         </div>
                       )}
                     </div>
@@ -5792,20 +5805,20 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                             <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <Palette size={18} style={{ color: 'var(--accent-primary)' }} />
                             </div>
-                            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>Tema & Aparência</h3>
+                            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('themeAndAppearance')}</h3>
                           </div>
 
                           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>
-                            Escolha um esquema de cor de destaque para personalizar os botões, badges, barras de progresso e elementos interativos do seu painel. Essa configuração será salva exclusivamente no seu dispositivo!
+                            {t('chooseThemeDesc')}
                           </p>
 
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {[
-                              { id: 'violet', label: 'Violeta Neon (Padrão)', desc: 'Estética clássica e tecnológica', color: '#8b5cf6', grad: 'linear-gradient(135deg, #8b5cf6, #6d28d9)' },
-                              { id: 'emerald', label: 'Verde Esmeralda', desc: 'Visual focado em saúde, organização e bem-estar', color: '#10b981', grad: 'linear-gradient(135deg, #10b981, #047857)' },
-                              { id: 'cyan', label: 'Ciano Oceano', desc: 'Atmosfera leve, limpa e moderna', color: '#06b6d4', grad: 'linear-gradient(135deg, #06b6d4, #0891b2)' },
-                              { id: 'amber', label: 'Âmbar Radiante', desc: 'Energia calorosa, viva e motivadora', color: '#f59e0b', grad: 'linear-gradient(135deg, #f59e0b, #b45309)' },
-                              { id: 'ruby', label: 'Vermelho Rubi', desc: 'Estilo dinâmico, forte e de alta visibilidade', color: '#ef4444', grad: 'linear-gradient(135deg, #ef4444, #b91c1c)' }
+                              { id: 'violet', label: t('themeVioletName'), desc: t('themeVioletDesc'), color: '#8b5cf6', grad: 'linear-gradient(135deg, #8b5cf6, #6d28d9)' },
+                              { id: 'emerald', label: t('themeEmeraldName'), desc: t('themeEmeraldDesc'), color: '#10b981', grad: 'linear-gradient(135deg, #10b981, #047857)' },
+                              { id: 'cyan', label: t('themeCyanName'), desc: t('themeCyanDesc'), color: '#06b6d4', grad: 'linear-gradient(135deg, #06b6d4, #0891b2)' },
+                              { id: 'amber', label: t('themeAmberName'), desc: t('themeAmberDesc'), color: '#f59e0b', grad: 'linear-gradient(135deg, #f59e0b, #b45309)' },
+                              { id: 'ruby', label: t('themeRubyName'), desc: t('themeRubyDesc'), color: '#ef4444', grad: 'linear-gradient(135deg, #ef4444, #b91c1c)' }
                             ].map(themeOpt => {
                               const isSelected = accentTheme === themeOpt.id;
                               return (
@@ -6015,7 +6028,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                             <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(236, 72, 153, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <Wand2 size={18} style={{ color: '#ec4899' }} />
                             </div>
-                            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>Inteligência Artificial (Gemini)</h3>
+                            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('aiSettings')} (Gemini)</h3>
                           </div>
 
                           {currentUser?.role !== 'admin' && (
@@ -6085,7 +6098,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
                             {/* Chave da API do Gemini */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                              <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>Chave de API do Gemini</label>
+                              <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{t('geminiApiKeyLabel')}</label>
                               <div style={{ display: 'flex', gap: '8px', position: 'relative', width: '100%' }}>
                                 <input
                                   type={showApiKey ? 'text' : 'password'}
@@ -6093,7 +6106,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                   value={aiConfigApiKey}
                                   onChange={(e) => setAiConfigApiKey(e.target.value)}
                                   disabled={currentUser?.role !== 'admin'}
-                                  placeholder={currentUser?.role === 'admin' ? "Digite sua API Key do Google Gemini..." : "A chave de API está configurada e sincronizada pelo administrador."}
+                                  placeholder={currentUser?.role === 'admin' ? t('aiApiKeyPlaceholderAdmin') : t('aiApiKeyPlaceholderUser')}
                                   style={{ paddingRight: '45px', width: '100%', opacity: currentUser?.role === 'admin' ? 1 : 0.7 }}
                                 />
                                 <button
@@ -6117,7 +6130,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                 </button>
                               </div>
                               <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>
-                                Sua chave é salva localmente e de forma segura no banco do navegador (IndexedDB) e nunca é enviada para servidores de terceiros. Crie sua chave gratuita no <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" style={{ color: '#ec4899', textDecoration: 'underline' }}>Google AI Studio</a>.
+                                {t('geminiApiKeyDescPart1')} <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" style={{ color: '#ec4899', textDecoration: 'underline' }}>Google AI Studio</a>.
                               </p>
                             </div>
 
@@ -6136,7 +6149,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                     borderRadius: 'var(--radius-sm)'
                                   }}
                                 >
-                                  Salvar Configurações de IA
+                                  {t('saveAiSettings')}
                                 </button>
                               )}
 
@@ -6154,17 +6167,17 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                   gap: '8px'
                                 }}
                               >
-                                <Trash2 size={14} style={{ color: '#ec4899' }} /> Limpar Cache de IA
+                                <Trash2 size={14} style={{ color: '#ec4899' }} /> {t('clearAiCache')}
                               </button>
                             </div>
 
                             {/* Widget de Teste Interativo */}
                             <div style={{ marginTop: '20px', padding: '18px', borderRadius: 'var(--radius-md)', background: 'rgba(236, 72, 153, 0.02)', border: '1px dashed rgba(236, 72, 153, 0.3)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                               <h4 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <Wand2 size={16} style={{ color: '#ec4899' }} /> Testar Classificação
+                                <Wand2 size={16} style={{ color: '#ec4899' }} /> {t('testClassification')}
                               </h4>
                               <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0 }}>
-                                Digite um item qualquer para testar como a IA (ou o classificador local se a IA estiver desligada/sem chave) categoriza o produto.
+                                {t('testClassificationDesc')}
                               </p>
                               
                               <div style={{ display: 'flex', gap: '10px' }}>
@@ -6173,7 +6186,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                   className="input-field"
                                   value={aiConfigTestItem}
                                   onChange={(e) => setAiConfigTestItem(e.target.value)}
-                                  placeholder="Ex: sabonete líquido, queijo prato, paracetamol..."
+                                  placeholder={t('testClassificationPlaceholder')}
                                   style={{ flex: 1, fontSize: '13px' }}
                                 />
                             <button
@@ -6233,7 +6246,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                   className="btn-secondary"
                                   style={{ padding: '8px 16px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}
                                 >
-                                  {aiConfigTestLoading ? 'Classificando...' : 'Classificar'}
+                                  {aiConfigTestLoading ? t('classifying') : t('classify')}
                                 </button>
                               </div>
 
@@ -6243,21 +6256,21 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                   return (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px', padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Item original:</span>
+                                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('originalItem')}</span>
                                         <span style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-muted)' }}>"{aiConfigTestItem}"</span>
                                       </div>
                                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Item Corrigido pela IA:</span>
+                                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('correctedItemByAi')}</span>
                                         <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent-warning)' }}>"{parsed.corrected}"</span>
                                       </div>
                                       {parsed.unit && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Unidade recomendada:</span>
+                                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('recommendedUnit')}</span>
                                           <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent-info)' }}>"{parsed.unit}"</span>
                                         </div>
                                       )}
                                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Categoria determinada:</span>
+                                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('determinedCategory')}</span>
                                         <span style={{
                                           padding: '4px 10px',
                                           borderRadius: '20px',
@@ -6273,12 +6286,12 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                                       parsed.category === 'Casa & Utensílios' ? '#14b8a6' :
                                                       parsed.category === 'Sem categoria' ? '#9ca3af' : '#6b7280'
                                         }}>
-                                          {parsed.category}
+                                          {t(getCategoryTranslationKey(parsed.category))}
                                         </span>
                                       </div>
                                       {parsed.error && (
                                         <div style={{ fontSize: '10px', color: '#ef4444', fontStyle: 'italic', marginTop: '4px' }}>
-                                          ⚠️ Fallback local ativo devido a: {parsed.error}
+                                          {t('aiFallbackActive')} {parsed.error}
                                         </div>
                                       )}
                                     </div>
@@ -6302,7 +6315,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                             <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <User size={18} style={{ color: 'var(--accent-primary)' }} />
                             </div>
-                            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>Meu Perfil</h3>
+                            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('myProfileHeader')}</h3>
                           </div>
 
                           <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -6352,33 +6365,6 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                 </select>
                               </div>
                               <div>
-                                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>{t('gender')}</label>
-                                <select
-                                  className="input-field"
-                                  style={{ padding: '8px 12px', fontSize: '13px', height: '38px' }}
-                                  value={profileGender}
-                                  onChange={(e) => setProfileGender(e.target.value)}
-                                >
-                                  <option value="Masculino">{t('genderMale')}</option>
-                                  <option value="Feminino">{t('genderFemale')}</option>
-                                  <option value="Outro">{t('genderOther')}</option>
-                                  <option value="Não Informar">{t('genderNone')}</option>
-                                </select>
-                              </div>
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                              <div>
-                                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>{t('birthDate')}</label>
-                                <input
-                                  type="date"
-                                  className="input-field"
-                                  style={{ padding: '8px 12px', fontSize: '13px', height: '38px' }}
-                                  value={profileBirthDate}
-                                  onChange={(e) => setProfileBirthDate(e.target.value)}
-                                />
-                              </div>
-                              <div>
                                 <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>{t('newPassword')}</label>
                                 <input
                                   type="password"
@@ -6422,7 +6408,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                             <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <Users size={18} style={{ color: 'var(--accent-success)' }} />
                             </div>
-                            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>Minha Família</h3>
+                            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('myFamily')}</h3>
                           </div>
 
 
@@ -6430,11 +6416,11 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                           {/* ADMINISTRAÇÃO DA FAMÍLIA */}
                           {currentUser && currentUser.role === 'admin' && (
                             <div>
-                              <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '16px', color: 'var(--accent-primary-hover)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Gerenciamento Administrativo</h4>
+                              <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '16px', color: 'var(--accent-primary-hover)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('administrativeManagement')}</h4>
                               
                               {/* Alterar Nome da Família */}
                               <div style={{ marginBottom: '18px' }}>
-                                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Alterar Nome da Família</label>
+                                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>{t('changeFamilyName')}</label>
                                 <div style={{ display: 'flex', gap: '10px' }}>
                                   <input
                                     type="text"
@@ -6442,24 +6428,24 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                     style={{ padding: '8px 12px', fontSize: '14px' }}
                                     value={newFamilyName !== undefined && newFamilyName !== '' ? newFamilyName : (family ? family.name : '')}
                                     onChange={(e) => setNewFamilyName(e.target.value)}
-                                    placeholder="ex: Família Silva"
+                                    placeholder={t('familyNamePlaceholder')}
                                   />
                                   <button
                                     onClick={() => handleUpdateFamilyName(newFamilyName || (family ? family.name : ''))}
                                     className="btn-primary"
                                     style={{ padding: '8px 16px', fontSize: '13px', whiteSpace: 'nowrap' }}
                                   >
-                                    Atualizar
+                                    {t('updateButton')}
                                   </button>
                                 </div>
                               </div>
 
                               {/* Tabela de Membros */}
                               <div style={{ marginBottom: '20px' }}>
-                                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px', textTransform: 'uppercase' }}>Gerenciar Integrantes</label>
+                                <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px', textTransform: 'uppercase' }}>{t('manageMembers')}</label>
                                 {familyMembers.length === 0 ? (
                                   <div style={{ fontSize: '12px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.01)', padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
-                                    Carregando membros da família...
+                                    {t('loadingMembers')}
                                   </div>
                                 ) : (
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -6478,7 +6464,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                         }}
                                       >
                                         <div style={{ fontSize: '13px', fontWeight: '600', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                                          {member.display_name || member.username} {member.id === currentUser.id && <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>(Você)</span>}
+                                          {member.display_name || member.username} {member.id === currentUser.id && <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>({t('youLabel')})</span>}
                                           {(member.display_name && member.display_name !== member.username) && (
                                             <div style={{ fontSize: '11px', fontWeight: '400', color: 'var(--text-secondary)' }}>@{member.username}</div>
                                           )}
@@ -6490,15 +6476,15 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                           value={member.family_title || 'Outro'}
                                           onChange={(e) => handleUpdateMember(member.id, undefined, e.target.value)}
                                         >
-                                          <option value="Pai">Pai</option>
-                                          <option value="Mãe">Mãe</option>
-                                          <option value="Filho">Filho</option>
-                                          <option value="Filha">Filha</option>
-                                          <option value="Avô">Avô</option>
-                                          <option value="Avó">Avó</option>
-                                          <option value="Tio">Tio</option>
-                                          <option value="Tia">Tia</option>
-                                          <option value="Outro">Outro</option>
+                                          <option value="Pai">{t('titleFather')}</option>
+                                          <option value="Mãe">{t('titleMother')}</option>
+                                          <option value="Filho">{t('titleSon')}</option>
+                                          <option value="Filha">{t('titleDaughter')}</option>
+                                          <option value="Avô">{t('titleGrandfather')}</option>
+                                          <option value="Avó">{t('titleGrandmother')}</option>
+                                          <option value="Tio">{t('titleUncle')}</option>
+                                          <option value="Tia">{t('titleAunt')}</option>
+                                          <option value="Outro">{t('titleOther')}</option>
                                         </select>
 
                                         <select
@@ -6509,7 +6495,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                           disabled={member.id === currentUser.id || member.id === family?.creator_id}
                                           title={member.id === family?.creator_id ? t('creatorMustBeAdmin') : undefined}
                                         >
-                                          <option value="admin">Admin</option>
+                                          <option value="admin">{t('roleAdmin')}</option>
                                           <option value="user">{t('roleUser')}</option>
                                         </select>
 
@@ -6660,7 +6646,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                             <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(6, 182, 212, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <Database size={18} style={{ color: 'var(--accent-info)' }} />
                             </div>
-                            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>Servidor & Banco de Dados</h3>
+                            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('serverAndDatabase')}</h3>
                           </div>
 
 
@@ -6670,10 +6656,10 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                             <div style={{ marginBottom: '24px', borderBottom: '1px solid var(--border-light)', paddingBottom: '20px' }}>
                               <h4 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <Shield size={16} style={{ color: 'var(--accent-warning)' }} />
-                                Central de Backup & Recuperação
+                                {t('backupCenterTitle')}
                               </h4>
                               <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                                Exporte todo o estado da família, histórico de tarefas, itens de compras e dados cadastrados como um arquivo portável `.json`, permitindo restaurações completas e Disaster Recovery.
+                                {t('backupCenterDesc')}
                               </p>
                               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                                 <button
@@ -6693,7 +6679,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                   }}
                                 >
                                   <Download size={15} />
-                                  Exportar Backup (.json)
+                                  {t('exportBackupBtn')}
                                 </button>
 
                                 <label
@@ -6713,7 +6699,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                   }}
                                 >
                                   <Upload size={15} />
-                                  Importar Backup (.json)
+                                  {t('importBackupBtn')}
                                   <input
                                     type="file"
                                     accept=".json"
@@ -6731,15 +6717,15 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                               <div style={{ marginTop: '20px', borderTop: '1px dashed rgba(255, 255, 255, 0.1)', paddingTop: '16px' }}>
                                 <h5 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                   <Clock size={14} style={{ color: 'var(--accent-primary)' }} />
-                                  Snapshots de Backup Internos (Últimos 3)
+                                  {t('internalSnapshotsTitle')}
                                 </h5>
                                 <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                                  Cópias de segurança instantâneas geradas automaticamente ou salvas localmente no navegador. Permite restaurar o portal em segundos.
+                                  {t('internalSnapshotsDesc')}
                                 </p>
                                 
                                 {localBackupsIndex.length === 0 ? (
                                   <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-light)', textAlign: 'center', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                                    Nenhum snapshot local salvo ainda.
+                                    {t('noLocalSnapshots')}
                                   </div>
                                 ) : (
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
@@ -6754,7 +6740,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                           className="btn-secondary"
                                           style={{ padding: '5px 10px', fontSize: '11px', borderRadius: '6px', cursor: 'pointer', borderColor: 'rgba(16, 185, 129, 0.3)', color: '#34d399', background: 'rgba(16, 185, 129, 0.05)' }}
                                         >
-                                          Restaurar
+                                          {t('restoreBtn')}
                                         </button>
                                       </div>
                                     ))}
@@ -6766,7 +6752,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                                   className="btn-secondary"
                                   style={{ padding: '6px 12px', fontSize: '11px', borderRadius: '6px', borderColor: 'rgba(139, 92, 246, 0.3)', color: '#a78bfa', background: 'rgba(139, 92, 246, 0.05)', fontWeight: '600' }}
                                 >
-                                  Criar Snapshot Instantâneo
+                                  {t('createInstantSnapshotBtn')}
                                 </button>
                               </div>
                             </div>
@@ -6777,10 +6763,10 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                             <div style={{ marginBottom: '24px' }}>
                               <h4 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <Award size={16} style={{ color: 'var(--accent-primary)' }} />
-                                Reiniciar Ciclo de Tarefas & Gamificação
+                                {t('resetRoutinesTitle')}
                               </h4>
                               <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
-                                Esta ação irá zerar as pontuações acumuladas e o XP de todos os membros da família, permitindo iniciar um novo período ou gincana semanal/mensal de tarefas.
+                                {t('resetRoutinesDesc')}
                               </p>
                               <button
                                 onClick={handleResetPoints}

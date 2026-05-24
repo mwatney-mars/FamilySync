@@ -142,7 +142,7 @@ export const initDb = async () => {
 
       await run(
         'INSERT INTO families (id, name, join_code, e2ee_salt, creator_id) VALUES (?, ?, ?, ?, ?)',
-        [familyId, 'Família Sync', 'FS1234', salt, userId]
+        [familyId, 'My Family', 'FS1234', salt, userId]
       );
 
       await run(
@@ -151,7 +151,7 @@ export const initDb = async () => {
       );
 
       console.log(`[Seed] Semeado com sucesso!`);
-      console.log(` -> Família: "Família Sync" (Código de Convite: FS1234)`);
+      console.log(` -> Família: "My Family" (Código de Convite: FS1234)`);
       console.log(` -> Administrador: username "admin" / senha "admin"`);
     }
   } catch (seedError) {

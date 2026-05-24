@@ -416,19 +416,12 @@ select.input-field option {
   border-top: none;
   padding: 12px 24px;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* Single line on desktop */
   justify-content: space-between;
   align-items: center;
   gap: 16px;
   z-index: 10;
   transition: padding var(--transition-normal), gap var(--transition-normal);
-}
-
-@media (max-width: 768px) {
-  .main-header {
-    padding: 12px 16px;
-    gap: 10px;
-  }
 }
 
 /* 1. Calendário de Visão Mensal */
@@ -624,3 +617,104 @@ select.input-field option {
   opacity: 0.9 !important;
 }
 
+/* ==========================================
+   MELHORIAS DE RESPONSIVIDADE (MOBILE SWEEP)
+   ========================================== */
+
+/* Identidade da família */
+.header-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Container de botões da barra de cabeçalho */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Container de progresso diário */
+.header-progress-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-light);
+  padding: 4px 10px;
+  border-radius: var(--radius-md);
+  min-height: 32px;
+  margin-left: auto; /* Float to the right, next to actions on desktop */
+}
+
+/* Container principal de conteúdo do app */
+.main-content {
+  flex: 1;
+  padding: 24px;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+/* Abas de navegação */
+.main-nav {
+  padding: 4px;
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+  overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+  .main-header {
+    flex-wrap: wrap; /* Allow wrapping on mobile */
+    padding: 12px 16px;
+    gap: 10px;
+  }
+
+  .main-content {
+    padding: 16px;
+    gap: 16px;
+  }
+  
+  .header-identity {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .header-actions {
+    gap: 8px;
+  }
+
+  /* Progress bar wraps to its own row below logo and other options on mobile */
+  .header-progress-container {
+    width: 100%;
+    margin-left: 0; /* Override desktop auto-margin */
+    order: 3; /* Render below identity and actions */
+    margin-top: 8px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Ocultar texto dos botões de abas em celulares para caberem perfeitamente */
+  .nav-btn-text {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+}

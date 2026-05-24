@@ -184,7 +184,7 @@ class E2EEEncryptionService {
       return JSON.parse(plaintext);
     } catch (err) {
       console.error('Falha ao descriptografar dado via Web Crypto:', err);
-      throw new Error('Falha de criptografia: a chave E2EE da família parece incorreta.');
+      throw new Error('Falha de criptografia: a chave E2EE da família parece incorreta.', { cause: err });
     }
   }
 }

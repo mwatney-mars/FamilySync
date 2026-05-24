@@ -973,6 +973,7 @@ function App() {
           body: JSON.stringify({
             username: cleanUsername,
             display_name: cleanDisplayName,
+            email: `${cleanUsername}@familysync.local`,
             password: setupPassword.trim(),
             birth_date: '',
             gender: '',
@@ -3509,7 +3510,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '18px' }}>
-              <img src="/logo.png" alt="FamilySync Logo" style={{ width: '96px', height: '96px', borderRadius: '24px', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.08)' }} />
+              <img src="/logo.png?v=2" alt="FamilySync Logo" style={{ width: '96px', height: '96px', borderRadius: '24px', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.08)' }} />
             </div>
             <h1 style={{ fontSize: '32px', fontWeight: '800', marginTop: '16px', letterSpacing: '-1px', color: 'var(--text-primary)', fontFamily: '"Outfit", "Inter", sans-serif' }}>FamilySync</h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '8px' }}>
@@ -3615,7 +3616,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-              <div style={{ fontSize: '48px', filter: 'drop-shadow(0 0 12px rgba(139, 92, 246, 0.4))' }}>🛡️</div>
+              <img src="/logo.png?v=2" alt="FamilySync Logo" style={{ width: '80px', height: '80px', borderRadius: '20px', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.08)' }} />
             </div>
             <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--accent-warning)', textTransform: 'uppercase', letterSpacing: '2px', background: 'rgba(245, 158, 11, 0.1)', padding: '4px 12px', borderRadius: '999px' }}>
               {t('securityTitle')}
@@ -3796,7 +3797,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
           
           {/* Identificação de Família */}
           <div className="header-identity" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <img src="/logo.png" alt="FamilySync Logo" style={{ height: '36px', width: '36px', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)' }} />
+            <img src="/logo.png?v=2" alt="FamilySync Logo" style={{ height: '36px', width: '36px', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)' }} />
             <div>
               <h2 style={{ fontSize: '16px', fontWeight: '700', letterSpacing: '-0.3px' }}>
                 {family ? family.name : 'Grupo Local Demo'}

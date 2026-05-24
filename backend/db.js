@@ -119,17 +119,7 @@ export const initDb = async () => {
 
   // --- ROTINA DE SEEDING E MIGRAÇÃO DOS USUÁRIOS DE TESTE ---
   try {
-    // 1. Migração de usuários de teste existentes: extrair username do email
-    const allUsers = await query('SELECT * FROM users');
-    for (const u of allUsers) {
-      if (u.email && u.email.includes('@')) {
-        const usernameFromEmail = u.email.split('@')[0].trim();
-        if (usernameFromEmail && u.username !== usernameFromEmail) {
-          console.log(`[Migração de Username] Migrando usuário: email ${u.email} -> username "${usernameFromEmail}"`);
-          await run('UPDATE users SET username = ? WHERE id = ?', [usernameFromEmail, u.id]);
-        }
-      }
-    }
+    // Legacy username migration removed because username is now a first-class required column and overwriting custom usernames on startup is incorrect.
 
     // 2. Seeding inicial caso o banco não possua nenhum usuário cadastrado
     const updatedUsers = await query('SELECT count(*) as count FROM users');

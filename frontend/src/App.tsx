@@ -5066,16 +5066,19 @@ Instruções para resposta:
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '12px',
-                                        background: 'transparent',
-                                        padding: '8px 4px',
-                                        borderBottom: '1px solid var(--border-light)',
-                                        borderLeft: '3px solid',
+                                        background: completed ? 'rgba(16, 185, 129, 0.02)' : 'rgba(255, 255, 255, 0.015)',
+                                        padding: '10px 12px',
+                                        borderRadius: 'var(--radius-sm)',
+                                        borderLeft: '4px solid',
                                         borderLeftColor: completed ? 'var(--accent-success)' : (isMed ? 'var(--accent-info)' : 'var(--accent-primary)'),
+                                        borderTop: '1px solid rgba(255, 255, 255, 0.01)',
+                                        borderRight: '1px solid rgba(255, 255, 255, 0.01)',
+                                        borderBottom: '1px solid rgba(255, 255, 255, 0.01)',
                                         cursor: 'pointer',
-                                        transition: 'background-color 0.2s'
+                                        transition: 'all 0.2s'
                                       }}
-                                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'; }}
-                                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = completed ? 'rgba(16, 185, 129, 0.04)' : 'rgba(255, 255, 255, 0.035)'; }}
+                                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = completed ? 'rgba(16, 185, 129, 0.02)' : 'rgba(255, 255, 255, 0.015)'; }}
                                     >
                                       <div style={{ flex: 1, minWidth: 0 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap', marginBottom: '2px' }}>

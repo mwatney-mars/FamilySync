@@ -4958,8 +4958,8 @@ Instruções para resposta:
                     {/* ROTEIRO DA FAMÍLIA (CHECKLIST DE TAREFAS DO DIA) */}
                     <div style={{ width: '100%' }}>
                       {/* 2. Checklist de Tarefas do Dia Selecionado */}
-                      <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
+                      <div className="glass-panel chores-outer-panel">
+                      <div className="chore-panel-header">
                         <div>
                           <p style={{ fontSize: '10px', color: 'var(--accent-primary-hover)', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>{t('routines')}</p>
                           <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0 0 0' }}>
@@ -4990,7 +4990,7 @@ Instruções para resposta:
                         )}
                       </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '380px', overflowY: 'auto', paddingRight: '4px' }}>
+                      <div className="chores-section-container">
                         {(() => {
                           const year = calendarSelectedDate.getFullYear();
                           const month = String(calendarSelectedDate.getMonth() + 1).padStart(2, '0');
@@ -5045,8 +5045,8 @@ Instruções para resposta:
                           const activeCategories = categories.filter(cat => cat.items.length > 0);
 
                           return activeCategories.map(cat => (
-                            <div key={cat.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', paddingBottom: '4px', marginBottom: '2px' }}>
+                            <div key={cat.id} className="chore-category-col">
+                              <div className="chore-category-header">
                                 <span style={{ fontSize: '13px' }}>{cat.icon}</span>
                                 <span style={{ fontSize: '11px', fontWeight: '800', color: cat.color, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{cat.label}</span>
                                 <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 'auto', fontWeight: 'bold' }}>{cat.items.length} {cat.items.length === 1 ? t('choreSingle') : t('chorePlural')}</span>
@@ -5107,16 +5107,7 @@ Instruções para resposta:
                                           e.stopPropagation();
                                           handleCompleteChore(chore.id, selectedDateStr);
                                         }}
-                                        className="btn-secondary"
-                                        style={{
-                                          padding: '4px 10px',
-                                          fontSize: '11px',
-                                          background: completed ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.04)',
-                                          borderColor: completed ? 'var(--accent-success)' : 'var(--border-light)',
-                                          color: completed ? 'var(--accent-success)' : 'var(--text-primary)',
-                                          borderRadius: 'var(--radius-sm)',
-                                          flexShrink: 0
-                                        }}
+                                        className={`chore-complete-btn btn-secondary ${completed ? 'completed' : ''}`}
                                       >
                                         {completed ? 'Feito' : 'Fazer'}
                                       </button>

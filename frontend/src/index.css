@@ -991,3 +991,112 @@ select.input-field option {
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.12) !important;
 }
 
+/* Highly Optimized High-Density Layout for Routines and Chores */
+.chores-outer-panel {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chore-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 12px;
+}
+
+.chores-section-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.chore-category-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chore-category-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 4px;
+  margin-bottom: 2px;
+}
+
+.chore-complete-btn {
+  padding: 4px 10px !important;
+  font-size: 11px !important;
+  border-radius: var(--radius-sm) !important;
+  flex-shrink: 0;
+  transition: all var(--transition-fast) !important;
+}
+
+.chore-complete-btn.completed {
+  background: rgba(16, 185, 129, 0.1) !important;
+  border-color: var(--accent-success) !important;
+  color: var(--accent-success) !important;
+}
+
+/* Responsive Mobile Layout Compaction (Fixing Screen Real Estate Waste) */
+@media (max-width: 768px) {
+  .chores-outer-panel {
+    padding: 14px !important;
+    gap: 12px !important;
+  }
+
+  .chore-panel-header {
+    padding-bottom: 8px !important;
+  }
+
+  .chores-section-container {
+    gap: 10px !important;
+    max-height: 420px; /* give more vertical space on mobile if needed */
+  }
+
+  .chore-category-col {
+    gap: 4px !important;
+  }
+
+  .chore-category-header {
+    padding-bottom: 2px !important;
+    margin-bottom: 0 !important;
+    gap: 6px !important;
+  }
+
+  .dashboard-chore-card {
+    padding: 8px 10px !important;
+    gap: 10px !important;
+    border-radius: var(--radius-sm) !important; /* 8px compact corners on mobile */
+    border-left-width: 3px !important; /* sleeker left indicator */
+  }
+
+  .dashboard-chores-list-grid {
+    gap: 6px !important; /* tightly pack cards */
+  }
+}
+
+@media (max-width: 480px) {
+  .chores-outer-panel {
+    padding: 10px !important;
+    gap: 8px !important;
+  }
+
+  .dashboard-chore-card {
+    padding: 6px 8px !important;
+    gap: 8px !important;
+  }
+
+  .chore-complete-btn {
+    padding: 3px 6px !important;
+    font-size: 10px !important;
+  }
+}
+

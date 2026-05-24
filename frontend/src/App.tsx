@@ -5051,7 +5051,7 @@ Instruções para resposta:
                                 <span style={{ fontSize: '11px', fontWeight: '800', color: cat.color, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{cat.label}</span>
                                 <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 'auto', fontWeight: 'bold' }}>{cat.items.length} {cat.items.length === 1 ? t('choreSingle') : t('chorePlural')}</span>
                               </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div className="dashboard-chores-list-grid">
                                 {cat.items.map(chore => {
                                   const completed = isChoreCompletedOnDate(chore, selectedDateStr);
                                   const isMed = !!chore.is_medication;

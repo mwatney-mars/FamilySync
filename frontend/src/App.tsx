@@ -5749,31 +5749,9 @@ Instruções para resposta:
                           {t('generatingRecommendations')}
                         </div>
                       ) : (
-                        <div style={{
-                          display: 'flex',
-                          gap: '12px',
-                          overflowX: 'auto',
-                          paddingBottom: '8px',
-                          scrollbarWidth: 'thin',
-                          WebkitOverflowScrolling: 'touch'
-                        }}>
+                        <div className="suggestion-carousel">
                           {smartSuggestions.map((suggest, idx) => (
-                            <div
-                              key={idx}
-                              style={{
-                                flexShrink: 0,
-                                width: '190px',
-                                padding: '12px 14px',
-                                borderRadius: '12px',
-                                background: 'rgba(255, 255, 255, 0.02)',
-                                border: '1px solid var(--border-light)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '8px',
-                                transition: 'transform 0.2s, box-shadow 0.2s',
-                                cursor: 'default'
-                              }}
-                            >
+                            <div key={idx} className="suggestion-card">
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                 <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                   {suggest.name}
@@ -5793,19 +5771,7 @@ Instruções para resposta:
                                   quantity: suggest.quantity || '1 un',
                                   category: suggest.category || 'Alimentos'
                                 })}
-                                style={{
-                                  border: 'none',
-                                  background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(219, 39, 119, 0.15))',
-                                  color: '#ec4899',
-                                  padding: '6px 10px',
-                                  borderRadius: '8px',
-                                  fontSize: '11px',
-                                  fontWeight: '700',
-                                  cursor: 'pointer',
-                                  textAlign: 'center',
-                                  width: '100%',
-                                  transition: 'all 0.2s'
-                                }}
+                                className="btn-suggestion-add"
                               >
                                 {t('addToList')}
                               </button>
@@ -7550,7 +7516,7 @@ Instruções para resposta:
       </main>
 
       {/* FOOTER DESCRITIVO */}
-      <footer style={{ borderTop: '1px solid var(--border-light)', padding: '16px 24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px' }}>
+      <footer className="app-footer">
         {t('footerText')}
       </footer>
 

@@ -1437,7 +1437,16 @@ function App() {
         await queueSyncOperation(choreId, 'chores', 'update');
         await queueSyncOperation(ptId, 'points', 'insert');
         triggerSync();
-        sendFamilyNotification(`🏡 **${currentUser?.display_name || userName}** ${chore.is_medication ? 'tomou o remédio' : 'concluiu a rotina'} **"${chore.title}"**! (+${chore.points_worth} XP)`);
+        const notifMsg = chore.is_medication
+          ? t('notifMedicationTaken')
+              .replace('{user}', currentUser?.display_name || userName)
+              .replace('{title}', chore.title)
+              .replace('{points}', chore.points_worth.toString())
+          : t('notifChoreCompleted')
+              .replace('{user}', currentUser?.display_name || userName)
+              .replace('{title}', chore.title)
+              .replace('{points}', chore.points_worth.toString());
+        sendFamilyNotification(notifMsg);
       }
     } else {
       // Desmarcar para esta data
@@ -2004,7 +2013,12 @@ function App() {
       if (isAuthenticated) {
         await queueSyncOperation(id, 'shopping', 'insert');
         triggerSync();
-        sendFamilyNotification(`🛒 **${currentUser?.display_name || adderName}** adicionou **"${correctedName}"** (${finalQuantity}) à lista de compras!`);
+        sendFamilyNotification(
+          t('notifShoppingItemAdded')
+            .replace('{user}', currentUser?.display_name || adderName)
+            .replace('{name}', correctedName)
+            .replace('{quantity}', finalQuantity)
+        );
       }
 
       setKeepItemName('');
@@ -2036,7 +2050,12 @@ function App() {
       if (isAuthenticated) {
         await queueSyncOperation(id, 'shopping', 'insert');
         triggerSync();
-        sendFamilyNotification(`🛒 **${currentUser?.display_name || adderName}** adicionou **"${name}"** (${finalQuantity}) à lista de compras!`);
+        sendFamilyNotification(
+          t('notifShoppingItemAdded')
+            .replace('{user}', currentUser?.display_name || adderName)
+            .replace('{name}', name)
+            .replace('{quantity}', finalQuantity)
+        );
       }
 
       setKeepItemName('');
@@ -2104,7 +2123,12 @@ function App() {
       if (isAuthenticated) {
         await queueSyncOperation(id, 'shopping', 'insert');
         triggerSync();
-        sendFamilyNotification(`🛒 **${currentUser?.display_name || adderName}** adicionou **"${correctedName}"** (${finalQuantity}) à lista de compras via Painel Geladeira!`);
+        sendFamilyNotification(
+          t('notifShoppingItemAddedFridge')
+            .replace('{user}', currentUser?.display_name || adderName)
+            .replace('{name}', correctedName)
+            .replace('{quantity}', finalQuantity)
+        );
       }
 
       setFridgeShoppingInput('');
@@ -2136,7 +2160,12 @@ function App() {
       if (isAuthenticated) {
         await queueSyncOperation(id, 'shopping', 'insert');
         triggerSync();
-        sendFamilyNotification(`🛒 **${currentUser?.display_name || adderName}** adicionou **"${name}"** (${finalQuantity}) à lista de compras via Painel Geladeira!`);
+        sendFamilyNotification(
+          t('notifShoppingItemAddedFridge')
+            .replace('{user}', currentUser?.display_name || adderName)
+            .replace('{name}', name)
+            .replace('{quantity}', finalQuantity)
+        );
       }
 
       setFridgeShoppingInput('');
@@ -2185,7 +2214,12 @@ function App() {
     if (isAuthenticated) {
       await queueSyncOperation(id, 'shopping', 'insert');
       triggerSync();
-      sendFamilyNotification(`🛒 **${currentUser?.display_name || adderName}** adicionou **"${correctedName}"** (${suggest.quantity || '1 un'}) à lista de compras!`);
+      sendFamilyNotification(
+        t('notifShoppingItemAdded')
+          .replace('{user}', currentUser?.display_name || adderName)
+          .replace('{name}', correctedName)
+          .replace('{quantity}', suggest.quantity || '1 un')
+      );
     }
 
     setKeepItemName('');

@@ -414,6 +414,7 @@ function App() {
 
   // --- ESTADO DE IDIOMA & TRADUÇÃO ---
   const [language, setLanguage] = useState<string>('en');
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(true);
 
   const t = (key: string): string => {
     return TRANSLATIONS[language]?.[key] || TRANSLATIONS['en']?.[key] || key;
@@ -808,6 +809,22 @@ function App() {
     };
     loadSettings();
   }, []);
+
+  // Verificar se o onboarding já foi concluído (se o usuário admin padrão já foi customizado)
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      try {
+        const response = await fetch(`${backendUrl}/api/auth/onboarding-status`);
+        if (response.ok) {
+          const data = await response.json();
+          setOnboardingCompleted(data.onboardingCompleted);
+        }
+      } catch (err) {
+        console.error('Erro ao verificar status de onboarding:', err);
+      }
+    };
+    checkOnboardingStatus();
+  }, [backendUrl]);
 
   // Aplicar tema dinâmico no DOM ao alterar o estado
   useEffect(() => {
@@ -3411,13 +3428,44 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
       <div className="animate-fade-in" style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', padding: '20px', background: 'var(--bg-main)' }}>
         <div className="glass-panel animate-scale-up" style={{ width: '100%', maxWidth: '440px', padding: '36px' }}>
           
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
+            <select
+              value={language}
+              onChange={async (e) => {
+                const newLang = e.target.value;
+                setLanguage(newLang);
+                await db.metadata.put({ key: 'language', value: newLang });
+              }}
+              className="input-field"
+              style={{
+                width: 'auto',
+                padding: '4px 12px',
+                height: '32px',
+                fontSize: '12px',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid var(--border-light)',
+                borderRadius: 'var(--radius-sm)',
+                cursor: 'pointer',
+                color: 'var(--text-primary)'
+              }}
+            >
+              <option value="pt">🇧🇷 Português</option>
+              <option value="en">🇺🇸 English</option>
+              <option value="es">🇪🇸 Español</option>
+              <option value="pl">🇵🇱 Polski</option>
+              <option value="de">🇩🇪 Deutsch</option>
+              <option value="fr">🇫🇷 Français</option>
+              <option value="it">🇮🇹 Italiano</option>
+            </select>
+          </div>
+
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '18px' }}>
               <img src="/logo.png" alt="FamilySync Logo" style={{ width: '96px', height: '96px', borderRadius: '24px', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.08)' }} />
             </div>
             <h1 style={{ fontSize: '32px', fontWeight: '800', marginTop: '16px', letterSpacing: '-1px', color: 'var(--text-primary)', fontFamily: '"Outfit", "Inter", sans-serif' }}>FamilySync</h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '8px' }}>
-              Organização, gamificação e comunicação familiar criptografada e segura.
+              {t('loginSubtitle')}
             </p>
           </div>
 
@@ -3429,22 +3477,22 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
 
             <form onSubmit={handleLogin}>
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>Nome de Usuário</label>
+                <label style={{ fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>{t('loginUsername')}</label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="ex: admin ou jorge"
+                  placeholder="ex: admin"
                   value={loginUsername}
                   onChange={(e) => setLoginUsername(e.target.value)}
                   required
                 />
               </div>
               <div style={{ marginBottom: '24px' }}>
-                <label style={{ fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>Senha</label>
+                <label style={{ fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' }}>{t('loginPassword')}</label>
                 <input
                   type="password"
                   className="input-field"
-                  placeholder="Sua senha secreta"
+                  placeholder={t('loginPasswordPlaceholder')}
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   required
@@ -3452,26 +3500,27 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
               </div>
 
               <button type="submit" className="btn-primary" style={{ width: '100%', padding: '14px' }}>
-                Entrar no Sistema
+                {t('loginButton')}
               </button>
 
               <div className="glass-panel" style={{ marginTop: '24px', border: '1px solid rgba(59, 130, 246, 0.25)', background: 'rgba(59, 130, 246, 0.03)', padding: '14px', borderRadius: 'var(--radius-md)', textAlign: 'left' }}>
                 <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600' }}>
-                  <span>🔐</span> Ambiente Self-Hosted Privado
+                  {t('loginSelfHostedTitle')}
                 </p>
                 <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.5' }}>
-                  Este app foi configurado como uma instância de alta privacidade e controle familiar. 
-                  O cadastro de novos membros é feito de forma segura e manual por um Administrador no painel de configurações.
+                  {t('loginSelfHostedDesc')}
                 </p>
-                <p style={{ fontSize: '11px', color: 'var(--accent-primary-hover)', margin: '8px 0 0 0', fontWeight: '600' }}>
-                  💡 Administrador de primeiro acesso: <strong>admin</strong> (senha: <strong>admin</strong>) — <em>Será removido obrigatoriamente no primeiro login</em>
-                </p>
+                {!onboardingCompleted && (
+                  <p style={{ fontSize: '11px', color: 'var(--accent-primary-hover)', margin: '8px 0 0 0', fontWeight: '600' }}>
+                    {t('loginFirstAccessAdmin')}
+                  </p>
+                )}
               </div>
             </form>
 
           <div style={{ marginTop: '24px', borderTop: '1px solid var(--border-light)', paddingTop: '16px', textAlign: 'center' }}>
             <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              Para testar localmente sem servidor, você já pode explorar o app carregado com os dados simulados clicando na opção de fechar ou simulando login.
+              {t('loginDemoText')}
             </p>
           </div>
         </div>
@@ -4059,17 +4108,17 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
             {/* ABAS DE NAVEGAÇÃO SUPERIOR (Responsivas para Mobile) */}
             <nav className="glass-panel" style={{ padding: '4px', display: 'flex', overflowX: 'auto', gap: '4px' }}>
               <button onClick={() => setActiveTab('dashboard')} className={activeTab === 'dashboard' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap' }}>
-                <LayoutDashboard size={16} /> <span style={{ marginLeft: '4px' }}>Painel</span>
+                <LayoutDashboard size={16} /> <span style={{ marginLeft: '4px' }}>{t('dashboard')}</span>
               </button>
               <button onClick={() => setActiveTab('calendar')} className={activeTab === 'calendar' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap' }}>
-                <CalendarIcon size={16} /> <span style={{ marginLeft: '4px' }}>Calendário</span>
+                <CalendarIcon size={16} /> <span style={{ marginLeft: '4px' }}>{t('calendar')}</span>
               </button>
               <button onClick={() => setActiveTab('shopping')} className={activeTab === 'shopping' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap' }}>
-                <ShoppingCart size={16} /> <span style={{ marginLeft: '4px' }}>Lista Compras</span>
+                <ShoppingCart size={16} /> <span style={{ marginLeft: '4px' }}>{t('shoppingList')}</span>
               </button>
 
               <button onClick={() => setActiveTab('gamification')} className={activeTab === 'gamification' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap' }}>
-                <Trophy size={16} /> <span style={{ marginLeft: '4px' }}>Gamificação</span>
+                <Trophy size={16} /> <span style={{ marginLeft: '4px' }}>{t('gamification')}</span>
               </button>
             </nav>
 
@@ -5588,9 +5637,9 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                 >
                   {activeSettingsSection === 'menu' ? (
                     <div>
-                      <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '6px', color: 'var(--text-primary)' }}>Ajustes do Aplicativo</h3>
+                      <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '6px', color: 'var(--text-primary)' }}>{t('appSettingsTitle')}</h3>
                       <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
-                        Selecione uma categoria abaixo para configurar e personalizar o seu painel.
+                        {t('appSettingsDesc')}
                       </p>
 
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
@@ -5609,10 +5658,10 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                               <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <User size={20} style={{ color: 'var(--accent-primary)' }} />
                               </div>
-                              <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>Meu Perfil</h4>
+                              <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('myProfile')}</h4>
                             </div>
                             <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
-                              Altere seus dados pessoais, como nome, nome de usuário, título familiar e senha de acesso.
+                              {t('myProfileDesc')}
                             </p>
                           </div>
                         )}
@@ -5627,12 +5676,12 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                             <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <Users size={20} style={{ color: 'var(--accent-success)' }} />
                             </div>
-                            <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>Minha Família</h4>
+                            <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('myFamily')}</h4>
                           </div>
                           <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
                             {currentUser?.role === 'admin' 
-                              ? "Gerencie integrantes, altere funções (admin/usuário) e adicione membros manualmente."
-                              : "Veja os dados de identificação da família e os integrantes."}
+                              ? t('myFamilyDescAdmin')
+                              : t('myFamilyDescUser')}
                           </p>
                         </div>
 
@@ -5647,10 +5696,10 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                               <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(6, 182, 212, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <Database size={20} style={{ color: 'var(--accent-info)' }} />
                               </div>
-                              <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>Sistema & Banco de Dados</h4>
+                              <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('systemAndDatabase')}</h4>
                             </div>
                             <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
-                              Zere o ciclo/XP, faça cópias de segurança (backup) ou limpe as tabelas do banco de dados local.
+                              {t('systemAndDatabaseDesc')}
                             </p>
                           </div>
                         )}
@@ -5684,10 +5733,10 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                             <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <Palette size={20} style={{ color: 'var(--accent-primary)' }} />
                             </div>
-                            <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>Aparência & Preferências</h4>
+                            <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('languageAndAppearance')}</h4>
                           </div>
                           <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
-                            Customize a cor de destaque e defina qual visualização do calendário (Mês, Semana ou Dia) deve ser exibida por padrão.
+                            {t('languageAndAppearanceDesc')}
                           </p>
                         </div>
 
@@ -5706,10 +5755,10 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                             <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(236, 72, 153, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <Wand2 size={20} style={{ color: '#ec4899' }} />
                             </div>
-                            <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>Inteligência Artificial</h4>
+                            <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('aiSettings')}</h4>
                           </div>
                           <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
-                            Habilite a classificação automática inteligente de itens de compras usando a API oficial do Google Gemini.
+                            {t('aiSettingsDesc')}
                           </p>
                         </div>
                       </div>
@@ -5723,7 +5772,7 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
                           className="btn-secondary" 
                           style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}
                         >
-                          <ArrowLeft size={14} /> Voltar ao Painel
+                          <ArrowLeft size={14} /> {t('backToSettings')}
                         </button>
                       </div>
 

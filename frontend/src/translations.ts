@@ -84,7 +84,24 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     systemAndDatabase: "Sistema & Banco de Dados",
     systemAndDatabaseDesc: "Zere o ciclo/XP, faça cópias de segurança (backup) ou limpe as tabelas do banco de dados local.",
     aiSettings: "Inteligência Artificial",
-    aiSettingsDesc: "Gerencie as chaves do Gemini AI e ative ou desative o assistente familiar."
+    aiSettingsDesc: "Gerencie as chaves do Gemini AI e ative ou desative o assistente familiar.",
+    
+    // Novas traduções adicionadas
+    gamification: "Gamificação",
+    loginSubtitle: "Organização, gamificação e comunicação familiar criptografada e segura.",
+    loginUsername: "Nome de Usuário",
+    loginPassword: "Senha",
+    loginPasswordPlaceholder: "Sua senha secreta",
+    loginButton: "Entrar no Sistema",
+    loginSelfHostedTitle: "🔐 Ambiente Self-Hosted Privado",
+    loginSelfHostedDesc: "Este app foi configurado como uma instância de alta privacidade e controle familiar. O cadastro de novos membros é feito de forma segura e manual por um Administrador no painel de configurações.",
+    loginFirstAccessAdmin: "💡 Administrador de primeiro acesso: admin (senha: admin) — Será removido obrigatoriamente no primeiro login",
+    loginDemoText: "Para testar localmente sem servidor, você já pode explorar o app carregado com os dados simulados clicando na opção de fechar ou simulando login.",
+    backToSettings: "Voltar às Configurações",
+    appSettingsTitle: "Ajustes do Aplicativo",
+    appSettingsDesc: "Selecione uma categoria abaixo para configurar e personalizar o seu painel.",
+    myFamilyDescAdmin: "Gerencie integrantes, altere funções (admin/usuário) e adicione membros manualmente.",
+    myFamilyDescUser: "Veja os dados de identificação da família e os integrantes."
   },
   en: {
     dashboard: "Dashboard",
@@ -162,7 +179,24 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     systemAndDatabase: "System & Database",
     systemAndDatabaseDesc: "Reset cycle/XP, perform backups, or clear local database tables.",
     aiSettings: "Artificial Intelligence",
-    aiSettingsDesc: "Manage Gemini AI keys and enable or disable the family assistant."
+    aiSettingsDesc: "Manage Gemini AI keys and enable or disable the family assistant.",
+    
+    // New translations added
+    gamification: "Gamification",
+    loginSubtitle: "Encrypted, secure, and gamified family organization and communication.",
+    loginUsername: "Username",
+    loginPassword: "Password",
+    loginPasswordPlaceholder: "Your secret password",
+    loginButton: "Sign In",
+    loginSelfHostedTitle: "🔐 Private Self-Hosted Environment",
+    loginSelfHostedDesc: "This app has been configured as a high-privacy, family-controlled instance. Member registration is securely performed by an Administrator in the settings panel.",
+    loginFirstAccessAdmin: "💡 First-access administrator: admin (password: admin) — Must be changed during the first login",
+    loginDemoText: "To test locally without a server, you can explore the app loaded with mock data by closing or simulating login.",
+    backToSettings: "Back to Settings",
+    appSettingsTitle: "App Settings",
+    appSettingsDesc: "Select a category below to configure and personalize your dashboard.",
+    myFamilyDescAdmin: "Manage members, change roles (admin/user), and add members manually.",
+    myFamilyDescUser: "View family identification details and members."
   },
   es: {
     dashboard: "Panel",
@@ -240,7 +274,24 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     systemAndDatabase: "Sistema y Base de Datos",
     systemAndDatabaseDesc: "Reinicie el ciclo/XP, realice copias de seguridad (backup) o limpie las tablas de la base de datos local.",
     aiSettings: "Inteligencia Artificial",
-    aiSettingsDesc: "Gestione las claves de Gemini AI y active o desactive el asistente familiar."
+    aiSettingsDesc: "Gestione las claves de Gemini AI y active o desactive el asistente familiar.",
+    
+    // New translations added
+    gamification: "Gamificación",
+    loginSubtitle: "Organización y comunicación familiar encriptada, segura y gamificada.",
+    loginUsername: "Nombre de usuario",
+    loginPassword: "Contraseña",
+    loginPasswordPlaceholder: "Tu contraseña secreta",
+    loginButton: "Iniciar Sesión",
+    loginSelfHostedTitle: "🔐 Ambiente Self-Hosted Privado",
+    loginSelfHostedDesc: "Esta aplicación se configuró como una instancia de alta privacidad y control familiar. El registro de nuevos miembros lo realiza de forma segura y manual un Administrador.",
+    loginFirstAccessAdmin: "💡 Administrador de primer acceso: admin (contraseña: admin) — Se eliminará obligatoriamente en el primer inicio de sesión",
+    loginDemoText: "Para probar localmente sin servidor, ya puede explorar la aplicación con datos de demostración cerrando o simulando iniciar sesión.",
+    backToSettings: "Volver a Configuración",
+    appSettingsTitle: "Ajustes del Aplicativo",
+    appSettingsDesc: "Seleccione una categoría a continuación para configurar y personalizar su panel.",
+    myFamilyDescAdmin: "Gestione integrantes, cambie funciones (admin/usuario) y añada miembros manualmente.",
+    myFamilyDescUser: "Ver los datos de identificación de la familia y los integrantes."
   },
   pl: {
     dashboard: "Pulpit",
@@ -318,7 +369,24 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     systemAndDatabase: "System i Baza Danych",
     systemAndDatabaseDesc: "Zresetuj cykl/XP, wykonaj kopię zapasową lub wyczyść tabele lokalnej bazy danych.",
     aiSettings: "Sztuczna Inteligencja",
-    aiSettingsDesc: "Zarządzaj kluczami Gemini AI i włącz lub wyłącz asystenta rodzinnego."
+    aiSettingsDesc: "Zarządzaj kluczami Gemini AI i włącz lub wyłącz asystenta rodzinnego.",
+    
+    // New translations added
+    gamification: "Grywalizacja",
+    loginSubtitle: "Zaszyfrowana, bezpieczna i grywalizowana organizacja oraz komunikacja rodzinna.",
+    loginUsername: "Nazwa użytkownika",
+    loginPassword: "Hasło",
+    loginPasswordPlaceholder: "Twoje tajne hasło",
+    loginButton: "Zaloguj się",
+    loginSelfHostedTitle: "🔐 Prywatne środowisko Self-Hosted",
+    loginSelfHostedDesc: "Ta aplikacja została skonfigurowana jako instancja o wysokiej prywatności i kontrolowana przez rodzinę. Rejestracja nowych członków jest bezpiecznie wykonywana przez Administratora.",
+    loginFirstAccessAdmin: "💡 Administrator pierwszego dostępu: admin (hasło: admin) — Musi zostać usunięty podczas pierwszego logowania",
+    loginDemoText: "Aby przetestować lokalnie bez serwera, możesz przeglądać aplikację załadowaną danymi demonstracyjnymi, zamykając okno lub symulując logowanie.",
+    backToSettings: "Powrót do ustawień",
+    appSettingsTitle: "Ustawienia aplikacji",
+    appSettingsDesc: "Wybierz kategorię poniżej, aby skonfigurować i spersonalizować swój pulpit.",
+    myFamilyDescAdmin: "Zarządzaj członkami, zmieniaj role (admin/użytkownik) i dodawaj członków ręcznie.",
+    myFamilyDescUser: "Zobacz dane identyfikacyjne rodziny i jej członków."
   },
   de: {
     dashboard: "Dashboard",
@@ -396,7 +464,24 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     systemAndDatabase: "System & Datenbank",
     systemAndDatabaseDesc: "Zyklus/XP zurücksetzen, Backups erstellen oder lokale Tabellen leeren.",
     aiSettings: "Künstliche Intelligenz",
-    aiSettingsDesc: "Gemini AI-Schlüssel verwalten und den Familienassistenten aktivieren oder deaktivieren."
+    aiSettingsDesc: "Gemini AI-Schlüssel verwalten und den Familienassistenten aktivieren oder deaktivieren.",
+    
+    // New translations added
+    gamification: "Gamification",
+    loginSubtitle: "Verschlüsselte, sichere und spielerische Familienorganisation und -kommunikation.",
+    loginUsername: "Benutzername",
+    loginPassword: "Passwort",
+    loginPasswordPlaceholder: "Ihr geheimes Passwort",
+    loginButton: "Anmelden",
+    loginSelfHostedTitle: "🔐 Private Self-Hosted-Umgebung",
+    loginSelfHostedDesc: "Diese App wurde als hochprivate, familienkontrollierte Instanz konfiguriert. Die Registrierung neuer Mitglieder wird sicher von einem Administrator durchgeführt.",
+    loginFirstAccessAdmin: "💡 Administrator beim ersten Zugriff: admin (Passwort: admin) — Muss beim ersten Login zwingend entfernt werden",
+    loginDemoText: "Um lokal ohne Server zu testen, können Sie die App mit simulierten Daten erkunden, indem Sie das Fenster schließen oder das Login simulieren.",
+    backToSettings: "Zurück zu Einstellungen",
+    appSettingsTitle: "App-Einstellungen",
+    appSettingsDesc: "Wählen Sie unten eine Kategorie aus, um Ihr Dashboard zu konfigurieren und zu personalisieren.",
+    myFamilyDescAdmin: "Mitglieder verwalten, Rollen ändern (Admin/Benutzer) und Mitglieder manuell hinzufügen.",
+    myFamilyDescUser: "Familienidentifikationsdetails und Mitglieder anzeigen."
   },
   fr: {
     dashboard: "Tableau",
@@ -474,7 +559,24 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     systemAndDatabase: "Système & Base de données",
     systemAndDatabaseDesc: "Réinitialiser le cycle/XP, effectuer des sauvegardes ou vider les tables locales.",
     aiSettings: "Intelligence Artificielle",
-    aiSettingsDesc: "Gérer les clés Gemini AI et activer ou désactiver l'assistant familial."
+    aiSettingsDesc: "Gérer les clés Gemini AI et activer ou désactiver l'assistant familial.",
+    
+    // New translations added
+    gamification: "Ludification",
+    loginSubtitle: "Organisation et communication familiales chiffrées, sécurisées et ludiques.",
+    loginUsername: "Nom d'utilisateur",
+    loginPassword: "Mot de passe",
+    loginPasswordPlaceholder: "Votre mot de passe secret",
+    loginButton: "Se connecter",
+    loginSelfHostedTitle: "🔐 Environnement privé auto-hébergé",
+    loginSelfHostedDesc: "Cette application a été configurée comme une instance hautement privée et contrôlée par la famille. L'inscription des nouveaux membres est effectuée par un Administrateur.",
+    loginFirstAccessAdmin: "💡 Administrateur de premier accès : admin (mot de passe : admin) — Doit obligatoirement être supprimé lors de la première connexion",
+    loginDemoText: "Pour tester localmente sans serveur, vous pouvez explorer l'application chargée de données simulées en fermant l'option ou en simulant la connexion.",
+    backToSettings: "Retour aux paramètres",
+    appSettingsTitle: "Paramètres de l'application",
+    appSettingsDesc: "Sélectionnez une catégorie ci-dessous pour configurer et personnaliser votre tableau de bord.",
+    myFamilyDescAdmin: "Gérer les membres, modifier les rôles (admin/utilisateur) et ajouter des membres manuellement.",
+    myFamilyDescUser: "Afficher les détails d'identification de la famille et les membres."
   },
   it: {
     dashboard: "Bacheca",
@@ -551,7 +653,24 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     myFamilyDesc: "Visualizza i dettagli di identificazione della famiglia e i membri.",
     systemAndDatabase: "Sistema e Database",
     systemAndDatabaseDesc: "Reimposta ciclo/XP, esegui backup o svuota le tabelle del database locale.",
-    aiSettings: "Intelligenza Artificiale",
-    aiSettingsDesc: "Gestisci le chiavi Gemini AI e abilita o disabilita l'assistente familiare."
+    aiSettings: "Inteligenza Artificiale",
+    aiSettingsDesc: "Gestisci le chiavi Gemini AI e abilita o disabilita l'assistente familiare.",
+    
+    // New translations added
+    gamification: "Gamification",
+    loginSubtitle: "Organizzazione e comunicazione familiare crittografata, sicura e ludica.",
+    loginUsername: "Nome utente",
+    loginPassword: "Password",
+    loginPasswordPlaceholder: "La tua password segreta",
+    loginButton: "Accedi",
+    loginSelfHostedTitle: "🔐 Ambiente Self-Hosted Privato",
+    loginSelfHostedDesc: "Questa app è stata configurata como un'istanza ad alta privacy e controllata dalla famiglia. La registrazione dei nuovi membri è eseguita in modo sicuro da un Amministratore.",
+    loginFirstAccessAdmin: "💡 Amministratore di primo acesso: admin (password: admin) — Deve essere rimosso obbligatoriamente al primo accesso",
+    loginDemoText: "Per testare localmente senza server, puoi esplorare l'app caricata con dati simulati facendo clic sulla chiusura o simulando l'accesso.",
+    backToSettings: "Torna alle Impostazioni",
+    appSettingsTitle: "Impostazioni dell'Applicazione",
+    appSettingsDesc: "Seleziona una categoria qui sotto per configurare e personalizzare il tuo pannello.",
+    myFamilyDescAdmin: "Gestisci i membri, modifica i ruoli (admin/utente) e aggiungi membri manualmente.",
+    myFamilyDescUser: "Visualizza i dettagli di identificazione della famiglia e i membri."
   }
 };

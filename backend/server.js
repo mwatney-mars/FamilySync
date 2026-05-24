@@ -50,6 +50,17 @@ app.post('/api/auth/register', (req, res) => {
   res.status(403).json({ error: 'O registro público está desativado. Novos membros devem ser cadastrados manualmente pelo Administrador no painel de configurações da família.' });
 });
 
+// Check onboarding status (public endpoint)
+app.get('/api/auth/onboarding-status', async (req, res) => {
+  try {
+    const adminUser = await get('SELECT id FROM users WHERE LOWER(username) = ?', ['admin']);
+    res.json({ onboardingCompleted: !adminUser });
+  } catch (err) {
+    console.error('[Onboarding Status Error]', err);
+    res.status(500).json({ error: 'Erro ao verificar status de onboarding.' });
+  }
+});
+
 // Login
 app.post('/api/auth/login', async (req, res) => {
   const { username, password, email } = req.body;

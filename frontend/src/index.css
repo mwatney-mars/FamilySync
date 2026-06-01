@@ -348,6 +348,47 @@
   --shadow-card-hover: 0 8px 20px rgba(49, 27, 146, 0.06), 0 0 15px rgba(109, 40, 217, 0.12);
 }
 
+[data-theme="sand"] {
+  /* Cores Base - Tema Warm Sand (Beige & Brown) */
+  --bg-main: #f7f4eb;        /* Soft sandy beige base */
+  --bg-surface: #eee5db;     /* Deeper warm sand surface */
+  --bg-surface-hover: #e2d7c5;/* Warm toasted sand hover */
+  --bg-glass: rgba(238, 229, 219, 0.75);
+  --bg-nav-fixed: rgba(238, 229, 219, 0.94);
+  --shadow-nav-fixed: 0 -8px 30px rgba(101, 67, 33, 0.05);
+  
+  --border-light: rgba(101, 67, 33, 0.06);
+  --border-medium: rgba(101, 67, 33, 0.12);
+  --border-focus: rgba(101, 67, 33, 0.4);
+
+  /* Acentas e Alertas Adaptados para Warm Sand */
+  --accent-primary: #8a5e38; /* Rich caramel brown */
+  --accent-primary-hover: #6f4e2b;
+  --accent-success: #2e7d32;
+  --accent-warning: #e65100;
+  --accent-danger: #c62828;
+  --accent-info: #00838f;
+
+  /* Cores de Texto de Alto Contraste */
+  --text-primary: #4a3525;   /* Deep espresso brown */
+  --text-secondary: #6e4f37; /* Cocoa brown */
+  --text-muted: #9a7f6c;     /* Soft sand/clay muted */
+
+  /* Sombras e Bordas Adaptadas para Warm Sand */
+  --shadow-sm: 0 2px 8px rgba(74, 53, 37, 0.03);
+  --shadow-md: 0 8px 24px rgba(74, 53, 37, 0.06);
+  --shadow-lg: 0 16px 40px rgba(74, 53, 37, 0.09);
+  --shadow-glow: 0 0 20px rgba(138, 94, 56, 0.1);
+
+  /* Design Tokens para Cartões e Atividades */
+  --bg-card: rgba(138, 94, 56, 0.03);
+  --bg-card-hover: rgba(138, 94, 56, 0.06);
+  --border-card: rgba(138, 94, 56, 0.08);
+  --border-card-hover: rgba(138, 94, 56, 0.15);
+  --shadow-card: 0 4px 10px rgba(74, 53, 37, 0.03);
+  --shadow-card-hover: 0 8px 20px rgba(74, 53, 37, 0.06), 0 0 15px rgba(138, 94, 56, 0.12);
+}
+
 
 
 /* Reset de Estilos */

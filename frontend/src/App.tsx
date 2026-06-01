@@ -79,9 +79,7 @@ const LOCALE_MAP: Record<string, string> = {
   de: 'de-DE',
   fr: 'fr-FR',
   it: 'it-IT'
-};
-
-const getAtmosphereTranslations = (lang: string) => {
+};const getAtmosphereTranslations = (lang: string) => {
   const data: Record<string, { 
     title: string; desc: string; 
     darkName: string; darkDesc: string; 
@@ -93,6 +91,7 @@ const getAtmosphereTranslations = (lang: string) => {
     latteName: string; latteDesc: string;
     mintName: string; mintDesc: string;
     lavenderName: string; lavenderDesc: string;
+    sandName: string; sandDesc: string;
     accentTitle: string; accentDesc: string;
     prefTitle: string; prefDesc: string;
   }> = {
@@ -117,6 +116,8 @@ const getAtmosphereTranslations = (lang: string) => {
       mintDesc: "Fresco, com fundo menta claro e toques de pinho",
       lavenderName: "Flor de Lavanda",
       lavenderDesc: "Atmosfera serena de lilás suave e fiorituras",
+      sandName: "Areia Nobre",
+      sandDesc: "Bege sofisticado, tons de areia e terra quentes",
       accentTitle: "Cores de Destaque",
       accentDesc: "Escolha a cor dos botões e destaques ativos por todo o sistema.",
       prefTitle: "Preferências & Idioma",
@@ -143,6 +144,8 @@ const getAtmosphereTranslations = (lang: string) => {
       mintDesc: "Crisp light mint-green base with fresh forest teal",
       lavenderName: "Lavender Blossom",
       lavenderDesc: "Serene soft lilac and purple blossom aesthetics",
+      sandName: "Warm Sand",
+      sandDesc: "Sophisticated warm beige, sand, and soft brown tones",
       accentTitle: "Accent Colors",
       accentDesc: "Choose the highlight color for active buttons and indicators across the system.",
       prefTitle: "Preferences & Language",
@@ -169,6 +172,8 @@ const getAtmosphereTranslations = (lang: string) => {
       mintDesc: "Base menta fresca con toques de verde pino",
       lavenderName: "Flor de Lavanda",
       lavenderDesc: "Ambiente sereno de lila suave y violeta",
+      sandName: "Arena Cálida",
+      sandDesc: "Sofisticados tonos beige cálido, arena y marrón suave",
       accentTitle: "Colores de Acento",
       accentDesc: "Elige el color de los botones activos y elementos destacados.",
       prefTitle: "Preferencias e Idioma",
@@ -180,7 +185,7 @@ const getAtmosphereTranslations = (lang: string) => {
       darkName: "Ciemny Premium",
       darkDesc: "Klasyczna, kontrastowa estetyka ciemna",
       lightName: "Jasny Premium",
-      lightDesc: "Czysta, jasna i wyrafinowana estetyka",
+      lightDesc: "Czysta, jasna i wyrafnowana estetyka",
       midnightName: "Granat Nocy",
       midnightDesc: "Głęboka atmosfera z neonowym niebieskim blaskiem",
       forestName: "Organiczny Las",
@@ -195,6 +200,8 @@ const getAtmosphereTranslations = (lang: string) => {
       mintDesc: "Rześkie jasnomiętowe tło z leśnym turkusem",
       lavenderName: "Kwiat Lawendy",
       lavenderDesc: "Spokojna estetyka delikatnego bzu i fioletu",
+      sandName: "Ciepły Piasek",
+      sandDesc: "Wyrafnowane ciepłe tony beżu, piasku i łagodnego brązu",
       accentTitle: "Kolory Akcentów",
       accentDesc: "Wybierz kolor wyróżnienia dla aktywnych przycisków i wskaźników.",
       prefTitle: "Preferencje i Język",
@@ -221,6 +228,8 @@ const getAtmosphereTranslations = (lang: string) => {
       mintDesc: "Frischer hellminziger Hintergrund mit Wald-Krickente",
       lavenderName: "Lavendelblüte",
       lavenderDesc: "Ruhige weiche Flieder- und Violetttöne",
+      sandName: "Warmer Sand",
+      sandDesc: "Raffiniertes warmes Beige, Sand und sanfte Erdtöne",
       accentTitle: "Akzentfarben",
       accentDesc: "Wählen Sie die Hervorhebungsfarbe für aktive Schaltflächen und Anzeigen.",
       prefTitle: "Einstellungen & Sprache",
@@ -247,6 +256,8 @@ const getAtmosphereTranslations = (lang: string) => {
       mintDesc: "Base menthe fraîche et fraîche avec sarcelle des bois",
       lavenderName: "Fleur de Lavande",
       lavenderDesc: "Esthétique sereine de lilas doux et de violet",
+      sandName: "Sable Chaud",
+      sandDesc: "Tons sophistiqués de beige chaud, sable et marron doux",
       accentTitle: "Couleurs d'Accent",
       accentDesc: "Choisissez la couleur de surbrillance pour les boutons actifs et indicateurs.",
       prefTitle: "Préférences & Langue",
@@ -273,8 +284,10 @@ const getAtmosphereTranslations = (lang: string) => {
       mintDesc: "Base menta fresca con sfumature verde pino",
       lavenderName: "Fior di Lavanda",
       lavenderDesc: "Atmosfera serena lilla tenue e fioritura viola",
+      sandName: "Sabbia Calda",
+      sandDesc: "Sofisticati toni caldi di beige, sabbia e marrone chiaro",
       accentTitle: "Colori di Accento",
-      accentDesc: "Scegli il colore di evidenziazione per pulsanti attivi e indicatori.",
+      accentDesc: "Scegli il color di evidenziazione per pulsanti attivi e indicatori.",
       prefTitle: "Preferenze & Lingua",
       prefDesc: "Configura la lingua del sistema e la vista predefinita del calendario.",
     }
@@ -657,7 +670,7 @@ function App() {
   };
 
   // --- ESTADOS DE USABILIDADE E CUSTOMIZAÇÃO ---
-  const [theme, setTheme] = useState<'light' | 'dark' | 'midnight' | 'forest' | 'sunset' | 'nordic' | 'latte' | 'mint' | 'lavender'>(() => {
+  const [theme, setTheme] = useState<'light' | 'dark' | 'midnight' | 'forest' | 'sunset' | 'nordic' | 'latte' | 'mint' | 'lavender' | 'sand'>(() => {
     const saved = localStorage.getItem('theme');
     if (
       saved === 'light' ||
@@ -668,7 +681,8 @@ function App() {
       saved === 'nordic' ||
       saved === 'latte' ||
       saved === 'mint' ||
-      saved === 'lavender'
+      saved === 'lavender' ||
+      saved === 'sand'
     ) return saved;
     return 'dark';
   });
@@ -678,24 +692,6 @@ function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme(prev => {
-      const cycle: ('light' | 'dark' | 'midnight' | 'forest' | 'sunset' | 'nordic' | 'latte' | 'mint' | 'lavender')[] = [
-        'dark',
-        'light',
-        'midnight',
-        'forest',
-        'sunset',
-        'nordic',
-        'latte',
-        'mint',
-        'lavender'
-      ];
-      const currentIndex = cycle.indexOf(prev);
-      const nextIndex = (currentIndex + 1) % cycle.length;
-      return cycle[nextIndex];
-    });
-  };
 
   const [appearanceSubSection, setAppearanceSubSection] = useState<'accents' | 'atmospheres' | 'preferences'>('accents');
 
@@ -4648,37 +4644,6 @@ Instruções para resposta:
 
           {/* Right: Smart Controls & Exit Button */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Alternador de Tema no Modo Geladeira */}
-            <button
-              onClick={toggleTheme}
-              className="btn-secondary"
-              style={{
-                padding: '6px',
-                borderRadius: '50%',
-                minWidth: '32px',
-                height: '32px',
-                border: '1px solid var(--border-light)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'rgba(255, 255, 255, 0.04)',
-                cursor: 'pointer',
-                transition: 'transform var(--transition-fast)'
-              }}
-              title={language === 'pt' ? 'Mudar Atmosfera' : 'Change Atmosphere'}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-              }}
-            >
-              {theme === 'light' ? (
-                <Moon size={13} style={{ color: 'var(--accent-primary)' }} />
-              ) : (
-                <Sun size={13} style={{ color: '#f59e0b' }} />
-              )}
-            </button>
 
             {/* Exit Panel button */}
             <button
@@ -4761,37 +4726,7 @@ Instruções para resposta:
               <span className="hide-on-mobile">{t('fridgeMode')}</span>
             </button>
 
-            {/* Alternador de Tema (Modo Claro / Escuro) */}
-            <button
-              onClick={toggleTheme}
-              className="btn-secondary"
-              style={{
-                padding: '6px',
-                borderRadius: '50%',
-                minWidth: '32px',
-                height: '32px',
-                border: '1px solid var(--border-light)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'rgba(255, 255, 255, 0.04)',
-                cursor: 'pointer',
-                transition: 'transform var(--transition-fast)'
-              }}
-              title={language === 'pt' ? 'Mudar Atmosfera' : 'Change Atmosphere'}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-              }}
-            >
-              {theme === 'light' ? (
-                <Moon size={13} style={{ color: 'var(--accent-primary)' }} />
-              ) : (
-                <Sun size={13} style={{ color: '#f59e0b' }} />
-              )}
-            </button>
+
 
             {/* Configurações (Ajustes) */}
             <button
@@ -7616,6 +7551,7 @@ Instruções para resposta:
                                   {[
                                     { id: 'light', name: getAtmosphereTranslations(language).lightName, desc: getAtmosphereTranslations(language).lightDesc, preview: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)', text: '#0f172a', border: 'rgba(15,23,42,0.06)' },
                                     { id: 'latte', name: getAtmosphereTranslations(language).latteName, desc: getAtmosphereTranslations(language).latteDesc, preview: 'linear-gradient(135deg, #fbfbf8 0%, #f4ece1 100%)', text: '#3e2723', border: 'rgba(139, 90, 43, 0.12)' },
+                                    { id: 'sand', name: getAtmosphereTranslations(language).sandName, desc: getAtmosphereTranslations(language).sandDesc, preview: 'linear-gradient(135deg, #f7f4eb 0%, #eee5db 100%)', text: '#4a3525', border: 'rgba(101, 67, 33, 0.12)' },
                                     { id: 'mint', name: getAtmosphereTranslations(language).mintName, desc: getAtmosphereTranslations(language).mintDesc, preview: 'linear-gradient(135deg, #f1f7f5 0%, #e4f0ed 100%)', text: '#004d40', border: 'rgba(46, 125, 50, 0.12)' },
                                     { id: 'lavender', name: getAtmosphereTranslations(language).lavenderName, desc: getAtmosphereTranslations(language).lavenderDesc, preview: 'linear-gradient(135deg, #f5f3f9 0%, #eae6f4 100%)', text: '#311b92', border: 'rgba(109, 40, 217, 0.12)' }
                                   ].map(atmOpt => {

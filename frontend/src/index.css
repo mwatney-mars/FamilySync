@@ -1773,4 +1773,137 @@ select.input-field option {
   }
 }
 
+/* ==========================================
+   Zen Space (White Noise & Ambient Sounds)
+   ========================================== */
+.zen-wave-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 16px;
+  width: auto;
+}
+
+.zen-wave-bar {
+  width: 3px;
+  height: 4px;
+  background-color: var(--accent-primary);
+  border-radius: 1px;
+  animation: zenBounce 1s ease-in-out infinite alternate;
+}
+
+.zen-wave-bar:nth-child(2) {
+  animation-delay: 0.15s;
+  height: 6px;
+}
+
+.zen-wave-bar:nth-child(3) {
+  animation-delay: 0.3s;
+  height: 8px;
+}
+
+.zen-wave-bar:nth-child(4) {
+  animation-delay: 0.45s;
+  height: 5px;
+}
+
+@keyframes zenBounce {
+  0% {
+    height: 4px;
+  }
+  100% {
+    height: 16px;
+  }
+}
+
+.zen-sound-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+  user-select: none;
+  overflow: hidden;
+}
+
+.zen-sound-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.zen-sound-card.active {
+  background: rgba(139, 92, 246, 0.12); /* Default fallback */
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+}
+
+/* Dynamically styled active backgrounds using CSS variables */
+.zen-sound-card.active-custom {
+  background: var(--active-bg);
+  border-color: var(--active-color);
+  box-shadow: 0 0 15px var(--active-glow);
+}
+
+.zen-sound-card.active .zen-icon-wrapper,
+.zen-sound-card.active-custom .zen-icon-wrapper {
+  transform: scale(1.1);
+}
+
+.zen-icon-wrapper {
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure sliders look consistent across browsers */
+.zen-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+  transition: background 0.15s;
+}
+
+.zen-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.zen-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.zen-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.zen-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}
+
+
 

@@ -1,6 +1,6 @@
-# Cloud Access & Security Setup for FamilySync
+# Cloud Access & Security Setup for FamilyHub
 
-To securely access your FamilySync portal from anywhere without opening ports on your home router, follow these steps using Cloudflare Tunnels (matching your frosty setup!).
+To securely access your FamilyHub portal from anywhere without opening ports on your home router, follow these steps using Cloudflare Tunnels (matching your frosty setup!).
 
 ## 1. Install Cloudflared
 On your Linux Docker Server (`102.168.100.19`), install the Cloudflare Tunnel agent:
@@ -19,7 +19,7 @@ Follow the link provided in your terminal to authorize your Cloudflare account.
 
 ## 3. Create a Tunnel
 ```bash
-cloudflared tunnel create familysync-tunnel
+cloudflared tunnel create familyhub-tunnel
 ```
 This will create your secure tunnel and download a credentials JSON file.
 
@@ -31,7 +31,7 @@ tunnel: <TUNNEL_ID>
 credentials-file: /root/.cloudflared/<TUNNEL_ID>.json
 
 ingress:
-  - hostname: familysync.yourdomain.com
+  - hostname: familyhub.yourdomain.com
     service: http://localhost:5000
   - service: http_status:404
 ```
@@ -41,13 +41,13 @@ ingress:
 ## 5. Route Traffic
 Route your subdomain to your new tunnel:
 ```bash
-cloudflared tunnel route dns familysync-tunnel familysync.yourdomain.com
+cloudflared tunnel route dns familyhub-tunnel familyhub.yourdomain.com
 ```
 
 ## 6. Run the Tunnel
 To start the tunnel immediately:
 ```bash
-cloudflared tunnel run familysync-tunnel
+cloudflared tunnel run familyhub-tunnel
 ```
 
 To run it continuously as a system service:
@@ -58,10 +58,10 @@ sudo systemctl start cloudflared
 ```
 
 ## 7. Cloudflare Zero Trust Security (Highly Recommended)
-Since FamilySync is private to your home, protect the entry point at your **Cloudflare Zero Trust** dashboard:
+Since FamilyHub is private to your home, protect the entry point at your **Cloudflare Zero Trust** dashboard:
 1. Navigate to **Access** -> **Applications**.
 2. Click **Add an Application** -> **Self-hosted**.
-3. Set the domain to `familysync.yourdomain.com`.
+3. Set the domain to `familyhub.yourdomain.com`.
 4. Configure an access policy:
    - Create a rule to allow only specified email addresses (via One-Time PIN) or associate your Google/GitHub SSO.
-   - This adds a bulletproof authentication layer *before* anyone even reaches the login page of FamilySync!
+   - This adds a bulletproof authentication layer *before* anyone even reaches the login page of FamilyHub!

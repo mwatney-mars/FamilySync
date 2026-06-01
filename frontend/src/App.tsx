@@ -43,7 +43,18 @@ import {
   Shield,
   Upload,
   Download,
-  Archive
+  Archive,
+  Waves,
+  Wind,
+  Radio,
+  Car,
+  Cpu,
+  Flame,
+  Droplets,
+  Music,
+  Volume2,
+  VolumeX,
+  Timer
 } from 'lucide-react';
 
 
@@ -97,7 +108,7 @@ const LOCALE_MAP: Record<string, string> = {
   }> = {
     pt: {
       title: "Fundo & Atmosfera",
-      desc: "Escolha o tema e plano de fundo geral de toda a interface do FamilySync.",
+      desc: "Escolha o tema e plano de fundo geral de toda a interface do FamilyHub.",
       darkName: "Escuro Premium",
       darkDesc: "Estética clássica de alto contraste",
       lightName: "Claro Premium",
@@ -125,7 +136,7 @@ const LOCALE_MAP: Record<string, string> = {
     },
     en: {
       title: "Atmosphere & Background",
-      desc: "Choose the global theme and atmosphere background for the entire FamilySync interface.",
+      desc: "Choose the global theme and atmosphere background for the entire FamilyHub interface.",
       darkName: "Dark Premium",
       darkDesc: "Classic high-contrast dark aesthetic",
       lightName: "Light Premium",
@@ -153,7 +164,7 @@ const LOCALE_MAP: Record<string, string> = {
     },
     es: {
       title: "Ambiente y Fondo",
-      desc: "Elige el tema global y fondo para toda la interfaz de FamilySync.",
+      desc: "Elige el tema global y fondo para toda la interfaz de FamilyHub.",
       darkName: "Oscuro Premium",
       darkDesc: "Estética oscura clásica de alto contraste",
       lightName: "Claro Premium",
@@ -181,7 +192,7 @@ const LOCALE_MAP: Record<string, string> = {
     },
     pl: {
       title: "Atmosfera i Tło",
-      desc: "Wybierz globalny motyw i tło dla całego interfejsu FamilySync.",
+      desc: "Wybierz globalny motyw i tło dla całego interfejsu FamilyHub.",
       darkName: "Ciemny Premium",
       darkDesc: "Klasyczna, kontrastowa estetyka ciemna",
       lightName: "Jasny Premium",
@@ -209,7 +220,7 @@ const LOCALE_MAP: Record<string, string> = {
     },
     de: {
       title: "Atmosphäre & Hintergrund",
-      desc: "Wählen Sie das globale Thema und den Hintergrund für FamilySync.",
+      desc: "Wählen Sie das globale Thema und den Hintergrund für FamilyHub.",
       darkName: "Dunkel Premium",
       darkDesc: "Klassische kontrastreiche dunkle Ästhetik",
       lightName: "Hell Premium",
@@ -237,7 +248,7 @@ const LOCALE_MAP: Record<string, string> = {
     },
     fr: {
       title: "Atmosphère & Arrière-plan",
-      desc: "Choisissez le thème global et l'arrière-plan de l'interface FamilySync.",
+      desc: "Choisissez le thème global et l'arrière-plan de l'interface FamilyHub.",
       darkName: "Sombre Premium",
       darkDesc: "Esthétique sombre classique à contraste élevé",
       lightName: "Clair Premium",
@@ -265,7 +276,7 @@ const LOCALE_MAP: Record<string, string> = {
     },
     it: {
       title: "Atmosfera e Sfondo",
-      desc: "Scegli il tema globale e lo sfondo per l'intera interfaccia di FamilySync.",
+      desc: "Scegli il tema globale e lo sfondo per l'intera interfaccia di FamilyHub.",
       darkName: "Scuro Premium",
       darkDesc: "Classica estetica scura ad alto contrasto",
       lightName: "Chiaro Premium",
@@ -594,11 +605,176 @@ const playChimeSound = () => {
   }
 };
 
+const ZEN_TRANSLATIONS: Record<string, Record<string, string>> = {
+  pt: {
+    zenTitle: "Espaço Zen",
+    zenSubtitle: "Sons relaxantes e ruído branco",
+    sleepTimer: "Temporizador",
+    timerOff: "Desativado",
+    timerRemaining: "restante",
+    volume: "Volume",
+    playing: "Reproduzindo",
+    rain: "Chuva",
+    ocean: "Oceano",
+    stream: "Riacho",
+    night: "Noite na Floresta",
+    fan: "Ventilador",
+    noise: "Ruído Branco",
+    car: "Interior de Carro",
+    engine: "Motor Suave",
+    hairdryer: "Secador de Cabelo",
+    vacuumcleaner: "Aspirador de Pó",
+    washingmachine: "Máquina de Lavar",
+    train: "Viagem de Trem"
+  },
+  en: {
+    zenTitle: "Zen Space",
+    zenSubtitle: "Relaxing sounds & white noise",
+    sleepTimer: "Sleep Timer",
+    timerOff: "Off",
+    timerRemaining: "remaining",
+    volume: "Volume",
+    playing: "Playing",
+    rain: "Rain",
+    ocean: "Ocean Waves",
+    stream: "Running Stream",
+    night: "Forest Night",
+    fan: "Fan Hum",
+    noise: "White Noise",
+    car: "Car Interior",
+    engine: "Engine Hum",
+    hairdryer: "Hairdryer",
+    vacuumcleaner: "Vacuum Cleaner",
+    washingmachine: "Washing Machine",
+    train: "Train Ride"
+  },
+  es: {
+    zenTitle: "Espacio Zen",
+    zenSubtitle: "Sonidos relajantes y ruido blanco",
+    sleepTimer: "Temporizador",
+    timerOff: "Apagado",
+    timerRemaining: "restante",
+    volume: "Volumen",
+    playing: "Reproduciendo",
+    rain: "Lluvia",
+    ocean: "Océano",
+    stream: "Arroyo",
+    night: "Noche en el Bosque",
+    fan: "Ventilador",
+    noise: "Ruido Blanco",
+    car: "Interior de Coche",
+    engine: "Motor Suave",
+    hairdryer: "Secador de Pelo",
+    vacuumcleaner: "Aspiradora",
+    washingmachine: "Lavadora",
+    train: "Viaje en Tren"
+  },
+  pl: {
+    zenTitle: "Strefa Zen",
+    zenSubtitle: "Relaksujące dźwięki i biały szum",
+    sleepTimer: "Wyłącznik czasowy",
+    timerOff: "Wył.",
+    timerRemaining: "pozostało",
+    volume: "Głośność",
+    playing: "Odtwarzanie",
+    rain: "Deszcz",
+    ocean: "Ocean",
+    stream: "Strumyk",
+    night: "Leśna Noc",
+    fan: "Wentylator",
+    noise: "Biały Szum",
+    car: "Wnętrze Samochodu",
+    engine: "Szum Silnika",
+    hairdryer: "Suszarka do Włosów",
+    vacuumcleaner: "Odkurzacz",
+    washingmachine: "Pralka",
+    train: "Podróż Pociągiem"
+  },
+  de: {
+    zenTitle: "Zen-Bereich",
+    zenSubtitle: "Entspannende Geräusche & weißes Rauschen",
+    sleepTimer: "Sleep-Timer",
+    timerOff: "Aus",
+    timerRemaining: "verbleibend",
+    volume: "Lautstärke",
+    playing: "Wird abgespielt",
+    rain: "Regen",
+    ocean: "Ozean",
+    stream: "Bachlauf",
+    night: "Waldnacht",
+    fan: "Ventilator",
+    noise: "Weißes Rauschen",
+    car: "Auto-Innenraum",
+    engine: "Motorbrummen",
+    hairdryer: "Haartrockner",
+    vacuumcleaner: "Staubsauger",
+    washingmachine: "Waschmaschine",
+    train: "Zugfahrt"
+  },
+  fr: {
+    zenTitle: "Espace Zen",
+    zenSubtitle: "Sons relaxants & bruit blanc",
+    sleepTimer: "Minuteur",
+    timerOff: "Désactivé",
+    timerRemaining: "restant",
+    volume: "Volume",
+    playing: "Lecture",
+    rain: "Pluie",
+    ocean: "Océan",
+    stream: "Ruisseau",
+    night: "Nuit en Forêt",
+    fan: "Ventilateur",
+    noise: "Bruit Blanc",
+    car: "Intérieur de Voiture",
+    engine: "Moteur Doux",
+    hairdryer: "Sèche-cheveux",
+    vacuumcleaner: "Aspirateur",
+    washingmachine: "Machine à Laver",
+    train: "Voyage en Train"
+  },
+  it: {
+    zenTitle: "Spazio Zen",
+    zenSubtitle: "Suoni rilassanti e rumore bianco",
+    sleepTimer: "Timer autospegnimento",
+    timerOff: "Spento",
+    timerRemaining: "rimanente",
+    volume: "Volume",
+    playing: "In riproduzione",
+    rain: "Pioggia",
+    ocean: "Oceano",
+    stream: "Ruscello",
+    night: "Notte nei Boschi",
+    fan: "Ventilatore",
+    noise: "Rumore Bianco",
+    car: "Interno Auto",
+    engine: "Ronzio Motore",
+    hairdryer: "Asciugacapelli",
+    vacuumcleaner: "Aspirapolvere",
+    washingmachine: "Lavatrice",
+    train: "Viaggio in Treno"
+  }
+};
+
+const SOUNDS_LIST = [
+  { id: 'rain', icon: 'CloudRain', color: '#60a5fa', activeBg: 'rgba(96, 165, 250, 0.12)', glow: 'rgba(96, 165, 250, 0.25)' },
+  { id: 'ocean', icon: 'Waves', color: '#3b82f6', activeBg: 'rgba(59, 130, 246, 0.12)', glow: 'rgba(59, 130, 246, 0.25)' },
+  { id: 'stream', icon: 'Droplets', color: '#2563eb', activeBg: 'rgba(37, 99, 235, 0.12)', glow: 'rgba(37, 99, 235, 0.25)' },
+  { id: 'night', icon: 'Moon', color: '#a78bfa', activeBg: 'rgba(167, 139, 250, 0.12)', glow: 'rgba(167, 139, 250, 0.25)' },
+  { id: 'fan', icon: 'Wind', color: '#2dd4bf', activeBg: 'rgba(45, 212, 191, 0.12)', glow: 'rgba(45, 212, 191, 0.25)' },
+  { id: 'noise', icon: 'Radio', color: '#c084fc', activeBg: 'rgba(192, 132, 252, 0.12)', glow: 'rgba(192, 132, 252, 0.25)' },
+  { id: 'car', icon: 'Car', color: '#fbbf24', activeBg: 'rgba(251, 191, 36, 0.12)', glow: 'rgba(251, 191, 36, 0.25)' },
+  { id: 'engine', icon: 'Cpu', color: '#f472b6', activeBg: 'rgba(244, 114, 182, 0.12)', glow: 'rgba(244, 114, 182, 0.25)' },
+  { id: 'hairdryer', icon: 'Flame', color: '#f87171', activeBg: 'rgba(248, 113, 113, 0.12)', glow: 'rgba(248, 113, 113, 0.25)' },
+  { id: 'vacuumcleaner', icon: 'Wind', color: '#94a3b8', activeBg: 'rgba(148, 163, 184, 0.12)', glow: 'rgba(148, 163, 184, 0.25)' },
+  { id: 'washingmachine', icon: 'RotateCcw', color: '#22d3ee', activeBg: 'rgba(34, 211, 238, 0.12)', glow: 'rgba(34, 211, 238, 0.25)' },
+  { id: 'train', icon: 'RotateCcw', color: '#34d399', activeBg: 'rgba(52, 211, 153, 0.12)', glow: 'rgba(52, 211, 153, 0.25)' }
+];
+
 function App() {
   // --- ESTADO GLOBAL ---
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'shopping' | 'gamification' | 'reports' | 'settings'>(() => {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'shopping' | 'gamification' | 'reports' | 'settings' | 'zenspace'>(() => {
     const saved = localStorage.getItem('activeTab');
-    if (saved === 'dashboard' || saved === 'calendar' || saved === 'shopping' || saved === 'gamification' || saved === 'reports' || saved === 'settings') {
+    if (saved === 'dashboard' || saved === 'calendar' || saved === 'shopping' || saved === 'gamification' || saved === 'reports' || saved === 'settings' || saved === 'zenspace') {
       return saved as any;
     }
     return 'dashboard';
@@ -638,6 +814,146 @@ function App() {
   const [isFridgeMode, setIsFridgeMode] = useState<boolean>(false);
   const [fridgeShoppingInput, setFridgeShoppingInput] = useState<string>('');
 
+  // Estados para o Zen Space (White Noise & Ambient Sounds)
+  const [activeSound, setActiveSound] = useState<string | null>(null);
+  const [soundVolume, setSoundVolume] = useState<number>(0.5);
+  const [timerSeconds, setTimerSeconds] = useState<number | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const timerIntervalRef = useRef<any>(null);
+
+  // Efeito para controlar a reprodução do áudio (Zen Space usando Web Audio API para loop gapless)
+  useEffect(() => {
+    let isCancelled = false;
+
+    // 1. Pausa e limpa qualquer áudio existente de forma segura
+    if (sourceNodeRef.current) {
+      try {
+        sourceNodeRef.current.stop();
+      } catch (e) {
+        // Já estava parado ou não inicializado
+      }
+      sourceNodeRef.current = null;
+    }
+
+    // 2. Se houver um som ativo, inicializa o contexto e decodifica o arquivo para reprodução gapless
+    if (activeSound) {
+      if (!audioContextRef.current) {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        audioContextRef.current = new AudioContextClass();
+      }
+      
+      const ctx = audioContextRef.current;
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+
+      fetch(`/audio/${activeSound}.wav`)
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          return res.arrayBuffer();
+        })
+        .then(arrayBuffer => ctx.decodeAudioData(arrayBuffer))
+        .then(audioBuffer => {
+          if (isCancelled) return;
+
+          // Cria a fonte e configura o loop de precisão em nível de sample
+          const source = ctx.createBufferSource();
+          source.buffer = audioBuffer;
+          source.loop = true;
+
+          // Cria o nó de ganho para controle de volume analógico/suave
+          const gainNode = ctx.createGain();
+          gainNode.gain.setValueAtTime(soundVolume, ctx.currentTime);
+
+          source.connect(gainNode);
+          gainNode.connect(ctx.destination);
+
+          source.start(0);
+
+          sourceNodeRef.current = source;
+          gainNodeRef.current = gainNode;
+        })
+        .catch(error => {
+          console.error("Erro ao carregar/reproduzir áudio via Web Audio API:", error);
+        });
+    }
+
+    // Limpeza ao desmontar ou alterar o som ativo
+    return () => {
+      isCancelled = true;
+      if (sourceNodeRef.current) {
+        try {
+          sourceNodeRef.current.stop();
+        } catch (e) {
+          // Já estava parado
+        }
+        sourceNodeRef.current = null;
+      }
+    };
+  }, [activeSound]);
+
+  // Efeito para sincronizar o volume em tempo real
+  useEffect(() => {
+    if (gainNodeRef.current && audioContextRef.current) {
+      gainNodeRef.current.gain.setValueAtTime(soundVolume, audioContextRef.current.currentTime);
+    }
+  }, [soundVolume]);
+
+  // Efeito para o temporizador regressivo (Timer) com controle robusto via Ref
+  useEffect(() => {
+    // 1. Limpa qualquer intervalo ativo do Ref para evitar vazamentos/duplicações
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+
+    // 2. Se o temporizador for nulo (desativado/Timer Off), saímos sem criar novos intervalos
+    if (timerSeconds === null) {
+      return;
+    }
+    
+    // 3. Se o temporizador chegou a zero ou menos, desativa o som e encerra o timer
+    if (timerSeconds <= 0) {
+      setActiveSound(null);
+      setTimerSeconds(null);
+      return;
+    }
+
+    // 4. Inicializa o intervalo regressivo de 1 segundo
+    timerIntervalRef.current = setInterval(() => {
+      setTimerSeconds(prev => {
+        if (prev === null) {
+          // Se o usuário desativou o timer ("Timer Off") externamente
+          if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current);
+            timerIntervalRef.current = null;
+          }
+          return null;
+        }
+        if (prev <= 1) {
+          // Temporizador expirou
+          setActiveSound(null);
+          if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current);
+            timerIntervalRef.current = null;
+          }
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    // 5. Cleanup ao alterar dependências ou desmontar o componente
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+    };
+  }, [timerSeconds]);
+
   // Estados para Edição de Perfil de Usuário
   const [profileUsername, setProfileUsername] = useState<string>('');
   const [profileDisplayName, setProfileDisplayName] = useState<string>('');
@@ -667,6 +983,26 @@ function App() {
 
   const t = (key: string): string => {
     return TRANSLATIONS[language]?.[key] || TRANSLATIONS['en']?.[key] || key;
+  };
+
+  const zt = (key: string): string => {
+    return ZEN_TRANSLATIONS[language]?.[key] || ZEN_TRANSLATIONS['en']?.[key] || key;
+  };
+
+  const renderSoundIcon = (iconName: string, size = 18, style = {}) => {
+    switch (iconName) {
+      case 'CloudRain': return <CloudRain size={size} style={style} />;
+      case 'Waves': return <Waves size={size} style={style} />;
+      case 'Droplets': return <Droplets size={size} style={style} />;
+      case 'Moon': return <Moon size={size} style={style} />;
+      case 'Wind': return <Wind size={size} style={style} />;
+      case 'Radio': return <Radio size={size} style={style} />;
+      case 'Car': return <Car size={size} style={style} />;
+      case 'Cpu': return <Cpu size={size} style={style} />;
+      case 'Flame': return <Flame size={size} style={style} />;
+      case 'RotateCcw': return <RotateCcw size={size} style={style} />;
+      default: return <Music size={size} style={style} />;
+    }
   };
 
   // --- ESTADOS DE USABILIDADE E CUSTOMIZAÇÃO ---
@@ -1052,7 +1388,7 @@ function App() {
             
             // 3. Disparar notificação nativa do SO se o app estiver em segundo plano
             if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
-              new Notification('Atualização no FamilySync 🏡', {
+              new Notification('Atualização no FamilyHub 🏡', {
                 body: data.message,
                 icon: '/favicon.png',
                 badge: '/favicon.png'
@@ -1323,7 +1659,7 @@ function App() {
           body: JSON.stringify({
             username: cleanUsername,
             display_name: cleanDisplayName,
-            email: `${cleanUsername}@familysync.local`,
+            email: `${cleanUsername}@familyhub.local`,
             password: setupPassword.trim(),
             birth_date: '',
             gender: '',
@@ -3826,7 +4162,7 @@ Instruções para resposta:
         const a = document.createElement('a');
         a.href = url;
         const familyNameClean = family ? family.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'familia';
-        a.download = `familysync_backup_${familyNameClean}_${Date.now()}.json`;
+        a.download = `familyhub_backup_${familyNameClean}_${Date.now()}.json`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -4403,9 +4739,9 @@ Instruções para resposta:
 
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '18px' }}>
-              <img src="/logo.png?v=2" alt="FamilySync Logo" style={{ width: '96px', height: '96px', borderRadius: '24px', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.08)' }} />
+              <img src="/logo.png?v=2" alt="FamilyHub Logo" style={{ width: '96px', height: '96px', borderRadius: '24px', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.08)' }} />
             </div>
-            <h1 style={{ fontSize: '32px', fontWeight: '800', marginTop: '16px', letterSpacing: '-1px', color: 'var(--text-primary)', fontFamily: '"Outfit", "Inter", sans-serif' }}>FamilySync</h1>
+            <h1 style={{ fontSize: '32px', fontWeight: '800', marginTop: '16px', letterSpacing: '-1px', color: 'var(--text-primary)', fontFamily: '"Outfit", "Inter", sans-serif' }}>FamilyHub</h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '8px' }}>
               {t('loginSubtitle')}
             </p>
@@ -4505,7 +4841,7 @@ Instruções para resposta:
 
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-              <img src="/logo.png?v=2" alt="FamilySync Logo" style={{ width: '80px', height: '80px', borderRadius: '20px', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.08)' }} />
+              <img src="/logo.png?v=2" alt="FamilyHub Logo" style={{ width: '80px', height: '80px', borderRadius: '20px', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.08)' }} />
             </div>
             <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--accent-warning)', textTransform: 'uppercase', letterSpacing: '2px', background: 'rgba(245, 158, 11, 0.1)', padding: '4px 12px', borderRadius: '999px' }}>
               {t('securityTitle')}
@@ -4604,6 +4940,226 @@ Instruções para resposta:
     );
   }
 
+  const renderZenSpacePanel = (isFridge = false) => {
+    return (
+      <div 
+        className="glass-panel animate-scale-up" 
+        style={{ 
+          padding: isFridge ? '24px' : '20px 24px', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '16px',
+          background: activeSound 
+            ? `radial-gradient(circle at top right, ${SOUNDS_LIST.find(s => s.id === activeSound)?.activeBg || 'rgba(139, 92, 246, 0.05)'}, transparent 65%), var(--bg-glass)` 
+            : 'var(--bg-glass)'
+        }}
+      >
+        {/* HEADER */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div 
+              style={{ 
+                width: '40px', 
+                height: '40px', 
+                borderRadius: '50%', 
+                background: activeSound 
+                  ? `${SOUNDS_LIST.find(s => s.id === activeSound)?.color}15` 
+                  : 'rgba(255,255,255,0.03)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                color: activeSound 
+                  ? SOUNDS_LIST.find(s => s.id === activeSound)?.color 
+                  : 'var(--text-secondary)',
+                border: '1px solid',
+                borderColor: activeSound 
+                  ? `${SOUNDS_LIST.find(s => s.id === activeSound)?.color}30` 
+                  : 'var(--border-light)',
+                boxShadow: activeSound 
+                  ? `0 0 10px ${SOUNDS_LIST.find(s => s.id === activeSound)?.color}15` 
+                  : 'none',
+                transition: 'all 0.3s'
+              }}
+              className={activeSound ? 'animate-pulse' : ''}
+            >
+              <Sparkles size={20} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {zt('zenTitle')}
+              </h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '11px', margin: '2px 0 0 0' }}>
+                {zt('zenSubtitle')}
+              </p>
+            </div>
+          </div>
+
+          {/* EQUALIZER/STATUS */}
+          {activeSound ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '11px', color: SOUNDS_LIST.find(s => s.id === activeSound)?.color, fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                {zt('playing')}
+              </span>
+              <div className="zen-wave-container">
+                <div className="zen-wave-bar" style={{ backgroundColor: SOUNDS_LIST.find(s => s.id === activeSound)?.color }}></div>
+                <div className="zen-wave-bar" style={{ backgroundColor: SOUNDS_LIST.find(s => s.id === activeSound)?.color }}></div>
+                <div className="zen-wave-bar" style={{ backgroundColor: SOUNDS_LIST.find(s => s.id === activeSound)?.color }}></div>
+                <div className="zen-wave-bar" style={{ backgroundColor: SOUNDS_LIST.find(s => s.id === activeSound)?.color }}></div>
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {/* SOUND SELECTION GRID */}
+        <div 
+          style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(4, 1fr)', 
+            gap: '10px',
+            margin: '4px 0'
+          }}
+        >
+          {SOUNDS_LIST.map((sound) => {
+            const isSelected = activeSound === sound.id;
+            return (
+              <div
+                key={sound.id}
+                onClick={() => {
+                  if (isSelected) {
+                    setActiveSound(null);
+                  } else {
+                    setActiveSound(sound.id);
+                  }
+                }}
+                className={`zen-sound-card ${isSelected ? 'active-custom' : ''}`}
+                style={{
+                  '--active-bg': sound.activeBg,
+                  '--active-color': sound.color,
+                  '--active-glow': sound.glow,
+                  borderColor: isSelected ? sound.color : undefined
+                } as React.CSSProperties}
+                title={zt(sound.id)}
+              >
+                <div 
+                  className="zen-icon-wrapper" 
+                  style={{ 
+                    color: isSelected ? sound.color : 'var(--text-secondary)',
+                    transition: 'color 0.2s'
+                  }}
+                >
+                  {renderSoundIcon(sound.icon, 20)}
+                </div>
+                <span 
+                  style={{ 
+                    fontSize: '10px', 
+                    fontWeight: isSelected ? '700' : '500', 
+                    color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    transition: 'color 0.2s'
+                  }}
+                >
+                  {zt(sound.id)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* CONTROLS (VOLUME AND SLEEP TIMER) */}
+        <div 
+          style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            borderTop: '1px solid var(--border-light)', 
+            paddingTop: '14px',
+            gap: '20px',
+            flexWrap: 'wrap'
+          }}
+        >
+          {/* VOLUME SLIDER */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '130px' }}>
+            <button
+              onClick={() => setSoundVolume(v => (v > 0 ? 0 : 0.5))}
+              style={{
+                border: 'none',
+                background: 'none',
+                padding: 0,
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center'
+              }}
+            >
+              {soundVolume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '4px' }}>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={soundVolume}
+                onChange={(e) => setSoundVolume(parseFloat(e.target.value))}
+                className="zen-slider"
+                style={{
+                  '--accent-primary': activeSound ? SOUNDS_LIST.find(s => s.id === activeSound)?.color : 'var(--accent-primary)'
+                } as React.CSSProperties}
+              />
+            </div>
+          </div>
+
+          {/* TIMER CONTROL */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Timer size={16} style={{ color: activeSound ? SOUNDS_LIST.find(s => s.id === activeSound)?.color : 'var(--text-secondary)' }} />
+              {timerSeconds !== null ? (
+                <span style={{ fontSize: '11px', color: 'var(--accent-success)', fontWeight: 'bold' }}>
+                  {Math.floor(timerSeconds / 60)}:{String(timerSeconds % 60).padStart(2, '0')}
+                </span>
+              ) : (
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  {zt('sleepTimer')}
+                </span>
+              )}
+            </div>
+            <select
+              value={timerSeconds === null ? 'off' : timerSeconds}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === 'off') {
+                  setTimerSeconds(null);
+                } else {
+                  setTimerSeconds(parseInt(val, 10));
+                }
+              }}
+              style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid var(--border-light)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '4px 8px',
+                fontSize: '11px',
+                color: 'var(--text-primary)',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="off" style={{ background: 'var(--bg-panels)' }}>{zt('timerOff')}</option>
+              <option value="900" style={{ background: 'var(--bg-panels)' }}>15 Min</option>
+              <option value="1800" style={{ background: 'var(--bg-panels)' }}>30 Min</option>
+              <option value="2700" style={{ background: 'var(--bg-panels)' }}>45 Min</option>
+              <option value="3600" style={{ background: 'var(--bg-panels)' }}>1 Hour</option>
+              <option value="7200" style={{ background: 'var(--bg-panels)' }}>2 Hours</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // TELA PRINCIPAL (MAIN SPA)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-main)' }}>
@@ -4673,7 +5229,7 @@ Instruções para resposta:
           
           {/* Identificação de Família */}
           <div className="header-identity" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <img src="/logo.png?v=2" alt="FamilySync Logo" style={{ height: '36px', width: '36px', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)' }} />
+            <img src="/logo.png?v=2" alt="FamilyHub Logo" style={{ height: '36px', width: '36px', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)' }} />
             <div>
               <h2 style={{ fontSize: '16px', fontWeight: '700', letterSpacing: '-0.3px' }}>
                 {family ? family.name : 'Grupo Local Demo'}
@@ -4988,6 +5544,9 @@ Instruções para resposta:
               )}
             </div>
 
+            {/* Bloco 4: Zen Space / Ambient Sounds */}
+            {renderZenSpacePanel(true)}
+
           </div>
         ) : (
           // SE FOR MODO COMPLETO (SPA MULTIABA COMPLETA)
@@ -5002,6 +5561,9 @@ Instruções para resposta:
               </button>
               <button onClick={() => setActiveTab('shopping')} className={activeTab === 'shopping' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <ShoppingCart size={16} /> <span className="nav-btn-text" style={{ marginLeft: '4px' }}>{t('shoppingList')}</span>
+              </button>
+              <button onClick={() => setActiveTab('zenspace')} className={activeTab === 'zenspace' ? 'btn-primary' : 'btn-secondary'} style={{ flex: 1, border: 'none', borderRadius: 'var(--radius-md)', padding: '10px 14px', fontSize: '14px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Sparkles size={16} /> <span className="nav-btn-text" style={{ marginLeft: '4px' }}>{zt('zenTitle')}</span>
               </button>
 
               {gamificationEnabled && (
@@ -5068,45 +5630,50 @@ Instruções para resposta:
                     
                     {/* LINHA SUPERIOR: GREETING & MURAL */}
                     <div className="mural-row-desktop" style={{ display: 'grid', gap: '24px' }}>
-                      {/* CARTÃO DE BOAS-VINDAS + CLIMA */}
-                      <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'center', background: `radial-gradient(circle at top right, ${weather.glow}, transparent 65%), var(--bg-glass)` }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <div>
-                            <span className="badge-xp" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)', border: '1px solid var(--border-light)', fontSize: '10px' }}>
-                              🏠 {t('controlCenter')}
-                            </span>
-                            <h2 className="welcome-greeting-title">
-                              {(() => {
-                                const base = getGreeting();
-                                if (!currentUser) return base;
-                                const name = currentUser.display_name || currentUser.username;
-                                return base
-                                  .replace(/Família/g, name)
-                                  .replace(/Family/g, name)
-                                  .replace(/Familia/g, name)
-                                  .replace(/Rodzino/g, name)
-                                  .replace(/Familie/g, name)
-                                  .replace(/la famille/g, name)
-                                  .replace(/Famiglia/g, name);
-                              })()}
-                            </h2>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: '500' }}>
-                              {getLocalizedDate(currentTime, language)}
-                            </p>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
-                            {weather.icon}
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <span style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', lineHeight: 1 }}>{weather.temp}</span>
-                              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '2px' }}>{weather.desc}</span>
+                      {/* COLUNA 1: BOAS VINDAS + ZEN SPACE */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                        {/* CARTÃO DE BOAS-VINDAS + CLIMA */}
+                        <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'center', background: `radial-gradient(circle at top right, ${weather.glow}, transparent 65%), var(--bg-glass)` }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div>
+                              <span className="badge-xp" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)', border: '1px solid var(--border-light)', fontSize: '10px' }}>
+                                🏠 {t('controlCenter')}
+                              </span>
+                              <h2 className="welcome-greeting-title">
+                                {(() => {
+                                  const base = getGreeting();
+                                  if (!currentUser) return base;
+                                  const name = currentUser.display_name || currentUser.username;
+                                  return base
+                                    .replace(/Família/g, name)
+                                    .replace(/Family/g, name)
+                                    .replace(/Familia/g, name)
+                                    .replace(/Rodzino/g, name)
+                                    .replace(/Familie/g, name)
+                                    .replace(/la famille/g, name)
+                                    .replace(/Famiglia/g, name);
+                                })()}
+                              </h2>
+                              <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: '500' }}>
+                                {getLocalizedDate(currentTime, language)}
+                              </p>
                             </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
+                              {weather.icon}
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', lineHeight: 1 }}>{weather.temp}</span>
+                                <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '2px' }}>{weather.desc}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid var(--border-light)', paddingTop: '14px', fontSize: '20px', fontWeight: '700', color: 'var(--accent-primary-hover)' }}>
+                            <Clock size={20} style={{ color: 'var(--accent-primary)' }} />
+                            <span>{currentTime.toLocaleTimeString(LOCALE_MAP[language] || 'en-US')}</span>
                           </div>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid var(--border-light)', paddingTop: '14px', fontSize: '20px', fontWeight: '700', color: 'var(--accent-primary-hover)' }}>
-                          <Clock size={20} style={{ color: 'var(--accent-primary)' }} />
-                          <span>{currentTime.toLocaleTimeString(LOCALE_MAP[language] || 'en-US')}</span>
-                        </div>
+                        {/* O Zen Space foi movido para sua própria aba dedicada */}
                       </div>
 
                       {/* MURAL DE AVISOS DA FAMÍLIA */}
@@ -8674,6 +9241,23 @@ Instruções para resposta:
                 </div>
               )}
 
+              {/* ABA 9: ESPAÇO ZEN */}
+              {activeTab === 'zenspace' && (
+                <div 
+                  className="animate-fade-in" 
+                  style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '24px', 
+                    maxWidth: '800px', 
+                    margin: '0 auto', 
+                    width: '100%' 
+                  }}
+                >
+                  {renderZenSpacePanel(false)}
+                </div>
+              )}
+
 
 
             </div>
@@ -8684,6 +9268,14 @@ Instruções para resposta:
 
       {/* FOOTER DESCRITIVO */}
       <footer className="app-footer">
+        <a 
+          href="https://github.com/mwatney-mars/FamilyHub" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          style={{ color: 'var(--accent-primary)', fontWeight: 'bold', textDecoration: 'underline' }}
+        >
+          FamilyHub 1.2.5
+        </a>{' '}
         {t('footerText')}
       </footer>
 

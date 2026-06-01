@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const dbPath = process.env.DATABASE_PATH || join(__dirname, 'familysync.db');
+const dbPath = process.env.DATABASE_PATH || join(__dirname, 'familyhub.db');
 
 // Habilitar modo verbose para depuração se necessário
 const sqlite = sqlite3.verbose();
@@ -132,12 +132,12 @@ export const initDb = async () => {
 
       await run(
         'INSERT INTO families (id, name, join_code, e2ee_salt, creator_id) VALUES (?, ?, ?, ?, ?)',
-        [familyId, 'My Family', 'FS1234', salt, userId]
+        [familyId, 'My Family', 'FH1234', salt, userId]
       );
 
       await run(
         'INSERT INTO users (id, username, display_name, email, password_hash, family_id, role, family_title) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [userId, 'admin', 'Administrador', 'admin@familysync.local', passHash, familyId, 'admin', null]
+        [userId, 'admin', 'Administrador', 'admin@familyhub.local', passHash, familyId, 'admin', null]
       );
 
       console.log(`[Seed] Semeado com sucesso!`);

@@ -1,8 +1,8 @@
-# FamilySync ✨
+# FamilyHub ✨
 
 > ⚠️ **Disclaimer:** This application is focused on privacy, fully *self-hosted*, and designed exclusively for single, private family use.
 
-**FamilySync** is a residential family management portal designed with an ultra-modern **Dark Glassmorphism** aesthetic. It combines a cooperative, smart shopping list, gamified chore routines with isolated privacy, AI-assisted medication scheduling, and a dedicated Fridge Mode for wall displays (*Smart Home Wall Dashboards*).
+**FamilyHub** is a residential family management portal designed with an ultra-modern **Dark Glassmorphism** aesthetic. It combines a cooperative, smart shopping list, gamified chore routines with isolated privacy, AI-assisted medication scheduling, and a dedicated Fridge Mode for wall displays (*Smart Home Wall Dashboards*).
 
 ---
 
@@ -23,7 +23,7 @@
 
 ## 🐳 Quick Start (Docker)
 
-The recommended way to run FamilySync in production is through Docker Compose, ensuring full isolation and secure persistence.
+The recommended way to run FamilyHub in production is through Docker Compose, ensuring full isolation and secure persistence.
 
 ### 1. Create the `docker-compose.yml` file
 
@@ -31,21 +31,21 @@ The recommended way to run FamilySync in production is through Docker Compose, e
 version: '3.8'
 
 services:
-  familysync:
-    image: gutolm/familysync:latest
-    container_name: familysync-app
+  familyhub:
+    image: gutolm/familyhub:latest
+    container_name: familyhub-app
     restart: unless-stopped
     ports:
       - "5000:5000"
     environment:
       - PORT=5000
-      - DATABASE_PATH=/data/familysync.db
-      - JWT_SECRET=FamilySyncSecretKey_SuperSecure123! # Change to a strong, secure secret key!
+      - DATABASE_PATH=/data/familyhub.db
+      - JWT_SECRET=FamilyHubSecretKey_SuperSecure123! # Change to a strong, secure secret key!
     volumes:
-      - familysync-data:/data
+      - familyhub-data:/data
 
 volumes:
-  familysync-data:
+  familyhub-data:
     driver: local
 ```
 
@@ -73,15 +73,15 @@ If you would like to run the local development environment directly on your mach
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/mwatney-mars/FamilySync.git
-    cd FamilySync
+    git clone https://github.com/mwatney-mars/FamilyHub.git
+    cd FamilyHub
     ```
 
 2.  **Configure Environment Variables:**
     Create a `.env` file in the root directory based on `.env.example`:
     ```env
     PORT=5000
-    DATABASE_PATH=./backend/familysync.db
+    DATABASE_PATH=./backend/familyhub.db
     JWT_SECRET=YourUltraSecretKeyHere
     ```
 
@@ -104,13 +104,13 @@ If you would like to run the local development environment directly on your mach
 
 ## ☁️ Secure External Access
 
-FamilySync is designed to operate within your local area network (LAN). To access it outside of your home without exposing ports on your router, we recommend using Cloudflare Tunnels (Zero Trust). A complete, step-by-step routing and security guide is detailed in [CLOUD.md](CLOUD.md).
+FamilyHub is designed to operate within your local area network (LAN). To access it outside of your home without exposing ports on your router, we recommend using Cloudflare Tunnels (Zero Trust). A complete, step-by-step routing and security guide is detailed in [CLOUD.md](CLOUD.md).
 
 ---
 
 ## 📜 Credits & Third-Party Attributions
 
-**FamilySync** is built using excellent open-source libraries, APIs, and technologies:
+**FamilyHub** is built using excellent open-source libraries, APIs, and technologies:
 
 *   **Artificial Intelligence:** [Google Gemini API](https://ai.google.dev/) with the `gemini-2.5-flash` model for offline-first semantic processing and shopping classification.
 *   **Local Database:** [Dexie.js](https://dexie.org/) by **Nikolas Dahlby** for encapsulating the browser's IndexedDB in a robust, transactional layer.

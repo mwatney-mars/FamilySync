@@ -12,7 +12,7 @@ const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const JWT_SECRET = process.env.JWT_SECRET || 'FamilySyncSecretKey_SuperSecure123!';
+const JWT_SECRET = process.env.JWT_SECRET || 'FamilyHubSecretKey_SuperSecure123!';
 
 app.use(cors());
 app.use(express.json());
@@ -240,7 +240,7 @@ app.post('/api/family/members', authenticateToken, async (req, res) => {
     return res.status(400).json({ error: 'Nome de usuário e senha provisória são obrigatórios.' });
   }
 
-  const targetEmail = email || (username.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9._-]/g, '') + '@familysync.local');
+  const targetEmail = email || (username.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9._-]/g, '') + '@familyhub.local');
   const targetDisplayName = display_name || displayName || username;
 
   try {
@@ -506,7 +506,7 @@ app.get('/api/family/backup/export', authenticateToken, async (req, res) => {
     };
 
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename=familysync_backup_${family.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.json`);
+    res.setHeader('Content-Disposition', `attachment; filename=familyhub_backup_${family.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.json`);
     res.json(backupPayload);
   } catch (err) {
     console.error('Erro ao exportar backup:', err);
@@ -878,7 +878,7 @@ app.get('*', (req, res, next) => {
   res.sendFile(join(__dirname, '../frontend/dist/index.html'), (err) => {
     if (err) {
       // Se o dist não estiver compilado ainda, retornar mensagem informativa
-      res.status(200).send('<h1>FamilySync Backend Ativo</h1><p>O servidor está rodando perfeitamente. O frontend ainda não foi compilado ou colocado em "../frontend/dist".</p>');
+      res.status(200).send('<h1>FamilyHub Backend Ativo</h1><p>O servidor está rodando perfeitamente. O frontend ainda não foi compilado ou colocado em "../frontend/dist".</p>');
     }
   });
 });

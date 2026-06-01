@@ -1,7 +1,7 @@
 import Dexie from 'dexie';
 
 // Classe do Banco de Dados Local Dexie
-class FamilySyncDatabase extends Dexie {
+class FamilyHubDatabase extends Dexie {
   chores!: Dexie.Table<Chore, string>;
   shopping!: Dexie.Table<ShoppingItem, string>;
   comments!: Dexie.Table<ChoreComment, string>;
@@ -14,7 +14,7 @@ class FamilySyncDatabase extends Dexie {
   purchase_history!: Dexie.Table<PurchaseRecord, string>;
 
   constructor() {
-    super('FamilySyncDB');
+    super('FamilyHubDB');
     // Upgrade do banco para a versão 2 com suporte ao salvamento sincronizado da configuração de IA
     this.version(2).stores({
       chores: 'id, collection, updated_at, deleted, completed_by',
@@ -155,7 +155,7 @@ export interface SyncQueueEntry {
   updated_at: number;
 }
 
-export const db = new FamilySyncDatabase();
+export const db = new FamilyHubDatabase();
 
 // --- FUNÇÕES AUXILIARES DE COORDENAÇÃO LOCAL ---
 

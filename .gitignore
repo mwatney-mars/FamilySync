@@ -76,7 +76,7 @@ Thumbs.db
 *.db-journal
 *.db-shm
 *.db-wal
-backend/familysync.db
+backend/familyhub.db
 backend/data/
 
 # Frontend builds

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'familysync-v2';
+const CACHE_NAME = 'familyhub-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -82,13 +82,13 @@ self.addEventListener('fetch', (event) => {
 
 // Ouvir notificações push do servidor
 self.addEventListener('push', (event) => {
-  let payload = { title: 'FamilySync', body: 'Novas atualizações pendentes!' };
+  let payload = { title: 'FamilyHub', body: 'Novas atualizações pendentes!' };
   
   if (event.data) {
     try {
       payload = event.data.json();
     } catch (e) {
-      payload = { title: 'FamilySync', body: event.data.text() };
+      payload = { title: 'FamilyHub', body: event.data.text() };
     }
   }
 

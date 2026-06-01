@@ -38,7 +38,7 @@ class E2EEEncryptionService {
   // Cifra/Decifra simples em Javascript usando XOR para cenários de fallback (HTTP)
   private xorEncryptDecrypt(input: string, key: string): string {
     let output = '';
-    const keyStr = key || 'FamilySyncFallbackKey';
+    const keyStr = key || 'FamilyHubFallbackKey';
     for (let i = 0; i < input.length; i++) {
       const charCode = input.charCodeAt(i) ^ keyStr.charCodeAt(i % keyStr.length);
       output += String.fromCharCode(charCode);

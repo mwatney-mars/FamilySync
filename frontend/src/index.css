@@ -404,7 +404,7 @@ body {
 
 /* Botões Modernos */
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent-primary), #6d28d9);
+  background: var(--accent-primary);
   color: #ffffff;
   border: none;
   padding: 10px 20px;

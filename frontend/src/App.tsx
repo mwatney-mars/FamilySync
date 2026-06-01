@@ -4596,7 +4596,7 @@ Instruções para resposta:
               <button
                 type="submit"
                 className="btn-primary"
-                style={{ flex: 2, padding: '12px', background: 'linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-hover) 100%)' }}
+                style={{ flex: 2, padding: '12px', background: 'var(--accent-primary)' }}
                 disabled={setupLoading}
               >
                 {setupLoading ? t('saving') : t('saveAndActivate')}
@@ -4691,7 +4691,7 @@ Instruções para resposta:
                 padding: '8px 16px',
                 fontSize: '13px',
                 fontWeight: '600',
-                background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-primary-hover))',
+                background: 'var(--accent-primary)',
                 border: 'none',
                 borderRadius: 'var(--radius-md)',
                 boxShadow: '0 4px 12px rgba(139, 92, 246, 0.25)',
@@ -5501,7 +5501,7 @@ Instruções para resposta:
                                   padding: '6px 10px',
                                   fontSize: '11px',
                                   borderRadius: 'var(--radius-sm)',
-                                  background: 'linear-gradient(135deg, var(--accent-info), #0891b2)',
+                                  background: 'var(--accent-primary)',
                                   borderColor: 'transparent'
                                 }}
                                 title={t('addNewMedication')}
@@ -7442,7 +7442,7 @@ Instruções para resposta:
                                             width: '22px',
                                             height: '22px',
                                             borderRadius: '50%',
-                                            background: themeOpt.grad,
+                                            background: themeOpt.color,
                                             boxShadow: isSelected ? `0 0 10px ${themeOpt.color}` : 'none'
                                           }}
                                         />
@@ -8678,7 +8678,7 @@ Instruções para resposta:
                                   display: 'flex',
                                   alignItems: 'center',
                                   gap: '8px',
-                                  background: 'linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-hover) 100%)',
+                                  background: 'var(--accent-primary)',
                                   border: 'none',
                                   borderRadius: '8px',
                                   fontWeight: '600',

@@ -82,7 +82,20 @@ const LOCALE_MAP: Record<string, string> = {
 };
 
 const getAtmosphereTranslations = (lang: string) => {
-  const data: Record<string, { title: string; desc: string; darkName: string; darkDesc: string; lightName: string; lightDesc: string; midnightName: string; midnightDesc: string; forestName: string; forestDesc: string; sunsetName: string; sunsetDesc: string; nordicName: string; nordicDesc: string }> = {
+  const data: Record<string, { 
+    title: string; desc: string; 
+    darkName: string; darkDesc: string; 
+    lightName: string; lightDesc: string; 
+    midnightName: string; midnightDesc: string; 
+    forestName: string; forestDesc: string; 
+    sunsetName: string; sunsetDesc: string; 
+    nordicName: string; nordicDesc: string;
+    latteName: string; latteDesc: string;
+    mintName: string; mintDesc: string;
+    lavenderName: string; lavenderDesc: string;
+    accentTitle: string; accentDesc: string;
+    prefTitle: string; prefDesc: string;
+  }> = {
     pt: {
       title: "Fundo & Atmosfera",
       desc: "Escolha o tema e plano de fundo geral de toda a interface do FamilySync.",
@@ -98,6 +111,16 @@ const getAtmosphereTranslations = (lang: string) => {
       sunsetDesc: "Tons de brasa e terracota quentes e aconchegantes",
       nordicName: "Ártico Nórdico",
       nordicDesc: "Visual de gelo e metal escuro minimalista",
+      latteName: "Café Latte",
+      latteDesc: "Tons de creme e café quentes e aconchegantes",
+      mintName: "Hortelã Nórdico",
+      mintDesc: "Fresco, com fundo menta claro e toques de pinho",
+      lavenderName: "Flor de Lavanda",
+      lavenderDesc: "Atmosfera serena de lilás suave e fiorituras",
+      accentTitle: "Cores de Destaque",
+      accentDesc: "Escolha a cor dos botões e destaques ativos por todo o sistema.",
+      prefTitle: "Preferências & Idioma",
+      prefDesc: "Configure o idioma do sistema e a visualização padrão do calendário.",
     },
     en: {
       title: "Atmosphere & Background",
@@ -114,6 +137,16 @@ const getAtmosphereTranslations = (lang: string) => {
       sunsetDesc: "Cozy warm glow with terracotta accents",
       nordicName: "Nordic Arctic",
       nordicDesc: "Icy minimalist slate-grey and glacier style",
+      latteName: "Creamy Latte",
+      latteDesc: "Cozy warm cream and coffee-toned aesthetic",
+      mintName: "Nordic Mint",
+      mintDesc: "Crisp light mint-green base with fresh forest teal",
+      lavenderName: "Lavender Blossom",
+      lavenderDesc: "Serene soft lilac and purple blossom aesthetics",
+      accentTitle: "Accent Colors",
+      accentDesc: "Choose the highlight color for active buttons and indicators across the system.",
+      prefTitle: "Preferences & Language",
+      prefDesc: "Configure the system language and default calendar view options.",
     },
     es: {
       title: "Ambiente y Fondo",
@@ -130,6 +163,16 @@ const getAtmosphereTranslations = (lang: string) => {
       sunsetDesc: "Cálido resplandor de terracota acogedor",
       nordicName: "Ártico Nórdico",
       nordicDesc: "Estilo minimalista de pizarra helada y glaciar",
+      latteName: "Café Latte",
+      latteDesc: "Cálidos tonos crema y sepia acogedores",
+      mintName: "Menta Nórdica",
+      mintDesc: "Base menta fresca con toques de verde pino",
+      lavenderName: "Flor de Lavanda",
+      lavenderDesc: "Ambiente sereno de lila suave y violeta",
+      accentTitle: "Colores de Acento",
+      accentDesc: "Elige el color de los botones activos y elementos destacados.",
+      prefTitle: "Preferencias e Idioma",
+      prefDesc: "Configura el idioma del sistema y la vista predeterminada del calendario.",
     },
     pl: {
       title: "Atmosfera i Tło",
@@ -146,6 +189,16 @@ const getAtmosphereTranslations = (lang: string) => {
       sunsetDesc: "Przytulny ciepły blask z terakotowymi akcentami",
       nordicName: "Nordycki Arktyczny",
       nordicDesc: "Lodowaty minimalistyczny styl łupkowy i lodowcowy",
+      latteName: "Kremowe Latte",
+      latteDesc: "Ciepłe, przytulne odcienie kremu i kawy",
+      mintName: "Nordycka Mięta",
+      mintDesc: "Rześkie jasnomiętowe tło z leśnym turkusem",
+      lavenderName: "Kwiat Lawendy",
+      lavenderDesc: "Spokojna estetyka delikatnego bzu i fioletu",
+      accentTitle: "Kolory Akcentów",
+      accentDesc: "Wybierz kolor wyróżnienia dla aktywnych przycisków i wskaźników.",
+      prefTitle: "Preferencje i Język",
+      prefDesc: "Skonfiguruj język systemu i domyślny widok kalendarza.",
     },
     de: {
       title: "Atmosphäre & Hintergrund",
@@ -159,9 +212,19 @@ const getAtmosphereTranslations = (lang: string) => {
       forestName: "Organischer Wald",
       forestDesc: "Erdtöne und Kieferngrün für natürliches Wohlbefinden",
       sunsetName: "Abendwärme",
-      sunsetDesc: "Gemütliches warmes Glühen mit Terrakotta-Akzenten",
+      sunsetDesc: "Gemütliches warmes Glühen mit Terrakotta-Accents",
       nordicName: "Nordische Arktis",
       nordicDesc: "Eisiger minimalistischer Schiefer- und Gletscherstil",
+      latteName: "Cremiges Latte",
+      latteDesc: "Gemütliche warme Sahne- und Kaffee-Ästhetik",
+      mintName: "Nordische Minze",
+      mintDesc: "Frischer hellminziger Hintergrund mit Wald-Krickente",
+      lavenderName: "Lavendelblüte",
+      lavenderDesc: "Ruhige weiche Flieder- und Violetttöne",
+      accentTitle: "Akzentfarben",
+      accentDesc: "Wählen Sie die Hervorhebungsfarbe für aktive Schaltflächen und Anzeigen.",
+      prefTitle: "Einstellungen & Sprache",
+      prefDesc: "Konfigurieren Sie die Systemsprache und die Standardkalenderansicht.",
     },
     fr: {
       title: "Atmosphère & Arrière-plan",
@@ -178,6 +241,16 @@ const getAtmosphereTranslations = (lang: string) => {
       sunsetDesc: "Lueur chaleureuse et confortable avec des tons de terre cuite",
       nordicName: "Arctique Nordique",
       nordicDesc: "Style minimaliste glacé, gris ardoise et glacier",
+      latteName: "Café Latte Cream",
+      latteDesc: "Esthétique chaleureuse et confortable aux tons crème et café",
+      mintName: "Menthe Nordique",
+      mintDesc: "Base menthe fraîche et fraîche avec sarcelle des bois",
+      lavenderName: "Fleur de Lavande",
+      lavenderDesc: "Esthétique sereine de lilas doux et de violet",
+      accentTitle: "Couleurs d'Accent",
+      accentDesc: "Choisissez la couleur de surbrillance pour les boutons actifs et indicateurs.",
+      prefTitle: "Préférences & Langue",
+      prefDesc: "Configurez la langue du système et la vue par défaut du calendrier.",
     },
     it: {
       title: "Atmosfera e Sfondo",
@@ -194,6 +267,16 @@ const getAtmosphereTranslations = (lang: string) => {
       sunsetDesc: "Accogliente bagliore caldo con accenti di terracotta",
       nordicName: "Artico Nordico",
       nordicDesc: "Stile minimalista glaciale, grigio ardesia e ghiacciaio",
+      latteName: "Caffè Latte",
+      latteDesc: "Accoglienti tonalità calde di crema e caffè",
+      mintName: "Menta Nordica",
+      mintDesc: "Base menta fresca con sfumature verde pino",
+      lavenderName: "Fior di Lavanda",
+      lavenderDesc: "Atmosfera serena lilla tenue e fioritura viola",
+      accentTitle: "Colori di Accento",
+      accentDesc: "Scegli il colore di evidenziazione per pulsanti attivi e indicatori.",
+      prefTitle: "Preferenze & Lingua",
+      prefDesc: "Configura la lingua del sistema e la vista predefinita del calendario.",
     }
   };
   return data[lang] || data['en'];
@@ -574,7 +657,7 @@ function App() {
   };
 
   // --- ESTADOS DE USABILIDADE E CUSTOMIZAÇÃO ---
-  const [theme, setTheme] = useState<'light' | 'dark' | 'midnight' | 'forest' | 'sunset' | 'nordic'>(() => {
+  const [theme, setTheme] = useState<'light' | 'dark' | 'midnight' | 'forest' | 'sunset' | 'nordic' | 'latte' | 'mint' | 'lavender'>(() => {
     const saved = localStorage.getItem('theme');
     if (
       saved === 'light' ||
@@ -582,7 +665,10 @@ function App() {
       saved === 'midnight' ||
       saved === 'forest' ||
       saved === 'sunset' ||
-      saved === 'nordic'
+      saved === 'nordic' ||
+      saved === 'latte' ||
+      saved === 'mint' ||
+      saved === 'lavender'
     ) return saved;
     return 'dark';
   });
@@ -594,19 +680,24 @@ function App() {
 
   const toggleTheme = () => {
     setTheme(prev => {
-      const cycle: ('light' | 'dark' | 'midnight' | 'forest' | 'sunset' | 'nordic')[] = [
+      const cycle: ('light' | 'dark' | 'midnight' | 'forest' | 'sunset' | 'nordic' | 'latte' | 'mint' | 'lavender')[] = [
         'dark',
         'light',
         'midnight',
         'forest',
         'sunset',
-        'nordic'
+        'nordic',
+        'latte',
+        'mint',
+        'lavender'
       ];
       const currentIndex = cycle.indexOf(prev);
       const nextIndex = (currentIndex + 1) % cycle.length;
       return cycle[nextIndex];
     });
   };
+
+  const [appearanceSubSection, setAppearanceSubSection] = useState<'accents' | 'atmospheres' | 'preferences'>('accents');
 
   const [accentTheme, setAccentTheme] = useState<string>('violet');
   const [gamificationEnabled, setGamificationEnabled] = useState<boolean>(true);
@@ -7252,6 +7343,7 @@ Instruções para resposta:
                       {/* 0. TEMA E APARÊNCIA */}
                       {activeSettingsSection === 'appearance' && (
                         <div>
+                          {/* TÍTULO PRINCIPAL DE APARÊNCIA */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
                             <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <Palette size={18} style={{ color: 'var(--accent-primary)' }} />
@@ -7259,222 +7351,109 @@ Instruções para resposta:
                             <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('themeAndAppearance')}</h3>
                           </div>
 
-                          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>
-                            {t('chooseThemeDesc')}
-                          </p>
-
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {/* SUBMENU SEGMENTADO PREMIUM */}
+                          <div style={{
+                            display: 'flex',
+                            background: 'rgba(0, 0, 0, 0.15)',
+                            padding: '6px',
+                            borderRadius: '12px',
+                            marginBottom: '24px',
+                            gap: '4px',
+                            border: '1px solid var(--border-light)'
+                          }}>
                             {[
-                              { id: 'violet', label: t('themeVioletName'), desc: t('themeVioletDesc'), color: '#8b5cf6', grad: 'linear-gradient(135deg, #8b5cf6, #6d28d9)' },
-                              { id: 'emerald', label: t('themeEmeraldName'), desc: t('themeEmeraldDesc'), color: '#10b981', grad: 'linear-gradient(135deg, #10b981, #047857)' },
-                              { id: 'cyan', label: t('themeCyanName'), desc: t('themeCyanDesc'), color: '#06b6d4', grad: 'linear-gradient(135deg, #06b6d4, #0891b2)' },
-                              { id: 'amber', label: t('themeAmberName'), desc: t('themeAmberDesc'), color: '#f59e0b', grad: 'linear-gradient(135deg, #f59e0b, #b45309)' },
-                              { id: 'ruby', label: t('themeRubyName'), desc: t('themeRubyDesc'), color: '#ef4444', grad: 'linear-gradient(135deg, #ef4444, #b91c1c)' }
-                            ].map(themeOpt => {
-                              const isSelected = accentTheme === themeOpt.id;
+                              { id: 'accents', label: getAtmosphereTranslations(language).accentTitle, icon: <Palette size={15} /> },
+                              { id: 'atmospheres', label: getAtmosphereTranslations(language).title, icon: <Sparkles size={15} /> },
+                              { id: 'preferences', label: getAtmosphereTranslations(language).prefTitle, icon: <Globe size={15} /> }
+                            ].map(subTab => {
+                              const isActive = appearanceSubSection === subTab.id;
                               return (
-                                <div
-                                  key={themeOpt.id}
-                                  onClick={() => handleChangeTheme(themeOpt.id)}
+                                <button
+                                  key={subTab.id}
+                                  onClick={() => setAppearanceSubSection(subTab.id as any)}
                                   style={{
-                                    padding: '14px 18px',
-                                    borderRadius: 'var(--radius-md)',
-                                    background: isSelected ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.1)',
-                                    border: '1px solid',
-                                    borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
-                                    cursor: 'pointer',
+                                    flex: 1,
                                     display: 'flex',
                                     alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    gap: '16px',
-                                    transition: 'all var(--transition-fast)'
+                                    justifyContent: 'center',
+                                    gap: '8px',
+                                    padding: '10px 12px',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    background: isActive ? 'var(--accent-primary)' : 'transparent',
+                                    color: isActive ? '#ffffff' : 'var(--text-secondary)',
+                                    fontSize: '13px',
+                                    fontWeight: isActive ? '600' : '500',
+                                    cursor: 'pointer',
+                                    transition: 'all var(--transition-fast)',
+                                    outline: 'none',
+                                    boxShadow: isActive ? '0 4px 12px rgba(0, 0, 0, 0.15)' : 'none'
                                   }}
-                                  className="glass-panel-hover"
+                                  className="tab-button-hover"
                                 >
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                    {/* Círculo de cor */}
-                                    <div
-                                      style={{
-                                        width: '22px',
-                                        height: '22px',
-                                        borderRadius: '50%',
-                                        background: themeOpt.grad,
-                                        boxShadow: isSelected ? `0 0 10px ${themeOpt.color}` : 'none'
-                                      }}
-                                    />
-                                    <div>
-                                      <p style={{ fontSize: '14px', fontWeight: '600', color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)', margin: 0 }}>
-                                        {themeOpt.label} {isSelected && '✓'}
-                                      </p>
-                                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>{themeOpt.desc}</p>
-                                    </div>
-                                  </div>
-
-                                  <div
-                                    style={{
-                                      width: '16px',
-                                      height: '16px',
-                                      borderRadius: '50%',
-                                      border: '2px solid',
-                                      borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      background: isSelected ? 'var(--accent-primary)' : 'transparent'
-                                    }}
-                                  >
-                                    {isSelected && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'white' }} />}
-                                  </div>
-                                </div>
+                                  {subTab.icon}
+                                  <span className="hide-on-mobile" style={{ transition: 'all var(--transition-fast)' }}>{subTab.label}</span>
+                                </button>
                               );
                             })}
                           </div>
 
-                          {/* SELETOR DE ATMOSFERAS (BACKGROUNDS) */}
-                          <div style={{ marginTop: '30px', borderTop: '1px solid var(--border-light)', paddingTop: '24px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                              <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Palette size={18} style={{ color: 'var(--accent-primary)' }} />
-                              </div>
-                              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
-                                {getAtmosphereTranslations(language).title}
-                              </h3>
-                            </div>
+                          {/* CONTEÚDOS DE SUB-SEÇÃO */}
 
-                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>
-                              {getAtmosphereTranslations(language).desc}
-                            </p>
+                          {/* SUB-SEÇÃO 1: CORES DE DESTAQUE (ACCENTS) */}
+                          {appearanceSubSection === 'accents' && (
+                            <div className="animate-slide-up">
+                              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>
+                                {getAtmosphereTranslations(language).accentDesc}
+                              </p>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
-                              {[
-                                { id: 'dark', name: getAtmosphereTranslations(language).darkName, desc: getAtmosphereTranslations(language).darkDesc, preview: 'linear-gradient(135deg, #090a0c 0%, #121418 100%)', text: '#f3f4f6', border: 'rgba(255,255,255,0.05)' },
-                                { id: 'light', name: getAtmosphereTranslations(language).lightName, desc: getAtmosphereTranslations(language).lightDesc, preview: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)', text: '#0f172a', border: 'rgba(15,23,42,0.06)' },
-                                { id: 'midnight', name: getAtmosphereTranslations(language).midnightName, desc: getAtmosphereTranslations(language).midnightDesc, preview: 'linear-gradient(135deg, #060913 0%, #0e1322 100%)', text: '#f1f5f9', border: 'rgba(14,165,233,0.15)' },
-                                { id: 'forest', name: getAtmosphereTranslations(language).forestName, desc: getAtmosphereTranslations(language).forestDesc, preview: 'linear-gradient(135deg, #060907 0%, #0e1410 100%)', text: '#f0fdf4', border: 'rgba(16,185,129,0.15)' },
-                                { id: 'sunset', name: getAtmosphereTranslations(language).sunsetName, desc: getAtmosphereTranslations(language).sunsetDesc, preview: 'linear-gradient(135deg, #0c0808 0%, #171010 100%)', text: '#fff7ed', border: 'rgba(249,115,22,0.15)' },
-                                { id: 'nordic', name: getAtmosphereTranslations(language).nordicName, desc: getAtmosphereTranslations(language).nordicDesc, preview: 'linear-gradient(135deg, #0b0f15 0%, #131922 100%)', text: '#f0f9ff', border: 'rgba(56,189,248,0.15)' }
-                              ].map(atmOpt => {
-                                const isSelected = theme === atmOpt.id;
-                                return (
-                                  <div
-                                    key={atmOpt.id}
-                                    onClick={() => {
-                                      setTheme(atmOpt.id as any);
-                                      if (typeof setToast === 'function') {
-                                        setToast({
-                                          message: language === 'pt' ? `Atmosfera "${atmOpt.name}" ativada!` : `Atmosphere "${atmOpt.name}" activated!`,
-                                          type: 'success',
-                                          id: Date.now()
-                                        });
-                                      }
-                                    }}
-                                    style={{
-                                      padding: '14px',
-                                      borderRadius: 'var(--radius-md)',
-                                      background: isSelected ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.1)',
-                                      border: '2px solid',
-                                      borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      flexDirection: 'column',
-                                      gap: '12px',
-                                      transition: 'all var(--transition-fast)'
-                                    }}
-                                    className="glass-panel-hover"
-                                  >
-                                    {/* Miniatura do Fundo */}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {[
+                                  { id: 'violet', label: t('themeVioletName'), desc: t('themeVioletDesc'), color: '#8b5cf6', grad: 'linear-gradient(135deg, #8b5cf6, #6d28d9)' },
+                                  { id: 'emerald', label: t('themeEmeraldName'), desc: t('themeEmeraldDesc'), color: '#10b981', grad: 'linear-gradient(135deg, #10b981, #047857)' },
+                                  { id: 'cyan', label: t('themeCyanName'), desc: t('themeCyanDesc'), color: '#06b6d4', grad: 'linear-gradient(135deg, #06b6d4, #0891b2)' },
+                                  { id: 'amber', label: t('themeAmberName'), desc: t('themeAmberDesc'), color: '#f59e0b', grad: 'linear-gradient(135deg, #f59e0b, #b45309)' },
+                                  { id: 'ruby', label: t('themeRubyName'), desc: t('themeRubyDesc'), color: '#ef4444', grad: 'linear-gradient(135deg, #ef4444, #b91c1c)' }
+                                ].map(themeOpt => {
+                                  const isSelected = accentTheme === themeOpt.id;
+                                  return (
                                     <div
+                                      key={themeOpt.id}
+                                      onClick={() => handleChangeTheme(themeOpt.id)}
                                       style={{
-                                        height: '70px',
-                                        borderRadius: 'var(--radius-sm)',
-                                        background: atmOpt.preview,
-                                        border: `1px solid ${atmOpt.border}`,
+                                        padding: '14px 18px',
+                                        borderRadius: 'var(--radius-md)',
+                                        background: isSelected ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.1)',
+                                        border: '1px solid',
+                                        borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
+                                        cursor: 'pointer',
                                         display: 'flex',
-                                        flexDirection: 'column',
+                                        alignItems: 'center',
                                         justifyContent: 'space-between',
-                                        padding: '8px',
-                                        position: 'relative',
-                                        overflow: 'hidden'
+                                        gap: '16px',
+                                        transition: 'all var(--transition-fast)'
                                       }}
+                                      className="glass-panel-hover"
                                     >
-                                      {/* Representação de um card miniatura no tema */}
-                                      <div style={{ display: 'flex', gap: '6px' }}>
-                                        <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--accent-primary)' }} />
-                                        <div style={{ flex: 1, height: '12px', borderRadius: '4px', background: isSelected ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)' }} />
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                        {/* Círculo de cor */}
+                                        <div
+                                          style={{
+                                            width: '22px',
+                                            height: '22px',
+                                            borderRadius: '50%',
+                                            background: themeOpt.grad,
+                                            boxShadow: isSelected ? `0 0 10px ${themeOpt.color}` : 'none'
+                                          }}
+                                        />
+                                        <div>
+                                          <p style={{ fontSize: '14px', fontWeight: '600', color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)', margin: 0 }}>
+                                            {themeOpt.label} {isSelected && '✓'}
+                                          </p>
+                                          <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>{themeOpt.desc}</p>
+                                        </div>
                                       </div>
-                                      <div style={{ height: '24px', borderRadius: '6px', background: isSelected ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)', border: `1px solid ${atmOpt.border}` }} />
-                                    </div>
 
-                                    {/* Detalhes do texto */}
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                        <p style={{ fontSize: '13px', fontWeight: '600', color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)', margin: 0 }}>
-                                          {atmOpt.name} {isSelected && '✓'}
-                                        </p>
-                                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.3' }}>{atmOpt.desc}</p>
-                                      </div>
-                                      <div
-                                        style={{
-                                          width: '16px',
-                                          height: '16px',
-                                          borderRadius: '50%',
-                                          border: '2px solid',
-                                          borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          background: isSelected ? 'var(--accent-primary)' : 'transparent',
-                                          flexShrink: 0
-                                        }}
-                                      >
-                                        {isSelected && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'white' }} />}
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-
-                          <div style={{ marginTop: '30px', borderTop: '1px solid var(--border-light)', paddingTop: '24px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                              <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <CalendarIcon size={18} style={{ color: 'var(--accent-primary)' }} />
-                              </div>
-                              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('defaultCalendarView')}</h3>
-                            </div>
-
-                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>
-                              {t('defaultCalendarViewDesc')}
-                            </p>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-                              {[
-                                { id: 'month', label: t('calendarViewMonthLabel'), desc: t('calendarViewMonthDesc'), icon: '📅' },
-                                { id: 'week', label: t('calendarViewWeekLabel'), desc: t('calendarViewWeekDesc'), icon: '🗓️' },
-                                { id: 'day', label: t('calendarViewDayLabel'), desc: t('calendarViewDayDesc'), icon: '☀️' }
-                              ].map(viewOpt => {
-                                const isSelected = defaultCalendarView === viewOpt.id;
-                                return (
-                                  <div
-                                    key={viewOpt.id}
-                                    onClick={() => handleChangeDefaultCalendarView(viewOpt.id as 'month' | 'week' | 'day')}
-                                    style={{
-                                      padding: '14px 18px',
-                                      borderRadius: 'var(--radius-md)',
-                                      background: isSelected ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.1)',
-                                      border: '1px solid',
-                                      borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      flexDirection: 'column',
-                                      gap: '6px',
-                                      transition: 'all var(--transition-fast)'
-                                    }}
-                                    className="glass-panel-hover"
-                                  >
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                      <span style={{ fontSize: '20px' }}>{viewOpt.icon}</span>
                                       <div
                                         style={{
                                           width: '16px',
@@ -7491,142 +7470,437 @@ Instruções para resposta:
                                         {isSelected && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'white' }} />}
                                       </div>
                                     </div>
-                                    <div style={{ marginTop: '6px' }}>
-                                      <p style={{ fontSize: '13px', fontWeight: '700', color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)', margin: 0 }}>
-                                        {viewOpt.label}
-                                      </p>
-                                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, marginTop: '2px' }}>{viewOpt.desc}</p>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-
-                          {/* SELETOR DE IDIOMA DO SISTEMA */}
-                          <div style={{ marginTop: '30px', borderTop: '1px solid var(--border-light)', paddingTop: '24px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                              <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Globe size={18} style={{ color: 'var(--accent-primary)' }} />
+                                  );
+                                })}
                               </div>
-                              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('languageAndAppearance')}</h3>
                             </div>
+                          )}
 
-                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>
-                              {t('languageAndAppearanceDesc')}
-                            </p>
+                          {/* SUB-SEÇÃO 2: ATMOSFERAS (DARK & LIGHT THEMES) */}
+                          {appearanceSubSection === 'atmospheres' && (
+                            <div className="animate-slide-up">
+                              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: '1.5' }}>
+                                {getAtmosphereTranslations(language).desc}
+                              </p>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-                              {[
-                                { id: 'pt', label: t('portuguese'), flag: '🇧🇷' },
-                                { id: 'en', label: t('english'), flag: '🇺🇸' },
-                                { id: 'es', label: t('spanish'), flag: '🇪🇸' },
-                                { id: 'pl', label: t('polish'), flag: '🇵🇱' },
-                                { id: 'de', label: t('german'), flag: '🇩🇪' },
-                                { id: 'fr', label: t('french'), flag: '🇫🇷' },
-                                { id: 'it', label: t('italian'), flag: '🇮🇹' }
-                              ].map(langOpt => {
-                                const isSelected = language === langOpt.id;
-                                return (
-                                  <div
-                                    key={langOpt.id}
-                                    onClick={async () => {
-                                      setLanguage(langOpt.id);
-                                      await db.metadata.put({ key: 'language', value: langOpt.id });
-                                    }}
-                                    style={{
-                                      padding: '14px 18px',
-                                      borderRadius: 'var(--radius-md)',
-                                      background: isSelected ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.1)',
-                                      border: '1px solid',
-                                      borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'space-between',
-                                      gap: '12px',
-                                      transition: 'all var(--transition-fast)'
-                                    }}
-                                    className="glass-panel-hover"
-                                  >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                      <span style={{ fontSize: '20px' }}>{langOpt.flag}</span>
-                                      <p style={{ fontSize: '13px', fontWeight: '700', color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)', margin: 0 }}>
-                                        {langOpt.label}
-                                      </p>
-                                    </div>
-                                    <div
-                                      style={{
-                                        width: '16px',
-                                        height: '16px',
-                                        borderRadius: '50%',
-                                        border: '2px solid',
-                                        borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        background: isSelected ? 'var(--accent-primary)' : 'transparent'
+                              {/* Atmosferas Escuras */}
+                              <div style={{ marginBottom: '32px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                                  <Moon size={16} style={{ color: 'var(--text-muted)' }} />
+                                  <h4 style={{ 
+                                    fontSize: '13px', 
+                                    fontWeight: '700', 
+                                    color: 'var(--text-muted)', 
+                                    margin: 0,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em'
+                                  }}>
+                                    {language === 'pt' ? 'Atmosferas Escuras' :
+                                     language === 'es' ? 'Atmósferas Oscuras' :
+                                     language === 'pl' ? 'Ciemne Atmosfery' :
+                                     language === 'de' ? 'Dunkle Atmosphären' :
+                                     language === 'fr' ? 'Atmosphères Sombres' :
+                                     language === 'it' ? 'Atmosfere Scure' : 'Dark Atmospheres'}
+                                  </h4>
+                                </div>
+                                
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                                  {[
+                                    { id: 'dark', name: getAtmosphereTranslations(language).darkName, desc: getAtmosphereTranslations(language).darkDesc, preview: 'linear-gradient(135deg, #090a0c 0%, #121418 100%)', text: '#f3f4f6', border: 'rgba(255,255,255,0.05)' },
+                                    { id: 'midnight', name: getAtmosphereTranslations(language).midnightName, desc: getAtmosphereTranslations(language).midnightDesc, preview: 'linear-gradient(135deg, #060913 0%, #0e1322 100%)', text: '#f1f5f9', border: 'rgba(14,165,233,0.15)' },
+                                    { id: 'forest', name: getAtmosphereTranslations(language).forestName, desc: getAtmosphereTranslations(language).forestDesc, preview: 'linear-gradient(135deg, #060907 0%, #0e1410 100%)', text: '#f0fdf4', border: 'rgba(16,185,129,0.15)' },
+                                    { id: 'sunset', name: getAtmosphereTranslations(language).sunsetName, desc: getAtmosphereTranslations(language).sunsetDesc, preview: 'linear-gradient(135deg, #0c0808 0%, #171010 100%)', text: '#fff7ed', border: 'rgba(249,115,22,0.15)' },
+                                    { id: 'nordic', name: getAtmosphereTranslations(language).nordicName, desc: getAtmosphereTranslations(language).nordicDesc, preview: 'linear-gradient(135deg, #0b0f15 0%, #131922 100%)', text: '#f0f9ff', border: 'rgba(56,189,248,0.15)' }
+                                  ].map(atmOpt => {
+                                    const isSelected = theme === atmOpt.id;
+                                    return (
+                                      <div
+                                        key={atmOpt.id}
+                                        onClick={() => {
+                                          setTheme(atmOpt.id as any);
+                                          if (typeof setToast === 'function') {
+                                            setToast({
+                                              message: language === 'pt' ? `Atmosfera "${atmOpt.name}" ativada!` : `Atmosphere "${atmOpt.name}" activated!`,
+                                              type: 'success',
+                                              id: Date.now()
+                                            });
+                                          }
+                                        }}
+                                        style={{
+                                          padding: '14px',
+                                          borderRadius: 'var(--radius-md)',
+                                          background: isSelected ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.1)',
+                                          border: '2px solid',
+                                          borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          gap: '12px',
+                                          transition: 'all var(--transition-fast)'
+                                        }}
+                                        className="glass-panel-hover"
+                                      >
+                                        <div
+                                          style={{
+                                            height: '70px',
+                                            borderRadius: 'var(--radius-sm)',
+                                            background: atmOpt.preview,
+                                            border: `1px solid ${atmOpt.border}`,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            justifyContent: 'space-between',
+                                            padding: '8px',
+                                            position: 'relative',
+                                            overflow: 'hidden'
+                                          }}
+                                        >
+                                          <div style={{ display: 'flex', gap: '6px' }}>
+                                            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--accent-primary)' }} />
+                                            <div style={{ flex: 1, height: '12px', borderRadius: '4px', background: isSelected ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)' }} />
+                                          </div>
+                                          <div style={{ height: '24px', borderRadius: '6px', background: isSelected ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)', border: `1px solid ${atmOpt.border}` }} />
+                                        </div>
+
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <p style={{ fontSize: '13px', fontWeight: '600', color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)', margin: 0 }}>
+                                              {atmOpt.name} {isSelected && '✓'}
+                                            </p>
+                                            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.3' }}>{atmOpt.desc}</p>
+                                          </div>
+                                          <div
+                                            style={{
+                                              width: '16px',
+                                              height: '16px',
+                                              borderRadius: '50%',
+                                              border: '2px solid',
+                                              borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              background: isSelected ? 'var(--accent-primary)' : 'transparent',
+                                              flexShrink: 0
+                                            }}
+                                          >
+                                            {isSelected && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'white' }} />}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              {/* Atmosferas Claras */}
+                              <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                                  <Sun size={16} style={{ color: 'var(--text-muted)' }} />
+                                  <h4 style={{ 
+                                    fontSize: '13px', 
+                                    fontWeight: '700', 
+                                    color: 'var(--text-muted)', 
+                                    margin: 0,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em'
+                                  }}>
+                                    {language === 'pt' ? 'Atmosferas Claras' :
+                                     language === 'es' ? 'Atmósferas Claras' :
+                                     language === 'pl' ? 'Jasne Atmosfery' :
+                                     language === 'de' ? 'Helle Atmosphären' :
+                                     language === 'fr' ? 'Atmosphères Claires' :
+                                     language === 'it' ? 'Atmosfere Chiare' : 'Light Atmospheres'}
+                                  </h4>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                                  {[
+                                    { id: 'light', name: getAtmosphereTranslations(language).lightName, desc: getAtmosphereTranslations(language).lightDesc, preview: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)', text: '#0f172a', border: 'rgba(15,23,42,0.06)' },
+                                    { id: 'latte', name: getAtmosphereTranslations(language).latteName, desc: getAtmosphereTranslations(language).latteDesc, preview: 'linear-gradient(135deg, #fbfbf8 0%, #f4ece1 100%)', text: '#3e2723', border: 'rgba(139, 90, 43, 0.12)' },
+                                    { id: 'mint', name: getAtmosphereTranslations(language).mintName, desc: getAtmosphereTranslations(language).mintDesc, preview: 'linear-gradient(135deg, #f1f7f5 0%, #e4f0ed 100%)', text: '#004d40', border: 'rgba(46, 125, 50, 0.12)' },
+                                    { id: 'lavender', name: getAtmosphereTranslations(language).lavenderName, desc: getAtmosphereTranslations(language).lavenderDesc, preview: 'linear-gradient(135deg, #f5f3f9 0%, #eae6f4 100%)', text: '#311b92', border: 'rgba(109, 40, 217, 0.12)' }
+                                  ].map(atmOpt => {
+                                    const isSelected = theme === atmOpt.id;
+                                    return (
+                                      <div
+                                        key={atmOpt.id}
+                                        onClick={() => {
+                                          setTheme(atmOpt.id as any);
+                                          if (typeof setToast === 'function') {
+                                            setToast({
+                                              message: language === 'pt' ? `Atmosfera "${atmOpt.name}" ativada!` : `Atmosphere "${atmOpt.name}" activated!`,
+                                              type: 'success',
+                                              id: Date.now()
+                                            });
+                                          }
+                                        }}
+                                        style={{
+                                          padding: '14px',
+                                          borderRadius: 'var(--radius-md)',
+                                          background: isSelected ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.1)',
+                                          border: '2px solid',
+                                          borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          gap: '12px',
+                                          transition: 'all var(--transition-fast)'
+                                        }}
+                                        className="glass-panel-hover"
+                                      >
+                                        <div
+                                          style={{
+                                            height: '70px',
+                                            borderRadius: 'var(--radius-sm)',
+                                            background: atmOpt.preview,
+                                            border: `1px solid ${atmOpt.border}`,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            justifyContent: 'space-between',
+                                            padding: '8px',
+                                            position: 'relative',
+                                            overflow: 'hidden'
+                                          }}
+                                        >
+                                          <div style={{ display: 'flex', gap: '6px' }}>
+                                            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--accent-primary)' }} />
+                                            <div style={{ flex: 1, height: '12px', borderRadius: '4px', background: isSelected ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.03)' }} />
+                                          </div>
+                                          <div style={{ height: '24px', borderRadius: '6px', background: isSelected ? 'rgba(0,0,0,0.04)' : 'rgba(0,0,0,0.01)', border: `1px solid ${atmOpt.border}` }} />
+                                        </div>
+
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <p style={{ fontSize: '13px', fontWeight: '600', color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)', margin: 0 }}>
+                                              {atmOpt.name} {isSelected && '✓'}
+                                            </p>
+                                            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.3' }}>{atmOpt.desc}</p>
+                                          </div>
+                                          <div
+                                            style={{
+                                              width: '16px',
+                                              height: '16px',
+                                              borderRadius: '50%',
+                                              border: '2px solid',
+                                              borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              background: isSelected ? 'var(--accent-primary)' : 'transparent',
+                                              flexShrink: 0
+                                            }}
+                                          >
+                                            {isSelected && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'white' }} />}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* SUB-SEÇÃO 3: PREFERÊNCIAS & IDIOMA */}
+                          {appearanceSubSection === 'preferences' && (
+                            <div className="animate-slide-up">
+                              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>
+                                {getAtmosphereTranslations(language).prefDesc}
+                              </p>
+
+                              {/* SELETOR DE IDIOMA DO SISTEMA */}
+                              <div style={{ marginBottom: '30px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                                  <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Globe size={18} style={{ color: 'var(--accent-primary)' }} />
+                                  </div>
+                                  <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('languageAndAppearance')}</h3>
+                                </div>
+
+                                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>
+                                  {t('languageAndAppearanceDesc')}
+                                </p>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+                                  {[
+                                    { id: 'pt', label: t('portuguese'), flag: '🇧🇷' },
+                                    { id: 'en', label: t('english'), flag: '🇺🇸' },
+                                    { id: 'es', label: t('spanish'), flag: '🇪🇸' },
+                                    { id: 'pl', label: t('polish'), flag: '🇵🇱' },
+                                    { id: 'de', label: t('german'), flag: '🇩🇪' },
+                                    { id: 'fr', label: t('french'), flag: '🇫🇷' },
+                                    { id: 'it', label: t('italian'), flag: '🇮🇹' }
+                                  ].map(langOpt => {
+                                    const isSelected = language === langOpt.id;
+                                    return (
+                                      <div
+                                        key={langOpt.id}
+                                        onClick={async () => {
+                                          setLanguage(langOpt.id);
+                                          await db.metadata.put({ key: 'language', value: langOpt.id });
+                                        }}
+                                        style={{
+                                          padding: '14px 18px',
+                                          borderRadius: 'var(--radius-md)',
+                                          background: isSelected ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.1)',
+                                          border: '1px solid',
+                                          borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'space-between',
+                                          gap: '12px',
+                                          transition: 'all var(--transition-fast)'
+                                        }}
+                                        className="glass-panel-hover"
+                                      >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                          <span style={{ fontSize: '20px' }}>{langOpt.flag}</span>
+                                          <p style={{ fontSize: '13px', fontWeight: '700', color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)', margin: 0 }}>
+                                            {langOpt.label}
+                                          </p>
+                                        </div>
+                                        <div
+                                          style={{
+                                            width: '16px',
+                                            height: '16px',
+                                            borderRadius: '50%',
+                                            border: '2px solid',
+                                            borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            background: isSelected ? 'var(--accent-primary)' : 'transparent'
+                                          }}
+                                        >
+                                          {isSelected && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'white' }} />}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              {/* VISTA PADRÃO DO CALENDÁRIO */}
+                              <div style={{ marginBottom: '30px', borderTop: '1px solid var(--border-light)', paddingTop: '24px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                                  <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <CalendarIcon size={18} style={{ color: 'var(--accent-primary)' }} />
+                                  </div>
+                                  <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('defaultCalendarView')}</h3>
+                                </div>
+
+                                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>
+                                  {t('defaultCalendarViewDesc')}
+                                </p>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+                                  {[
+                                    { id: 'month', label: t('calendarViewMonthLabel'), desc: t('calendarViewMonthDesc'), icon: '📅' },
+                                    { id: 'week', label: t('calendarViewWeekLabel'), desc: t('calendarViewWeekDesc'), icon: '🗓️' },
+                                    { id: 'day', label: t('calendarViewDayLabel'), desc: t('calendarViewDayDesc'), icon: '☀️' }
+                                  ].map(viewOpt => {
+                                    const isSelected = defaultCalendarView === viewOpt.id;
+                                    return (
+                                      <div
+                                        key={viewOpt.id}
+                                        onClick={() => handleChangeDefaultCalendarView(viewOpt.id as 'month' | 'week' | 'day')}
+                                        style={{
+                                          padding: '14px 18px',
+                                          borderRadius: 'var(--radius-md)',
+                                          background: isSelected ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.1)',
+                                          border: '1px solid',
+                                          borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          gap: '6px',
+                                          transition: 'all var(--transition-fast)'
+                                        }}
+                                        className="glass-panel-hover"
+                                      >
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                          <span style={{ fontSize: '20px' }}>{viewOpt.icon}</span>
+                                          <div
+                                            style={{
+                                              width: '16px',
+                                              height: '16px',
+                                              borderRadius: '50%',
+                                              border: '2px solid',
+                                              borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              background: isSelected ? 'var(--accent-primary)' : 'transparent'
+                                            }}
+                                          >
+                                            {isSelected && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'white' }} />}
+                                          </div>
+                                        </div>
+                                        <div style={{ marginTop: '6px' }}>
+                                          <p style={{ fontSize: '13px', fontWeight: '700', color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)', margin: 0 }}>
+                                            {viewOpt.label}
+                                          </p>
+                                          <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, marginTop: '2px' }}>{viewOpt.desc}</p>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              {/* RECURSOS DE GAMIFICAÇÃO */}
+                              <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '24px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                                  <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Trophy size={18} style={{ color: 'var(--accent-primary)' }} />
+                                  </div>
+                                  <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('gamificationFeatures')}</h3>
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderRadius: 'var(--radius-md)', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-light)' }}>
+                                  <div style={{ marginRight: '16px', flex: 1 }}>
+                                    <p style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('gamificationFeatures')}</p>
+                                    <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0, marginTop: '2px' }}>{t('gamificationFeaturesDesc')}</p>
+                                  </div>
+                                  <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '46px', height: '22px', cursor: 'pointer' }}>
+                                    <input 
+                                      type="checkbox" 
+                                      checked={gamificationEnabled} 
+                                      onChange={async (e) => {
+                                        const val = e.target.checked;
+                                        setGamificationEnabled(val);
+                                        await db.metadata.put({ key: 'gamification_enabled', value: val });
+                                        if (!val && (activeTab as string) === 'gamification') {
+                                          setActiveTab('dashboard');
+                                        }
                                       }}
-                                    >
-                                      {isSelected && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'white' }} />}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-
-                          {/* RECURSOS DE GAMIFICAÇÃO */}
-                          <div style={{ marginTop: '30px', borderTop: '1px solid var(--border-light)', paddingTop: '24px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                              <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Trophy size={18} style={{ color: 'var(--accent-primary)' }} />
+                                      style={{ opacity: 0, width: 0, height: 0 }}
+                                    />
+                                    <span style={{
+                                      position: 'absolute',
+                                      cursor: 'pointer',
+                                      top: 0, left: 0, right: 0, bottom: 0,
+                                      backgroundColor: gamificationEnabled ? 'var(--accent-primary)' : 'rgba(255, 255, 255, 0.1)',
+                                      transition: '0.3s',
+                                      borderRadius: '34px'
+                                    }}>
+                                      <span style={{
+                                        position: 'absolute',
+                                        content: '""',
+                                        height: '16px', width: '16px',
+                                        left: gamificationEnabled ? '26px' : '3px',
+                                        bottom: '3px',
+                                        backgroundColor: 'white',
+                                        transition: '0.3s',
+                                        borderRadius: '50%',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                      }} />
+                                    </span>
+                                  </label>
+                                </div>
                               </div>
-                              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('gamificationFeatures')}</h3>
                             </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderRadius: 'var(--radius-md)', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-light)' }}>
-                              <div style={{ marginRight: '16px', flex: 1 }}>
-                                <p style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('gamificationFeatures')}</p>
-                                <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0, marginTop: '2px' }}>{t('gamificationFeaturesDesc')}</p>
-                              </div>
-                              <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '46px', height: '22px', cursor: 'pointer' }}>
-                                <input 
-                                  type="checkbox" 
-                                  checked={gamificationEnabled} 
-                                  onChange={async (e) => {
-                                    const val = e.target.checked;
-                                    setGamificationEnabled(val);
-                                    await db.metadata.put({ key: 'gamification_enabled', value: val });
-                                    if (!val && (activeTab as string) === 'gamification') {
-                                      setActiveTab('dashboard');
-                                    }
-                                  }}
-                                  style={{ opacity: 0, width: 0, height: 0 }}
-                                />
-                                <span style={{
-                                  position: 'absolute',
-                                  cursor: 'pointer',
-                                  top: 0, left: 0, right: 0, bottom: 0,
-                                  backgroundColor: gamificationEnabled ? 'var(--accent-primary)' : 'rgba(255, 255, 255, 0.1)',
-                                  transition: '0.3s',
-                                  borderRadius: '34px'
-                                }}>
-                                  <span style={{
-                                    position: 'absolute',
-                                    content: '""',
-                                    height: '16px', width: '16px',
-                                    left: gamificationEnabled ? '26px' : '3px',
-                                    bottom: '3px',
-                                    backgroundColor: 'white',
-                                    transition: '0.3s',
-                                    borderRadius: '50%',
-                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                  }} />
-                                </span>
-                              </label>
-                            </div>
-                          </div>
+                          )}
                         </div>
                       )}
 

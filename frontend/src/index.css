@@ -225,6 +225,129 @@
   --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.5), var(--shadow-glow);
 }
 
+[data-theme="latte"] {
+  /* Cores Base - Tema Creamy Latte */
+  --bg-main: #fbfbf8;        /* Soft ivory/cream base */
+  --bg-surface: #f4ece1;     /* Coffee latte surface */
+  --bg-surface-hover: #eae1d4;/* Slightly darker warm latte */
+  --bg-glass: rgba(244, 236, 225, 0.75);
+  --bg-nav-fixed: rgba(244, 236, 225, 0.94);
+  --shadow-nav-fixed: 0 -8px 30px rgba(120, 80, 50, 0.05);
+  
+  --border-light: rgba(139, 90, 43, 0.06);
+  --border-medium: rgba(139, 90, 43, 0.12);
+  --border-focus: rgba(139, 90, 43, 0.4);
+
+  /* Acentas e Alertas Adaptados para Latte */
+  --accent-primary: #a0522d; /* Warm sienna/brown */
+  --accent-primary-hover: #8b4513;
+  --accent-success: #2e7d32;
+  --accent-warning: #e65100;
+  --accent-danger: #c62828;
+  --accent-info: #00838f;
+
+  /* Cores de Texto de Alto Contraste */
+  --text-primary: #3e2723;   /* Very deep warm brown */
+  --text-secondary: #5d4037; /* Warm medium brown */
+  --text-muted: #8d6e63;     /* Warm muted brown */
+
+  /* Sombras e Bordas Adaptadas para Latte */
+  --shadow-sm: 0 2px 8px rgba(62, 39, 35, 0.03);
+  --shadow-md: 0 8px 24px rgba(62, 39, 35, 0.06);
+  --shadow-lg: 0 16px 40px rgba(62, 39, 35, 0.09);
+  --shadow-glow: 0 0 20px rgba(160, 82, 45, 0.1);
+
+  /* Design Tokens para Cartões e Atividades */
+  --bg-card: rgba(139, 90, 43, 0.03);
+  --bg-card-hover: rgba(139, 90, 43, 0.06);
+  --border-card: rgba(139, 90, 43, 0.08);
+  --border-card-hover: rgba(139, 90, 43, 0.15);
+  --shadow-card: 0 4px 10px rgba(62, 39, 35, 0.03);
+  --shadow-card-hover: 0 8px 20px rgba(62, 39, 35, 0.06), 0 0 15px rgba(160, 82, 45, 0.12);
+}
+
+[data-theme="mint"] {
+  /* Cores Base - Tema Nordic Mint */
+  --bg-main: #f1f7f5;        /* Fresh minty-grey base */
+  --bg-surface: #e4f0ed;     /* Ice mint surface */
+  --bg-surface-hover: #d5e5e0;/* Slightly deeper mint */
+  --bg-glass: rgba(228, 240, 237, 0.75);
+  --bg-nav-fixed: rgba(228, 240, 237, 0.94);
+  --shadow-nav-fixed: 0 -8px 30px rgba(46, 125, 50, 0.04);
+  
+  --border-light: rgba(46, 125, 50, 0.06);
+  --border-medium: rgba(46, 125, 50, 0.12);
+  --border-focus: rgba(46, 125, 50, 0.4);
+
+  /* Acentas e Alertas Adaptados para Mint */
+  --accent-primary: #00796b; /* Pine teal */
+  --accent-primary-hover: #004d40;
+  --accent-success: #2e7d32;
+  --accent-warning: #f57c00;
+  --accent-danger: #d32f2f;
+  --accent-info: #0288d1;
+
+  /* Cores de Texto de Alto Contraste */
+  --text-primary: #004d40;   /* Deep teal */
+  --text-secondary: #00695c; /* Medium teal */
+  --text-muted: #4db6ac;     /* Soft teal */
+
+  /* Sombras e Bordas */
+  --shadow-sm: 0 2px 8px rgba(0, 77, 64, 0.03);
+  --shadow-md: 0 8px 24px rgba(0, 77, 64, 0.06);
+  --shadow-lg: 0 16px 40px rgba(0, 77, 64, 0.09);
+  --shadow-glow: 0 0 20px rgba(0, 121, 107, 0.1);
+
+  /* Design Tokens para Cartões e Atividades */
+  --bg-card: rgba(0, 121, 107, 0.03);
+  --bg-card-hover: rgba(0, 121, 107, 0.06);
+  --border-card: rgba(0, 121, 107, 0.08);
+  --border-card-hover: rgba(0, 121, 107, 0.15);
+  --shadow-card: 0 4px 10px rgba(0, 77, 64, 0.03);
+  --shadow-card-hover: 0 8px 20px rgba(0, 77, 64, 0.06), 0 0 15px rgba(0, 121, 107, 0.12);
+}
+
+[data-theme="lavender"] {
+  /* Cores Base - Tema Lavender Blossom */
+  --bg-main: #f5f3f9;        /* Soft lavender-white base */
+  --bg-surface: #eae6f4;     /* Pale lilac surface */
+  --bg-surface-hover: #ddd8ec;/* Deeper lavender/lilac */
+  --bg-glass: rgba(234, 230, 244, 0.75);
+  --bg-nav-fixed: rgba(234, 230, 244, 0.94);
+  --shadow-nav-fixed: 0 -8px 30px rgba(109, 40, 217, 0.04);
+  
+  --border-light: rgba(109, 40, 217, 0.06);
+  --border-medium: rgba(109, 40, 217, 0.12);
+  --border-focus: rgba(109, 40, 217, 0.4);
+
+  /* Acentas e Alertas Adaptados */
+  --accent-primary: #6d28d9; /* Deep violet */
+  --accent-primary-hover: #5b21b6;
+  --accent-success: #059669;
+  --accent-warning: #d97706;
+  --accent-danger: #dc2626;
+  --accent-info: #0891b2;
+
+  /* Cores de Texto de Alto Contraste */
+  --text-primary: #311b92;   /* Deep violet/indigo */
+  --text-secondary: #4a148c; /* Medium violet */
+  --text-muted: #9575cd;     /* Soft purple */
+
+  /* Sombras e Bordas */
+  --shadow-sm: 0 2px 8px rgba(49, 27, 146, 0.03);
+  --shadow-md: 0 8px 24px rgba(49, 27, 146, 0.06);
+  --shadow-lg: 0 16px 40px rgba(49, 27, 146, 0.09);
+  --shadow-glow: 0 0 20px rgba(109, 40, 217, 0.1);
+
+  /* Design Tokens para Cartões e Atividades */
+  --bg-card: rgba(109, 40, 217, 0.03);
+  --bg-card-hover: rgba(109, 40, 217, 0.06);
+  --border-card: rgba(109, 40, 217, 0.08);
+  --border-card-hover: rgba(109, 40, 217, 0.15);
+  --shadow-card: 0 4px 10px rgba(49, 27, 146, 0.03);
+  --shadow-card-hover: 0 8px 20px rgba(49, 27, 146, 0.06), 0 0 15px rgba(109, 40, 217, 0.12);
+}
+
 
 
 /* Reset de Estilos */

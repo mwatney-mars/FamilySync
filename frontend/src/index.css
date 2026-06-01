@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
-:root {
+:root, [data-theme="dark"] {
   /* Cores Base - Tema Dark Premium */
   --bg-main: #090a0c;
   --bg-surface: #121418;
@@ -92,6 +92,139 @@
   --shadow-card: 0 4px 10px rgba(15, 23, 42, 0.04);
   --shadow-card-hover: 0 8px 20px rgba(15, 23, 42, 0.08), 0 0 15px rgba(124, 58, 237, 0.15);
 }
+
+[data-theme="midnight"] {
+  /* Cores Base - Tema Midnight Blue */
+  --bg-main: #060913;
+  --bg-surface: #0e1322;
+  --bg-surface-hover: #161f33;
+  --bg-glass: rgba(14, 19, 34, 0.7);
+  --bg-nav-fixed: rgba(14, 19, 34, 0.92);
+  --shadow-nav-fixed: 0 -8px 30px rgba(0, 0, 0, 0.4);
+  
+  --border-light: rgba(14, 165, 233, 0.08);
+  --border-medium: rgba(14, 165, 233, 0.15);
+  --border-focus: rgba(14, 165, 233, 0.5);
+
+  /* Cores de Texto */
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  /* Sombras e Brilho */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.8);
+  --shadow-glow: 0 0 20px rgba(14, 165, 233, 0.25);
+
+  /* Design Tokens para Cartões e Atividades */
+  --bg-card: rgba(14, 165, 233, 0.035);
+  --bg-card-hover: rgba(14, 165, 233, 0.07);
+  --border-card: rgba(14, 165, 233, 0.08);
+  --border-card-hover: rgba(14, 165, 233, 0.18);
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.5), var(--shadow-glow);
+}
+
+[data-theme="forest"] {
+  /* Cores Base - Tema Organic Forest */
+  --bg-main: #060907;
+  --bg-surface: #0e1410;
+  --bg-surface-hover: #16201a;
+  --bg-glass: rgba(14, 20, 16, 0.7);
+  --bg-nav-fixed: rgba(14, 20, 16, 0.92);
+  --shadow-nav-fixed: 0 -8px 30px rgba(0, 0, 0, 0.4);
+  
+  --border-light: rgba(16, 185, 129, 0.08);
+  --border-medium: rgba(16, 185, 129, 0.15);
+  --border-focus: rgba(16, 185, 129, 0.5);
+
+  /* Cores de Texto */
+  --text-primary: #f0fdf4;
+  --text-secondary: #a3b899;
+  --text-muted: #627254;
+
+  /* Sombras e Brilho */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.8);
+  --shadow-glow: 0 0 20px rgba(16, 185, 129, 0.25);
+
+  /* Design Tokens para Cartões e Atividades */
+  --bg-card: rgba(16, 185, 129, 0.035);
+  --bg-card-hover: rgba(16, 185, 129, 0.07);
+  --border-card: rgba(16, 185, 129, 0.08);
+  --border-card-hover: rgba(16, 185, 129, 0.18);
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.5), var(--shadow-glow);
+}
+
+[data-theme="sunset"] {
+  /* Cores Base - Tema Sunset Warmth */
+  --bg-main: #0c0808;
+  --bg-surface: #171010;
+  --bg-surface-hover: #221818;
+  --bg-glass: rgba(23, 16, 16, 0.7);
+  --bg-nav-fixed: rgba(23, 16, 16, 0.92);
+  --shadow-nav-fixed: 0 -8px 30px rgba(0, 0, 0, 0.4);
+  
+  --border-light: rgba(249, 115, 22, 0.08);
+  --border-medium: rgba(249, 115, 22, 0.15);
+  --border-focus: rgba(249, 115, 22, 0.5);
+
+  /* Cores de Texto */
+  --text-primary: #fff7ed;
+  --text-secondary: #d4a373;
+  --text-muted: #8b5e3c;
+
+  /* Sombras e Brilho */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.8);
+  --shadow-glow: 0 0 20px rgba(249, 115, 22, 0.25);
+
+  /* Design Tokens para Cartões e Atividades */
+  --bg-card: rgba(249, 115, 22, 0.035);
+  --bg-card-hover: rgba(249, 115, 22, 0.07);
+  --border-card: rgba(249, 115, 22, 0.08);
+  --border-card-hover: rgba(249, 115, 22, 0.18);
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.5), var(--shadow-glow);
+}
+
+[data-theme="nordic"] {
+  /* Cores Base - Tema Nordic Arctic */
+  --bg-main: #0b0f15;
+  --bg-surface: #131922;
+  --bg-surface-hover: #1c2533;
+  --bg-glass: rgba(19, 25, 34, 0.7);
+  --bg-nav-fixed: rgba(19, 25, 34, 0.92);
+  --shadow-nav-fixed: 0 -8px 30px rgba(0, 0, 0, 0.4);
+  
+  --border-light: rgba(56, 189, 248, 0.08);
+  --border-medium: rgba(56, 189, 248, 0.15);
+  --border-focus: rgba(56, 189, 248, 0.5);
+
+  /* Cores de Texto */
+  --text-primary: #f0f9ff;
+  --text-secondary: #93c5fd;
+  --text-muted: #475569;
+
+  /* Sombras e Brilho */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.8);
+  --shadow-glow: 0 0 20px rgba(56, 189, 248, 0.25);
+
+  /* Design Tokens para Cartões e Atividades */
+  --bg-card: rgba(56, 189, 248, 0.035);
+  --bg-card-hover: rgba(56, 189, 248, 0.07);
+  --border-card: rgba(56, 189, 248, 0.08);
+  --border-card-hover: rgba(56, 189, 248, 0.18);
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.5), var(--shadow-glow);
+}
+
 
 
 /* Reset de Estilos */

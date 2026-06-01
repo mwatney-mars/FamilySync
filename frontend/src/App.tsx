@@ -81,6 +81,124 @@ const LOCALE_MAP: Record<string, string> = {
   it: 'it-IT'
 };
 
+const getAtmosphereTranslations = (lang: string) => {
+  const data: Record<string, { title: string; desc: string; darkName: string; darkDesc: string; lightName: string; lightDesc: string; midnightName: string; midnightDesc: string; forestName: string; forestDesc: string; sunsetName: string; sunsetDesc: string; nordicName: string; nordicDesc: string }> = {
+    pt: {
+      title: "Fundo & Atmosfera",
+      desc: "Escolha o tema e plano de fundo geral de toda a interface do FamilySync.",
+      darkName: "Escuro Premium",
+      darkDesc: "Estética clássica de alto contraste",
+      lightName: "Claro Premium",
+      lightDesc: "Estética limpa, iluminada e sofisticada",
+      midnightName: "Azul Meia-Noite",
+      midnightDesc: "Atmosfera profunda com brilho azulado neon",
+      forestName: "Floresta Orgânica",
+      forestDesc: "Tons de terra e verde pinho focados em bem-estar",
+      sunsetName: "Calor do Pôr do Sol",
+      sunsetDesc: "Tons de brasa e terracota quentes e aconchegantes",
+      nordicName: "Ártico Nórdico",
+      nordicDesc: "Visual de gelo e metal escuro minimalista",
+    },
+    en: {
+      title: "Atmosphere & Background",
+      desc: "Choose the global theme and atmosphere background for the entire FamilySync interface.",
+      darkName: "Dark Premium",
+      darkDesc: "Classic high-contrast dark aesthetic",
+      lightName: "Light Premium",
+      lightDesc: "Clean, bright, and sophisticated aesthetic",
+      midnightName: "Midnight Blue",
+      midnightDesc: "Deep navy atmosphere with neon blue glow",
+      forestName: "Organic Forest",
+      forestDesc: "Earthy tones and pine green focused on wellness",
+      sunsetName: "Sunset Warmth",
+      sunsetDesc: "Cozy warm glow with terracotta accents",
+      nordicName: "Nordic Arctic",
+      nordicDesc: "Icy minimalist slate-grey and glacier style",
+    },
+    es: {
+      title: "Ambiente y Fondo",
+      desc: "Elige el tema global y fondo para toda la interfaz de FamilySync.",
+      darkName: "Oscuro Premium",
+      darkDesc: "Estética oscura clásica de alto contraste",
+      lightName: "Claro Premium",
+      lightDesc: "Estética limpia, brillante y sofisticada",
+      midnightName: "Azul Medianoche",
+      midnightDesc: "Atmósfera azul marino profunda con brillo neón",
+      forestName: "Bosque Orgánico",
+      forestDesc: "Tonos tierra y verde pino enfocados en bienestar",
+      sunsetName: "Calor del Atardecer",
+      sunsetDesc: "Cálido resplandor de terracota acogedor",
+      nordicName: "Ártico Nórdico",
+      nordicDesc: "Estilo minimalista de pizarra helada y glaciar",
+    },
+    pl: {
+      title: "Atmosfera i Tło",
+      desc: "Wybierz globalny motyw i tło dla całego interfejsu FamilySync.",
+      darkName: "Ciemny Premium",
+      darkDesc: "Klasyczna, kontrastowa estetyka ciemna",
+      lightName: "Jasny Premium",
+      lightDesc: "Czysta, jasna i wyrafinowana estetyka",
+      midnightName: "Granat Nocy",
+      midnightDesc: "Głęboka atmosfera z neonowym niebieskim blaskiem",
+      forestName: "Organiczny Las",
+      forestDesc: "Earthy tones i leśna zieleń dla dobrego samopoczucia",
+      sunsetName: "Ciepło Zachodu Słońca",
+      sunsetDesc: "Przytulny ciepły blask z terakotowymi akcentami",
+      nordicName: "Nordycki Arktyczny",
+      nordicDesc: "Lodowaty minimalistyczny styl łupkowy i lodowcowy",
+    },
+    de: {
+      title: "Atmosphäre & Hintergrund",
+      desc: "Wählen Sie das globale Thema und den Hintergrund für FamilySync.",
+      darkName: "Dunkel Premium",
+      darkDesc: "Klassische kontrastreiche dunkle Ästhetik",
+      lightName: "Hell Premium",
+      lightDesc: "Saubere, helle und anspruchsvolle Ästhetik",
+      midnightName: "Mitternachtsblau",
+      midnightDesc: "Tiefe marineblaue Atmosphäre mit neongelbem Leuchten",
+      forestName: "Organischer Wald",
+      forestDesc: "Erdtöne und Kieferngrün für natürliches Wohlbefinden",
+      sunsetName: "Abendwärme",
+      sunsetDesc: "Gemütliches warmes Glühen mit Terrakotta-Akzenten",
+      nordicName: "Nordische Arktis",
+      nordicDesc: "Eisiger minimalistischer Schiefer- und Gletscherstil",
+    },
+    fr: {
+      title: "Atmosphère & Arrière-plan",
+      desc: "Choisissez le thème global et l'arrière-plan de l'interface FamilySync.",
+      darkName: "Sombre Premium",
+      darkDesc: "Esthétique sombre classique à contraste élevé",
+      lightName: "Clair Premium",
+      lightDesc: "Esthétique épurée, lumineuse et sophistiquée",
+      midnightName: "Bleu Minuit",
+      midnightDesc: "Atmosphère marine profonde avec lueur bleu néon",
+      forestName: "Forêt Organique",
+      forestDesc: "Tons terreux et vert pin axés sur le bien-être",
+      sunsetName: "Chaleur du Coucher de Soleil",
+      sunsetDesc: "Lueur chaleureuse et confortable avec des tons de terre cuite",
+      nordicName: "Arctique Nordique",
+      nordicDesc: "Style minimaliste glacé, gris ardoise et glacier",
+    },
+    it: {
+      title: "Atmosfera e Sfondo",
+      desc: "Scegli il tema globale e lo sfondo per l'intera interfaccia di FamilySync.",
+      darkName: "Scuro Premium",
+      darkDesc: "Classica estetica scura ad alto contrasto",
+      lightName: "Chiaro Premium",
+      lightDesc: "Estetica pulita, luminosità e raffinatezza",
+      midnightName: "Blu Mezzanotte",
+      midnightDesc: "Atmosfera blu profondo con un bagliore neon blu",
+      forestName: "Foresta Organica",
+      forestDesc: "Toni della terra e verde pino incentrati sul benessere",
+      sunsetName: "Calor del Tramonto",
+      sunsetDesc: "Accogliente bagliore caldo con accenti di terracotta",
+      nordicName: "Artico Nordico",
+      nordicDesc: "Stile minimalista glaciale, grigio ardesia e ghiacciaio",
+    }
+  };
+  return data[lang] || data['en'];
+};
+
 const getLocalizedDate = (d: Date, lang: string) => {
   const locale = LOCALE_MAP[lang] || 'en-US';
   const formatter = new Intl.DateTimeFormat(locale, {
@@ -456,9 +574,16 @@ function App() {
   };
 
   // --- ESTADOS DE USABILIDADE E CUSTOMIZAÇÃO ---
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+  const [theme, setTheme] = useState<'light' | 'dark' | 'midnight' | 'forest' | 'sunset' | 'nordic'>(() => {
     const saved = localStorage.getItem('theme');
-    if (saved === 'light' || saved === 'dark') return saved;
+    if (
+      saved === 'light' ||
+      saved === 'dark' ||
+      saved === 'midnight' ||
+      saved === 'forest' ||
+      saved === 'sunset' ||
+      saved === 'nordic'
+    ) return saved;
     return 'dark';
   });
 
@@ -468,7 +593,19 @@ function App() {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+    setTheme(prev => {
+      const cycle: ('light' | 'dark' | 'midnight' | 'forest' | 'sunset' | 'nordic')[] = [
+        'dark',
+        'light',
+        'midnight',
+        'forest',
+        'sunset',
+        'nordic'
+      ];
+      const currentIndex = cycle.indexOf(prev);
+      const nextIndex = (currentIndex + 1) % cycle.length;
+      return cycle[nextIndex];
+    });
   };
 
   const [accentTheme, setAccentTheme] = useState<string>('violet');
@@ -4437,7 +4574,7 @@ Instruções para resposta:
                 cursor: 'pointer',
                 transition: 'transform var(--transition-fast)'
               }}
-              title={theme === 'dark' ? t('switchToLightMode') : t('switchToDarkMode')}
+              title={language === 'pt' ? 'Mudar Atmosfera' : 'Change Atmosphere'}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'scale(1.1)';
               }}
@@ -4445,10 +4582,10 @@ Instruções para resposta:
                 e.currentTarget.style.transform = 'scale(1)';
               }}
             >
-              {theme === 'dark' ? (
-                <Sun size={13} style={{ color: '#f59e0b' }} />
+              {theme === 'light' ? (
+                <Moon size={13} style={{ color: 'var(--accent-primary)' }} />
               ) : (
-                <Moon size={13} style={{ color: '#7c3aed' }} />
+                <Sun size={13} style={{ color: '#f59e0b' }} />
               )}
             </button>
 
@@ -4550,7 +4687,7 @@ Instruções para resposta:
                 cursor: 'pointer',
                 transition: 'transform var(--transition-fast)'
               }}
-              title={theme === 'dark' ? t('switchToLightMode') : t('switchToDarkMode')}
+              title={language === 'pt' ? 'Mudar Atmosfera' : 'Change Atmosphere'}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'scale(1.1)';
               }}
@@ -4558,10 +4695,10 @@ Instruções para resposta:
                 e.currentTarget.style.transform = 'scale(1)';
               }}
             >
-              {theme === 'dark' ? (
-                <Sun size={13} style={{ color: '#f59e0b' }} />
+              {theme === 'light' ? (
+                <Moon size={13} style={{ color: 'var(--accent-primary)' }} />
               ) : (
-                <Moon size={13} style={{ color: '#7c3aed' }} />
+                <Sun size={13} style={{ color: '#f59e0b' }} />
               )}
             </button>
 
@@ -7191,6 +7328,112 @@ Instruções para resposta:
                                 </div>
                               );
                             })}
+                          </div>
+
+                          {/* SELETOR DE ATMOSFERAS (BACKGROUNDS) */}
+                          <div style={{ marginTop: '30px', borderTop: '1px solid var(--border-light)', paddingTop: '24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                              <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Palette size={18} style={{ color: 'var(--accent-primary)' }} />
+                              </div>
+                              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
+                                {getAtmosphereTranslations(language).title}
+                              </h3>
+                            </div>
+
+                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>
+                              {getAtmosphereTranslations(language).desc}
+                            </p>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                              {[
+                                { id: 'dark', name: getAtmosphereTranslations(language).darkName, desc: getAtmosphereTranslations(language).darkDesc, preview: 'linear-gradient(135deg, #090a0c 0%, #121418 100%)', text: '#f3f4f6', border: 'rgba(255,255,255,0.05)' },
+                                { id: 'light', name: getAtmosphereTranslations(language).lightName, desc: getAtmosphereTranslations(language).lightDesc, preview: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)', text: '#0f172a', border: 'rgba(15,23,42,0.06)' },
+                                { id: 'midnight', name: getAtmosphereTranslations(language).midnightName, desc: getAtmosphereTranslations(language).midnightDesc, preview: 'linear-gradient(135deg, #060913 0%, #0e1322 100%)', text: '#f1f5f9', border: 'rgba(14,165,233,0.15)' },
+                                { id: 'forest', name: getAtmosphereTranslations(language).forestName, desc: getAtmosphereTranslations(language).forestDesc, preview: 'linear-gradient(135deg, #060907 0%, #0e1410 100%)', text: '#f0fdf4', border: 'rgba(16,185,129,0.15)' },
+                                { id: 'sunset', name: getAtmosphereTranslations(language).sunsetName, desc: getAtmosphereTranslations(language).sunsetDesc, preview: 'linear-gradient(135deg, #0c0808 0%, #171010 100%)', text: '#fff7ed', border: 'rgba(249,115,22,0.15)' },
+                                { id: 'nordic', name: getAtmosphereTranslations(language).nordicName, desc: getAtmosphereTranslations(language).nordicDesc, preview: 'linear-gradient(135deg, #0b0f15 0%, #131922 100%)', text: '#f0f9ff', border: 'rgba(56,189,248,0.15)' }
+                              ].map(atmOpt => {
+                                const isSelected = theme === atmOpt.id;
+                                return (
+                                  <div
+                                    key={atmOpt.id}
+                                    onClick={() => {
+                                      setTheme(atmOpt.id as any);
+                                      if (typeof setToast === 'function') {
+                                        setToast({
+                                          message: language === 'pt' ? `Atmosfera "${atmOpt.name}" ativada!` : `Atmosphere "${atmOpt.name}" activated!`,
+                                          type: 'success',
+                                          id: Date.now()
+                                        });
+                                      }
+                                    }}
+                                    style={{
+                                      padding: '14px',
+                                      borderRadius: 'var(--radius-md)',
+                                      background: isSelected ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.1)',
+                                      border: '2px solid',
+                                      borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '12px',
+                                      transition: 'all var(--transition-fast)'
+                                    }}
+                                    className="glass-panel-hover"
+                                  >
+                                    {/* Miniatura do Fundo */}
+                                    <div
+                                      style={{
+                                        height: '70px',
+                                        borderRadius: 'var(--radius-sm)',
+                                        background: atmOpt.preview,
+                                        border: `1px solid ${atmOpt.border}`,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'space-between',
+                                        padding: '8px',
+                                        position: 'relative',
+                                        overflow: 'hidden'
+                                      }}
+                                    >
+                                      {/* Representação de um card miniatura no tema */}
+                                      <div style={{ display: 'flex', gap: '6px' }}>
+                                        <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--accent-primary)' }} />
+                                        <div style={{ flex: 1, height: '12px', borderRadius: '4px', background: isSelected ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)' }} />
+                                      </div>
+                                      <div style={{ height: '24px', borderRadius: '6px', background: isSelected ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)', border: `1px solid ${atmOpt.border}` }} />
+                                    </div>
+
+                                    {/* Detalhes do texto */}
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                        <p style={{ fontSize: '13px', fontWeight: '600', color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)', margin: 0 }}>
+                                          {atmOpt.name} {isSelected && '✓'}
+                                        </p>
+                                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.3' }}>{atmOpt.desc}</p>
+                                      </div>
+                                      <div
+                                        style={{
+                                          width: '16px',
+                                          height: '16px',
+                                          borderRadius: '50%',
+                                          border: '2px solid',
+                                          borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-light)',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          background: isSelected ? 'var(--accent-primary)' : 'transparent',
+                                          flexShrink: 0
+                                        }}
+                                      >
+                                        {isSelected && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'white' }} />}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
 
                           <div style={{ marginTop: '30px', borderTop: '1px solid var(--border-light)', paddingTop: '24px' }}>

@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   LayoutDashboard,
   CheckSquare,
+  Activity,
   Calendar as CalendarIcon,
   ShoppingCart,
   Trophy,
@@ -10,14 +11,11 @@ import {
   Plus,
   Check,
   Trash2,
-  Wifi,
-  WifiOff,
   RefreshCw,
   BarChart3,
   Tablet,
   Coins,
   LogOut,
-  PlusCircle,
   RotateCcw,
   ChevronUp,
   ChevronDown,
@@ -384,7 +382,18 @@ const playChimeSound = () => {
 
 function App() {
   // --- ESTADO GLOBAL ---
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'shopping' | 'gamification' | 'reports' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'shopping' | 'gamification' | 'reports' | 'settings'>(() => {
+    const saved = localStorage.getItem('activeTab');
+    if (saved === 'dashboard' || saved === 'calendar' || saved === 'shopping' || saved === 'gamification' || saved === 'reports' || saved === 'settings') {
+      return saved as any;
+    }
+    return 'dashboard';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('activeTab', activeTab);
+  }, [activeTab]);
+
   const [isAuthenticated, setIsAuth] = useState<boolean>(false);
   const [token, setToken] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -464,14 +473,83 @@ function App() {
 
   const [accentTheme, setAccentTheme] = useState<string>('violet');
   const [gamificationEnabled, setGamificationEnabled] = useState<boolean>(true);
-  const [defaultCalendarView, setDefaultCalendarView] = useState<'month' | 'week' | 'day'>('month');
+  const [defaultCalendarView, setDefaultCalendarView] = useState<'month' | 'week' | 'day'>('week');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | null; id: number | null }>({ message: '', type: null, id: null });
   const [calendarYear, setCalendarYear] = useState<number>(new Date().getFullYear());
   const [calendarMonth, setCalendarMonth] = useState<number>(new Date().getMonth());
-  const [calendarView, setCalendarView] = useState<'month' | 'week' | 'day'>('month');
+  const [calendarView, setCalendarView] = useState<'month' | 'week' | 'day'>('week');
   const [calendarSelectedDate, setCalendarSelectedDate] = useState<Date>(new Date());
   const [filterChoreUser, setFilterChoreUser] = useState<string>('all');
   const [filterChoreType, setFilterChoreType] = useState<string>('all');
+
+  // --- BROWSER HISTORY & BACK/FORWARD BUTTON INTEGRATION ---
+  const isNavigatingFromPopState = useRef<boolean>(false);
+  const lastPushedStateRef = useRef<any>(null);
+
+  // Sync React navigation state into HTML5 History API
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const stateObj = {
+      tab: activeTab,
+      calendarView: calendarView,
+      calendarSelectedDate: calendarSelectedDate.toISOString()
+    };
+
+    const currentHistState = window.history.state;
+
+    // Initialize/replace history state if none exists yet for the session
+    if (!currentHistState || !currentHistState.tab) {
+      window.history.replaceState(stateObj, '', '');
+      lastPushedStateRef.current = stateObj;
+      return;
+    }
+
+    // Check if current react states match browser history's top state
+    const isMatch = currentHistState.tab === activeTab &&
+                    currentHistState.calendarView === calendarView &&
+                    new Date(currentHistState.calendarSelectedDate).getTime() === calendarSelectedDate.getTime();
+
+    if (!isMatch) {
+      if (isNavigatingFromPopState.current) {
+        // Muted change from browser popstate, do not push
+      } else {
+        // User action: push new state to history
+        window.history.pushState(stateObj, '', '');
+      }
+    }
+    
+    isNavigatingFromPopState.current = false;
+    lastPushedStateRef.current = stateObj;
+  }, [activeTab, calendarView, calendarSelectedDate, isAuthenticated]);
+
+  // Listen to browser Back/Forward (and swipe-back gestures) popstate events
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state && event.state.tab) {
+        isNavigatingFromPopState.current = true;
+        
+        const { tab, calendarView: cv, calendarSelectedDate: csd } = event.state;
+        
+        if (tab) setActiveTab(tab);
+        if (cv) setCalendarView(cv);
+        if (csd) {
+          const parsedDate = new Date(csd);
+          setCalendarSelectedDate(parsedDate);
+          setCalendarMonth(parsedDate.getMonth());
+          setCalendarYear(parsedDate.getFullYear());
+        }
+        
+        lastPushedStateRef.current = event.state;
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
 
   // --- NOVOS ESTADOS PREMIUM DO PAINEL ---
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
@@ -527,14 +605,39 @@ function App() {
   const liveAiConfig = useLiveQuery(() => db.ai_config.get('current_ai_config'));
 
   useEffect(() => {
-    if (liveAiConfig) {
-      Promise.resolve().then(() => {
-        setGeminiApiKey(liveAiConfig.gemini_api_key || '');
-        setAiCategorizationEnabled(!!liveAiConfig.ai_categorization_enabled);
-        setAiConfigApiKey(liveAiConfig.gemini_api_key || '');
-        setAiConfigEnabled(!!liveAiConfig.ai_categorization_enabled);
-      });
-    }
+    const applyAiConfig = async () => {
+      let activeKey = '';
+      let activeEnabled = false;
+
+      if (liveAiConfig && liveAiConfig.gemini_api_key) {
+        activeKey = liveAiConfig.gemini_api_key;
+        activeEnabled = !!liveAiConfig.ai_categorization_enabled;
+      } else {
+        // Fallback to server key cached in metadata
+        const cachedFallback = await db.metadata.get('server_fallback_gemini_api_key');
+        if (cachedFallback && cachedFallback.value) {
+          activeKey = cachedFallback.value;
+          activeEnabled = true; // Default to true if server fallback is configured
+        } else {
+          // If no fallback, look at stored metadata (from old individual configs, if any)
+          const storedApiKey = await db.metadata.get('gemini_api_key');
+          if (storedApiKey && storedApiKey.value) {
+            activeKey = storedApiKey.value;
+          }
+          const storedAiEnabled = await db.metadata.get('ai_categorization_enabled');
+          if (storedAiEnabled && storedAiEnabled.value !== undefined) {
+            activeEnabled = storedAiEnabled.value;
+          }
+        }
+      }
+
+      setGeminiApiKey(activeKey);
+      setAiConfigApiKey(activeKey);
+      setAiCategorizationEnabled(activeEnabled);
+      setAiConfigEnabled(activeEnabled);
+    };
+
+    applyAiConfig();
   }, [liveAiConfig]);
 
   // Obter dias da semana abreviados
@@ -808,24 +911,33 @@ function App() {
         }
 
         const liveConfig = await db.ai_config.get('current_ai_config');
-        if (liveConfig) {
-          setGeminiApiKey(liveConfig.gemini_api_key || '');
-          setAiConfigApiKey(liveConfig.gemini_api_key || '');
-          setAiCategorizationEnabled(!!liveConfig.ai_categorization_enabled);
-          setAiConfigEnabled(!!liveConfig.ai_categorization_enabled);
-        } else {
-          const storedApiKey = await db.metadata.get('gemini_api_key');
-          if (storedApiKey && storedApiKey.value !== undefined) {
-            setGeminiApiKey(storedApiKey.value);
-            setAiConfigApiKey(storedApiKey.value);
-          }
+        let initialKey = '';
+        let initialEnabled = false;
 
-          const storedAiEnabled = await db.metadata.get('ai_categorization_enabled');
-          if (storedAiEnabled && storedAiEnabled.value !== undefined) {
-            setAiCategorizationEnabled(storedAiEnabled.value);
-            setAiConfigEnabled(storedAiEnabled.value);
+        if (liveConfig && liveConfig.gemini_api_key) {
+          initialKey = liveConfig.gemini_api_key;
+          initialEnabled = !!liveConfig.ai_categorization_enabled;
+        } else {
+          const cachedFallback = await db.metadata.get('server_fallback_gemini_api_key');
+          if (cachedFallback && cachedFallback.value) {
+            initialKey = cachedFallback.value;
+            initialEnabled = true;
+          } else {
+            const storedApiKey = await db.metadata.get('gemini_api_key');
+            if (storedApiKey && storedApiKey.value !== undefined) {
+              initialKey = storedApiKey.value;
+            }
+            const storedAiEnabled = await db.metadata.get('ai_categorization_enabled');
+            if (storedAiEnabled && storedAiEnabled.value !== undefined) {
+              initialEnabled = storedAiEnabled.value;
+            }
           }
         }
+
+        setGeminiApiKey(initialKey);
+        setAiConfigApiKey(initialKey);
+        setAiCategorizationEnabled(initialEnabled);
+        setAiConfigEnabled(initialEnabled);
 
         // Pré-seeding de cache de compras local se estiver vazio
         const cachedKeys = await db.metadata.toArray();
@@ -1089,6 +1201,36 @@ function App() {
     }
   };
 
+  // Buscar configuração global/fallback de IA do servidor
+  const fetchBackendAiConfig = async () => {
+    if (!isAuthenticated || !isOnline) return;
+    try {
+      const response = await fetch(`${backendUrl}/api/ai/config`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.gemini_api_key) {
+          await db.metadata.put({ key: 'server_fallback_gemini_api_key', value: data.gemini_api_key });
+          
+          // Se o usuário não tem nenhuma chave configurada localmente na tabela ai_config ou metadata
+          const liveConfig = await db.ai_config.get('current_ai_config');
+          if (!liveConfig || !liveConfig.gemini_api_key) {
+            setGeminiApiKey(data.gemini_api_key);
+            setAiConfigApiKey(data.gemini_api_key);
+            setAiCategorizationEnabled(true);
+            setAiConfigEnabled(true);
+          }
+        } else {
+          // Se o servidor removeu/não tem a chave global, removemos o cache local de fallback do servidor
+          await db.metadata.delete('server_fallback_gemini_api_key');
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao buscar configuração global de IA do servidor:', err);
+    }
+  };
+
   // --- EXECUÇÃO DO MOTOR DE SINCRONIZAÇÃO BIDIRECIONAL (E2EE CLIENT-SIDE) ---
   async function triggerSync() {
     if (!isOnline) {
@@ -1217,13 +1359,17 @@ function App() {
   useEffect(() => {
     let interval: any = null;
     if (isAuthenticated && isOnline) {
+      fetchBackendAiConfig();
       triggerSync(); // Sincronização inicial imediata
-      interval = setInterval(triggerSync, 60000); // A cada 60s
+      interval = setInterval(() => {
+        fetchBackendAiConfig();
+        triggerSync();
+      }, 60000); // A cada 60s
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isAuthenticated, isOnline]);
+  }, [isAuthenticated, isOnline, token]);
 
   // Intervalo periódico de processamento de itens de compras pendentes de classificação de IA (a cada 15s)
   useEffect(() => {
@@ -1304,6 +1450,7 @@ function App() {
     await db.metadata.delete('user_info');
     await db.metadata.delete('family_info');
     await db.metadata.delete('last_sync_time');
+    localStorage.removeItem('activeTab');
     setIsAuth(false);
     setToken(null);
     setCurrentUser(null);
@@ -1790,13 +1937,12 @@ function App() {
           }
           setNewChoreDesc(res.description);
           setNewChorePoints(res.points_worth);
-          setNewChoreIsMed(res.is_medication);
           setNewChoreRepeats(res.repeats);
           setNewChoreRecurrenceType(res.recurrence_type);
           setNewChoreTimeType(res.time_type);
           setNewChoreFixedTime(res.fixed_time);
           setNewChorePeriodTime(res.period_time);
-          if (res.is_medication) {
+          if (newChoreIsMed) {
             setNewChoreMedCycle(['1 dose']);
           }
 
@@ -1842,13 +1988,12 @@ function App() {
       setLastEnrichedTitle(pastChore.title);
       setNewChoreDesc(pastChore.description || '');
       setNewChorePoints(pastChore.points_worth !== undefined ? Number(pastChore.points_worth) : 30);
-      setNewChoreIsMed(!!pastChore.is_medication);
       setNewChoreRepeats(!!pastChore.repeats);
       setNewChoreRecurrenceType(pastChore.recurrence_type || 'daily');
       setNewChoreTimeType(pastChore.time_type || 'all_day');
       setNewChoreFixedTime(pastChore.fixed_time || '08:00');
       setNewChorePeriodTime(pastChore.period_time || 'manha');
-      if (pastChore.is_medication) {
+      if (newChoreIsMed) {
         setNewChoreMedCycle(pastChore.medication_cycle || ['1 dose']);
       }
 
@@ -1870,21 +2015,15 @@ function App() {
 
       showToast(t('toastChoreHistorySuggested'), 'info');
     } else {
-      // 4. Sem histórico local, aplicar heurísticas estáticas simples
-      const medKeywords = ['remedio', 'medicacao', 'paracetamol', 'dipirona', 'ibuprofeno', 'dose', 'tomar', 'aspirina', 'vitamina', 'ritalina', 'comprimido', 'gotas'];
-      const isMed = medKeywords.some(kw => normalized.includes(kw));
-
-      if (isMed) {
-        setNewChoreDesc('Tomar medicação recomendada.');
+      // 4. Sem histórico local, aplicar heurísticas estáticas simples dependendo do contexto escolhido pelo usuário
+      if (newChoreIsMed) {
+        setNewChoreDesc(language === 'pt' ? 'Tomar medicação recomendada.' : 'Take recommended medication.');
         setNewChorePoints(10);
-        setNewChoreIsMed(true);
         setNewChoreRepeats(true);
         setNewChoreRecurrenceType('daily');
         setNewChoreMedCycle(['1 dose']);
       } else {
-        // Manter valores padrão mas resetar campo de descrição se estiver vazio
         setNewChorePoints(30);
-        setNewChoreIsMed(false);
       }
     }
   };
@@ -4281,20 +4420,6 @@ Instruções para resposta:
 
           {/* Right: Smart Controls & Exit Button */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Connection simulation toggle */}
-            <button
-              onClick={() => {
-                setIsOnline(!isOnline);
-                if (!isOnline) setTimeout(triggerSync, 500);
-              }}
-              className="btn-secondary"
-              style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}
-              title={t('toggleConnection')}
-            >
-              {isOnline ? <Wifi size={13} style={{ color: 'var(--accent-success)' }} /> : <WifiOff size={13} style={{ color: 'var(--accent-danger)' }} />}
-              <span>{isOnline ? t('syncStatusOnline') : t('syncStatusOffline')}</span>
-            </button>
-
             {/* Alternador de Tema no Modo Geladeira */}
             <button
               onClick={toggleTheme}
@@ -4384,29 +4509,6 @@ Instruções para resposta:
           {/* Simuladores de Geolocalização e NFC e Internet */}
           <div className="header-actions">
             
-            {/* Conexão Simulada */}
-            <button
-              onClick={() => {
-                setIsOnline(!isOnline);
-                if (!isOnline) setTimeout(triggerSync, 500);
-              }}
-              className="btn-secondary"
-              style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', background: isOnline ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)', borderColor: isOnline ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)' }}
-              title={t('toggleConnectionDesc')}
-            >
-              {isOnline ? (
-                <>
-                  <Wifi size={14} style={{ color: 'var(--accent-success)' }} />
-                  <span className="hide-on-mobile" style={{ color: 'var(--accent-success)', fontWeight: '600' }}>{t('syncStatusOnline')}</span>
-                </>
-              ) : (
-                <>
-                  <WifiOff size={14} style={{ color: 'var(--accent-danger)' }} />
-                  <span className="hide-on-mobile" style={{ color: 'var(--accent-danger)', fontWeight: '600' }}>{t('syncStatusOffline')}</span>
-                </>
-              )}
-            </button>
-
             {/* Sincronização Manual */}
             {isOnline && (
               <button
@@ -4811,7 +4913,19 @@ Instruções para resposta:
                               🏠 {t('controlCenter')}
                             </span>
                             <h2 className="welcome-greeting-title">
-                              {getGreeting()}, {currentUser ? (currentUser.display_name || currentUser.username) : 'Família'}!
+                              {(() => {
+                                const base = getGreeting();
+                                if (!currentUser) return base;
+                                const name = currentUser.display_name || currentUser.username;
+                                return base
+                                  .replace(/Família/g, name)
+                                  .replace(/Family/g, name)
+                                  .replace(/Familia/g, name)
+                                  .replace(/Rodzino/g, name)
+                                  .replace(/Familie/g, name)
+                                  .replace(/la famille/g, name)
+                                  .replace(/Famiglia/g, name);
+                              })()}
                             </h2>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: '500' }}>
                               {getLocalizedDate(currentTime, language)}
@@ -4820,7 +4934,7 @@ Instruções para resposta:
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
                             {weather.icon}
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <span style={{ fontSize: '16px', fontWeight: '800', color: '#fff', lineHeight: 1 }}>{weather.temp}</span>
+                              <span style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', lineHeight: 1 }}>{weather.temp}</span>
                               <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '2px' }}>{weather.desc}</span>
                             </div>
                           </div>
@@ -4836,7 +4950,7 @@ Instruções para resposta:
                       <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
                           <div>
-                            <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <Pin size={18} style={{ color: 'var(--accent-danger)', transform: 'rotate(15deg)' }} />
                               <span>{t('stickyNotesTitle')}</span>
                             </h3>
@@ -4957,170 +5071,351 @@ Instruções para resposta:
 
                     {/* ROTEIRO DA FAMÍLIA (CHECKLIST DE TAREFAS DO DIA) */}
                     <div style={{ width: '100%' }}>
-                      {/* 2. Checklist de Tarefas do Dia Selecionado */}
-                      <div className="glass-panel chores-outer-panel">
-                      <div className="chore-panel-header">
-                        <div>
-                          <p style={{ fontSize: '10px', color: 'var(--accent-primary-hover)', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>{t('routines')}</p>
-                          <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0 0 0' }}>
-                            <CheckSquare size={16} style={{ color: 'var(--accent-primary)' }} />
-                            <span>
-                              {(() => {
-                                const formattedDate = calendarSelectedDate.toLocaleDateString(language === 'pt' ? 'pt-BR' : language, { weekday: 'long', day: 'numeric', month: 'long' });
-                                return formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
-                              })()}
-                            </span>
-                          </h3>
-                        </div>
-                        {currentUser && (
-                          <button
-                            onClick={() => {
+                      <div className="dashboard-split-grid" style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                        gap: '24px',
+                        width: '100%'
+                      }}>
+                        {/* 1. Checklist de Rotinas (Tarefas) */}
+                        <div className="glass-panel chores-outer-panel">
+                          <div className="chore-panel-header">
+                            <div>
+                              <p style={{ fontSize: '10px', color: 'var(--accent-primary-hover)', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>{t('routines')}</p>
+                              <h3 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0 0 0' }}>
+                                <CheckSquare size={16} style={{ color: 'var(--accent-primary)' }} />
+                                <span>
+                                  {(() => {
+                                    const formattedDate = calendarSelectedDate.toLocaleDateString(language === 'pt' ? 'pt-BR' : language, { weekday: 'long', day: 'numeric', month: 'long' });
+                                    return formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+                                  })()}
+                                </span>
+                              </h3>
+                            </div>
+                            {currentUser && (
+                              <button
+                                onClick={() => {
+                                  const year = calendarSelectedDate.getFullYear();
+                                  const month = String(calendarSelectedDate.getMonth() + 1).padStart(2, '0');
+                                  const day = String(calendarSelectedDate.getDate()).padStart(2, '0');
+                                  setNewChoreStartDate(`${year}-${month}-${day}`);
+                                  setNewChoreIsMed(false);
+                                  setShowChoreFormModal(true);
+                                }}
+                                className="btn-primary"
+                                style={{ padding: '6px 10px', fontSize: '11px', borderRadius: 'var(--radius-sm)' }}
+                                title={t('createChoreForSelectedDay')}
+                              >
+                                + {t('createNewChore')}
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="chores-section-container">
+                            {(() => {
                               const year = calendarSelectedDate.getFullYear();
                               const month = String(calendarSelectedDate.getMonth() + 1).padStart(2, '0');
                               const day = String(calendarSelectedDate.getDate()).padStart(2, '0');
-                              setNewChoreStartDate(`${year}-${month}-${day}`);
-                              setShowChoreFormModal(true);
-                            }}
-                            className="btn-primary"
-                            style={{ padding: '6px 10px', fontSize: '11px', borderRadius: 'var(--radius-sm)' }}
-                            title={t('createChoreForSelectedDay')}
-                          >
-                            + {t('createNewChore')}
-                          </button>
-                        )}
-                      </div>
+                              const selectedDateStr = `${year}-${month}-${day}`;
 
-                      <div className="chores-section-container">
-                        {(() => {
-                          const year = calendarSelectedDate.getFullYear();
-                          const month = String(calendarSelectedDate.getMonth() + 1).padStart(2, '0');
-                          const day = String(calendarSelectedDate.getDate()).padStart(2, '0');
-                          const selectedDateStr = `${year}-${month}-${day}`;
+                              const targetChores = visibleChores
+                                .filter(c => !c.is_medication && isChoreActiveOnDate(c, selectedDateStr))
+                                .sort(sortChoresChronologically);
 
-                          const targetChores = visibleChores
-                            .filter(c => isChoreActiveOnDate(c, selectedDateStr))
-                            .sort(sortChoresChronologically);
-
-                          if (targetChores.length === 0) {
-                            return (
-                              <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)', fontSize: '13px' }}>
-                                💤 {t('noChoresForDate')}
-                              </div>
-                            );
-                          }
-
-                          // Agrupamento por período
-                          const manhaChores: Chore[] = [];
-                          const tardeChores: Chore[] = [];
-                          const noiteChores: Chore[] = [];
-                          const flexivelChores: Chore[] = [];
-
-                          targetChores.forEach(chore => {
-                            if (chore.time_type === 'period') {
-                              if (chore.period_time === 'manha') manhaChores.push(chore);
-                              else if (chore.period_time === 'tarde') tardeChores.push(chore);
-                              else if (chore.period_time === 'noite') noiteChores.push(chore);
-                              else flexivelChores.push(chore);
-                            } else if (chore.time_type === 'fixed' && chore.fixed_time) {
-                              const time = chore.fixed_time;
-                              if (time >= '05:00' && time <= '11:59') {
-                                manhaChores.push(chore);
-                              } else if (time >= '12:00' && time <= '17:59') {
-                                tardeChores.push(chore);
-                              } else {
-                                noiteChores.push(chore);
+                              if (targetChores.length === 0) {
+                                return (
+                                  <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                                    💤 {t('noChoresForDate')}
+                                  </div>
+                                );
                               }
-                            } else {
-                              flexivelChores.push(chore);
-                            }
-                          });
 
-                          const categories = [
-                            { id: 'manha', label: t('periodMorning'), icon: '🌅', color: 'var(--accent-warning)', items: manhaChores },
-                            { id: 'tarde', label: t('periodAfternoon'), icon: '☀️', color: 'var(--accent-info)', items: tardeChores },
-                            { id: 'noite', label: t('periodEvening'), icon: '🌙', color: 'var(--accent-primary-hover)', items: noiteChores },
-                            { id: 'flexivel', label: t('periodFlexible'), icon: '📅', color: 'var(--text-secondary)', items: flexivelChores }
-                          ];
+                              // Agrupamento por período
+                              const manhaChores: Chore[] = [];
+                              const tardeChores: Chore[] = [];
+                              const noiteChores: Chore[] = [];
+                              const flexivelChores: Chore[] = [];
 
-                          const activeCategories = categories.filter(cat => cat.items.length > 0);
+                              targetChores.forEach(chore => {
+                                if (chore.time_type === 'period') {
+                                  if (chore.period_time === 'manha') manhaChores.push(chore);
+                                  else if (chore.period_time === 'tarde') tardeChores.push(chore);
+                                  else if (chore.period_time === 'noite') noiteChores.push(chore);
+                                  else flexivelChores.push(chore);
+                                } else if (chore.time_type === 'fixed' && chore.fixed_time) {
+                                  const time = chore.fixed_time;
+                                  if (time >= '05:00' && time <= '11:59') {
+                                    manhaChores.push(chore);
+                                  } else if (time >= '12:00' && time <= '17:59') {
+                                    tardeChores.push(chore);
+                                  } else {
+                                    noiteChores.push(chore);
+                                  }
+                                } else {
+                                  flexivelChores.push(chore);
+                                }
+                              });
 
-                          return activeCategories.map(cat => (
-                            <div key={cat.id} className="chore-category-col">
-                              <div className="chore-category-header">
-                                <span style={{ fontSize: '13px' }}>{cat.icon}</span>
-                                <span style={{ fontSize: '11px', fontWeight: '800', color: cat.color, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{cat.label}</span>
-                                <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 'auto', fontWeight: 'bold' }}>{cat.items.length} {cat.items.length === 1 ? t('choreSingle') : t('chorePlural')}</span>
-                              </div>
-                              <div className="dashboard-chores-list-grid">
-                                {cat.items.map(chore => {
-                                  const completed = isChoreCompletedOnDate(chore, selectedDateStr);
-                                  const isMed = !!chore.is_medication;
-                                  const dose = isMed ? getMedicationDoseOnDate(chore, selectedDateStr, language) : '';
+                              const categories = [
+                                { id: 'manha', label: t('periodMorning'), icon: '🌅', color: 'var(--accent-warning)', items: manhaChores },
+                                { id: 'tarde', label: t('periodAfternoon'), icon: '☀️', color: 'var(--accent-info)', items: tardeChores },
+                                { id: 'noite', label: t('periodEvening'), icon: '🌙', color: 'var(--accent-primary-hover)', items: noiteChores },
+                                { id: 'flexivel', label: t('periodFlexible'), icon: '📅', color: 'var(--text-secondary)', items: flexivelChores }
+                              ];
 
-                                  return (
-                                    <div
-                                      key={chore.id}
-                                      className={`dashboard-chore-card ${completed ? 'completed' : ''}`}
-                                      onClick={() => handleEditChoreClick(chore)}
-                                      style={{
-                                        borderLeftColor: completed ? 'var(--accent-success)' : (isMed ? 'var(--accent-info)' : 'var(--accent-primary)'),
-                                      }}
-                                    >
-                                      <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap', marginBottom: '2px' }}>
-                                          <p
-                                            style={{
-                                              fontSize: '13px',
-                                              fontWeight: '700',
-                                              textDecoration: completed ? 'line-through' : 'none',
-                                              margin: 0,
-                                              color: completed ? 'var(--text-muted)' : 'var(--text-primary)',
-                                              overflow: 'hidden',
-                                              textOverflow: 'ellipsis',
-                                              whiteSpace: 'nowrap',
-                                              maxWidth: '100%'
+                              const activeCategories = categories.filter(cat => cat.items.length > 0);
+
+                              return activeCategories.map(cat => (
+                                <div key={cat.id} className="chore-category-col">
+                                  <div className="chore-category-header">
+                                    <span style={{ fontSize: '13px' }}>{cat.icon}</span>
+                                    <span style={{ fontSize: '11px', fontWeight: '800', color: cat.color, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{cat.label}</span>
+                                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 'auto', fontWeight: 'bold' }}>{cat.items.length} {cat.items.length === 1 ? t('choreSingle') : t('chorePlural')}</span>
+                                  </div>
+                                  <div className="dashboard-chores-list-grid">
+                                    {cat.items.map(chore => {
+                                      const completed = isChoreCompletedOnDate(chore, selectedDateStr);
+                                      const isMed = !!chore.is_medication;
+                                      const dose = isMed ? getMedicationDoseOnDate(chore, selectedDateStr, language) : '';
+
+                                      return (
+                                        <div
+                                          key={chore.id}
+                                          className={`dashboard-chore-card ${completed ? 'completed' : ''}`}
+                                          onClick={() => handleEditChoreClick(chore)}
+                                          style={{
+                                            borderLeftColor: completed ? 'var(--accent-success)' : (isMed ? 'var(--accent-info)' : 'var(--accent-primary)'),
+                                          }}
+                                        >
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap', marginBottom: '2px' }}>
+                                              <p
+                                                style={{
+                                                  fontSize: '13px',
+                                                  fontWeight: '700',
+                                                  textDecoration: completed ? 'line-through' : 'none',
+                                                  margin: 0,
+                                                  color: completed ? 'var(--text-muted)' : 'var(--text-primary)',
+                                                  overflow: 'hidden',
+                                                  textOverflow: 'ellipsis',
+                                                  whiteSpace: 'nowrap',
+                                                  maxWidth: '100%'
+                                                }}
+                                              >
+                                                {chore.title}
+                                              </p>
+                                              {isMed ? (
+                                                <span style={{ fontSize: '8px', background: 'rgba(6, 182, 212, 0.15)', padding: '1px 4px', borderRadius: '3px', color: 'var(--accent-info)', fontWeight: 'bold' }}>💊</span>
+                                              ) : (
+                                                <span style={{ fontSize: '8px', background: 'rgba(139, 92, 246, 0.15)', padding: '1px 4px', borderRadius: '3px', color: 'var(--accent-primary-hover)', fontWeight: 'bold' }}>📅</span>
+                                              )}
+                                              {chore.time_type === 'fixed' && (
+                                                <span style={{ fontSize: '8px', background: 'rgba(255, 255, 255, 0.05)', padding: '1px 4px', borderRadius: '3px', color: 'var(--text-secondary)' }}>⏰ {chore.fixed_time}</span>
+                                              )}
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}><span className="chore-responsible-label">{t('responsibleLabel')} </span><strong>{chore.assigned_to === 'all' ? t('allLabel') : (chore.assigned_to === currentUser?.username ? t('youLabel') : chore.assigned_to)}</strong></span>
+                                              {isMed && dose && (
+                                                <span style={{ fontSize: '10px', color: 'var(--accent-info)' }}>({dose})</span>
+                                              )}
+                                              {gamificationEnabled && (
+                                                <span className="badge-xp" style={{ fontSize: '9px', padding: '0 4px' }}>+{chore.points_worth} XP</span>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleCompleteChore(chore.id, selectedDateStr);
                                             }}
+                                            className={`chore-complete-btn btn-secondary ${completed ? 'completed' : ''}`}
                                           >
-                                            {chore.title}
-                                          </p>
-                                          {isMed ? (
-                                            <span style={{ fontSize: '8px', background: 'rgba(6, 182, 212, 0.15)', padding: '1px 4px', borderRadius: '3px', color: 'var(--accent-info)', fontWeight: 'bold' }}>💊</span>
-                                          ) : (
-                                            <span style={{ fontSize: '8px', background: 'rgba(139, 92, 246, 0.15)', padding: '1px 4px', borderRadius: '3px', color: 'var(--accent-primary-hover)', fontWeight: 'bold' }}>📅</span>
-                                          )}
-                                          {chore.time_type === 'fixed' && (
-                                            <span style={{ fontSize: '8px', background: 'rgba(255, 255, 255, 0.05)', padding: '1px 4px', borderRadius: '3px', color: 'var(--text-secondary)' }}>⏰ {chore.fixed_time}</span>
-                                          )}
+                                            <Check size={14} strokeWidth={3} className="chore-check-icon" />
+                                            <span className="chore-btn-text">{completed ? t('doneCheck') : t('doAction')}</span>
+                                          </button>
                                         </div>
-                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}><span className="chore-responsible-label">{t('responsibleLabel')} </span><strong>{chore.assigned_to === 'all' ? t('allLabel') : (chore.assigned_to === currentUser?.username ? t('youLabel') : chore.assigned_to)}</strong></span>
-                                          {isMed && dose && (
-                                            <span style={{ fontSize: '10px', color: 'var(--accent-info)' }}>({dose})</span>
-                                          )}
-                                          {gamificationEnabled && (
-                                            <span className="badge-xp" style={{ fontSize: '9px', padding: '0 4px' }}>+{chore.points_worth} XP</span>
-                                          )}
-                                        </div>
-                                      </div>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleCompleteChore(chore.id, selectedDateStr);
-                                        }}
-                                        className={`chore-complete-btn btn-secondary ${completed ? 'completed' : ''}`}
-                                      >
-                                        <Check size={14} strokeWidth={3} className="chore-check-icon" />
-                                        <span className="chore-btn-text">{completed ? 'Feito' : 'Fazer'}</span>
-                                      </button>
-                                    </div>
-                                  );
-                                })}
-                              </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              ));
+                            })()}
+                          </div>
+                        </div>
+
+                        {/* 2. Checklist de Medicamentos */}
+                        <div className="glass-panel chores-outer-panel">
+                          <div className="chore-panel-header">
+                            <div>
+                              <p style={{ fontSize: '10px', color: 'var(--accent-info)', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>{t('medications')}</p>
+                              <h3 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0 0 0' }}>
+                                <Activity size={16} style={{ color: 'var(--accent-info)' }} />
+                                <span>
+                                  {(() => {
+                                    const formattedDate = calendarSelectedDate.toLocaleDateString(language === 'pt' ? 'pt-BR' : language, { weekday: 'long', day: 'numeric', month: 'long' });
+                                    return formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+                                  })()}
+                                </span>
+                              </h3>
                             </div>
-                          ));
-                        })()}
+                            {currentUser && (
+                              <button
+                                onClick={() => {
+                                  const year = calendarSelectedDate.getFullYear();
+                                  const month = String(calendarSelectedDate.getMonth() + 1).padStart(2, '0');
+                                  const day = String(calendarSelectedDate.getDate()).padStart(2, '0');
+                                  setNewChoreStartDate(`${year}-${month}-${day}`);
+                                  setNewChoreIsMed(true);
+                                  setShowChoreFormModal(true);
+                                }}
+                                className="btn-primary"
+                                style={{
+                                  padding: '6px 10px',
+                                  fontSize: '11px',
+                                  borderRadius: 'var(--radius-sm)',
+                                  background: 'linear-gradient(135deg, var(--accent-info), #0891b2)',
+                                  borderColor: 'transparent'
+                                }}
+                                title={t('addNewMedication')}
+                              >
+                                + {t('addNewMedication')}
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="chores-section-container">
+                            {(() => {
+                              const year = calendarSelectedDate.getFullYear();
+                              const month = String(calendarSelectedDate.getMonth() + 1).padStart(2, '0');
+                              const day = String(calendarSelectedDate.getDate()).padStart(2, '0');
+                              const selectedDateStr = `${year}-${month}-${day}`;
+
+                              const targetChores = visibleChores
+                                .filter(c => c.is_medication && isChoreActiveOnDate(c, selectedDateStr))
+                                .sort(sortChoresChronologically);
+
+                              if (targetChores.length === 0) {
+                                return (
+                                  <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                                    💊 {t('noMedicationsForDate')}
+                                  </div>
+                                );
+                              }
+
+                              // Agrupamento por período
+                              const manhaChores: Chore[] = [];
+                              const tardeChores: Chore[] = [];
+                              const noiteChores: Chore[] = [];
+                              const flexivelChores: Chore[] = [];
+
+                              targetChores.forEach(chore => {
+                                if (chore.time_type === 'period') {
+                                  if (chore.period_time === 'manha') manhaChores.push(chore);
+                                  else if (chore.period_time === 'tarde') tardeChores.push(chore);
+                                  else if (chore.period_time === 'noite') noiteChores.push(chore);
+                                  else flexivelChores.push(chore);
+                                } else if (chore.time_type === 'fixed' && chore.fixed_time) {
+                                  const time = chore.fixed_time;
+                                  if (time >= '05:00' && time <= '11:59') {
+                                    manhaChores.push(chore);
+                                  } else if (time >= '12:00' && time <= '17:59') {
+                                    tardeChores.push(chore);
+                                  } else {
+                                    noiteChores.push(chore);
+                                  }
+                                } else {
+                                  flexivelChores.push(chore);
+                                }
+                              });
+
+                              const categories = [
+                                { id: 'manha', label: t('periodMorning'), icon: '🌅', color: 'var(--accent-warning)', items: manhaChores },
+                                { id: 'tarde', label: t('periodAfternoon'), icon: '☀️', color: 'var(--accent-info)', items: tardeChores },
+                                { id: 'noite', label: t('periodEvening'), icon: '🌙', color: 'var(--accent-primary-hover)', items: noiteChores },
+                                { id: 'flexivel', label: t('periodFlexible'), icon: '📅', color: 'var(--text-secondary)', items: flexivelChores }
+                              ];
+
+                              const activeCategories = categories.filter(cat => cat.items.length > 0);
+
+                              return activeCategories.map(cat => (
+                                <div key={cat.id} className="chore-category-col">
+                                  <div className="chore-category-header">
+                                    <span style={{ fontSize: '13px' }}>{cat.icon}</span>
+                                    <span style={{ fontSize: '11px', fontWeight: '800', color: cat.color, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{cat.label}</span>
+                                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 'auto', fontWeight: 'bold' }}>{cat.items.length} {cat.items.length === 1 ? t('choreSingle') : t('chorePlural')}</span>
+                                  </div>
+                                  <div className="dashboard-chores-list-grid">
+                                    {cat.items.map(chore => {
+                                      const completed = isChoreCompletedOnDate(chore, selectedDateStr);
+                                      const isMed = !!chore.is_medication;
+                                      const dose = isMed ? getMedicationDoseOnDate(chore, selectedDateStr, language) : '';
+
+                                      return (
+                                        <div
+                                          key={chore.id}
+                                          className={`dashboard-chore-card ${completed ? 'completed' : ''}`}
+                                          onClick={() => handleEditChoreClick(chore)}
+                                          style={{
+                                            borderLeftColor: completed ? 'var(--accent-success)' : (isMed ? 'var(--accent-info)' : 'var(--accent-primary)'),
+                                          }}
+                                        >
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap', marginBottom: '2px' }}>
+                                              <p
+                                                style={{
+                                                  fontSize: '13px',
+                                                  fontWeight: '700',
+                                                  textDecoration: completed ? 'line-through' : 'none',
+                                                  margin: 0,
+                                                  color: completed ? 'var(--text-muted)' : 'var(--text-primary)',
+                                                  overflow: 'hidden',
+                                                  textOverflow: 'ellipsis',
+                                                  whiteSpace: 'nowrap',
+                                                  maxWidth: '100%'
+                                                }}
+                                              >
+                                                {chore.title}
+                                              </p>
+                                              {isMed ? (
+                                                <span style={{ fontSize: '8px', background: 'rgba(6, 182, 212, 0.15)', padding: '1px 4px', borderRadius: '3px', color: 'var(--accent-info)', fontWeight: 'bold' }}>💊</span>
+                                              ) : (
+                                                <span style={{ fontSize: '8px', background: 'rgba(139, 92, 246, 0.15)', padding: '1px 4px', borderRadius: '3px', color: 'var(--accent-primary-hover)', fontWeight: 'bold' }}>📅</span>
+                                              )}
+                                              {chore.time_type === 'fixed' && (
+                                                <span style={{ fontSize: '8px', background: 'rgba(255, 255, 255, 0.05)', padding: '1px 4px', borderRadius: '3px', color: 'var(--text-secondary)' }}>⏰ {chore.fixed_time}</span>
+                                              )}
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}><span className="chore-responsible-label">{t('responsibleLabel')} </span><strong>{chore.assigned_to === 'all' ? t('allLabel') : (chore.assigned_to === currentUser?.username ? t('youLabel') : chore.assigned_to)}</strong></span>
+                                              {isMed && dose && (
+                                                <span style={{ fontSize: '10px', color: 'var(--accent-info)' }}>({dose})</span>
+                                              )}
+                                              {gamificationEnabled && (
+                                                <span className="badge-xp" style={{ fontSize: '9px', padding: '0 4px' }}>+{chore.points_worth} XP</span>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleCompleteChore(chore.id, selectedDateStr);
+                                            }}
+                                            className={`chore-complete-btn btn-secondary ${completed ? 'completed' : ''}`}
+                                          >
+                                            <Check size={14} strokeWidth={3} className="chore-check-icon" />
+                                            <span className="chore-btn-text">{completed ? t('doneCheck') : t('doAction')}</span>
+                                          </button>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              ));
+                            })()}
+                          </div>
+                        </div>
+
                       </div>
-                    </div>
                     </div>
               </div>
             );
@@ -6344,7 +6639,7 @@ Instruções para resposta:
                         <BarChart3 size={24} />
                       </div>
                       <div>
-                        <h2 style={{ fontSize: '22px', fontWeight: '800', background: 'linear-gradient(135deg, #ffffff 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
+                        <h2 style={{ fontSize: '22px', fontWeight: '800', background: theme === 'dark' ? 'linear-gradient(135deg, #ffffff 0%, #a78bfa 100%)' : 'linear-gradient(135deg, var(--text-primary) 0%, var(--accent-primary) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
                           {t('reportsTab')}
                         </h2>
                         <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px', margin: 0 }}>
@@ -6365,7 +6660,7 @@ Instruções para resposta:
                         <p style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
                           {t('reportsTotalChores')}
                         </p>
-                        <h3 style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', color: '#ffffff', margin: 0 }}>
+                        <h3 style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', color: 'var(--text-primary)', margin: 0 }}>
                           {reportsStats.tasksCount}
                         </h3>
                       </div>
@@ -6379,7 +6674,7 @@ Instruções para resposta:
                         <p style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
                           {t('reportsTotalMeds')}
                         </p>
-                        <h3 style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', color: '#ffffff', margin: 0 }}>
+                        <h3 style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', color: 'var(--text-primary)', margin: 0 }}>
                           {reportsStats.medsCount}
                         </h3>
                       </div>
@@ -6393,7 +6688,7 @@ Instruções para resposta:
                         <p style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
                           {t('reportsTotalRewards')}
                         </p>
-                        <h3 style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', color: '#ffffff', margin: 0 }}>
+                        <h3 style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', color: 'var(--text-primary)', margin: 0 }}>
                           {reportsStats.rewardsCount}
                         </h3>
                       </div>
@@ -6407,7 +6702,7 @@ Instruções para resposta:
                         <p style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
                           {t('reportsTotalXp')}
                         </p>
-                        <h3 style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', color: '#ffffff', margin: 0 }}>
+                        <h3 style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', color: 'var(--text-primary)', margin: 0 }}>
                           {reportsStats.familyXp} XP
                         </h3>
                       </div>
@@ -6453,7 +6748,7 @@ Instruções para resposta:
                             </svg>
                             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', width: '80%' }}>
                               <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', textTransform: 'uppercase', fontWeight: '600' }}>Total</span>
-                              <span style={{ fontSize: '18px', fontWeight: '800', color: '#ffffff' }}>{reportsStats.familyXp}</span>
+                              <span style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)' }}>{reportsStats.familyXp}</span>
                             </div>
                           </div>
 
@@ -6499,7 +6794,7 @@ Instruções para resposta:
                                 }} 
                               />
                             </div>
-                            <span style={{ width: '25px', fontSize: '12px', fontWeight: '700', textAlign: 'right', color: '#ffffff' }}>
+                            <span style={{ width: '25px', fontSize: '12px', fontWeight: '700', textAlign: 'right', color: 'var(--text-primary)' }}>
                               {day.count}
                             </span>
                           </div>
@@ -6523,7 +6818,7 @@ Instruções para resposta:
                         <h4 style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--accent-warning)', fontWeight: '700', margin: 0 }}>
                           {t('reportsTopEarner')}
                         </h4>
-                        <h3 style={{ fontSize: '18px', fontWeight: '800', marginTop: '4px', color: '#ffffff', margin: 0 }}>
+                        <h3 style={{ fontSize: '18px', fontWeight: '800', marginTop: '4px', color: 'var(--text-primary)', margin: 0 }}>
                           {reportsHighlights.topEarner === 'none' ? '---' : reportsHighlights.topEarner}
                         </h3>
                         <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', margin: 0 }}>
@@ -6543,7 +6838,7 @@ Instruções para resposta:
                         <h4 style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#a78bfa', fontWeight: '700', margin: 0 }}>
                           {t('reportsTopSpender')}
                         </h4>
-                        <h3 style={{ fontSize: '18px', fontWeight: '800', marginTop: '4px', color: '#ffffff', margin: 0 }}>
+                        <h3 style={{ fontSize: '18px', fontWeight: '800', marginTop: '4px', color: 'var(--text-primary)', margin: 0 }}>
                           {reportsHighlights.topSpender === 'none' ? '---' : reportsHighlights.topSpender}
                         </h3>
                         <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', margin: 0 }}>
@@ -6649,7 +6944,7 @@ Instruções para resposta:
                                   onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.01)' }}
                                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                                 >
-                                  <td style={{ padding: '12px 16px', fontWeight: '600', color: '#ffffff' }}>
+                                  <td style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--text-primary)' }}>
                                     {log.user_name}
                                   </td>
                                   <td style={{ padding: '12px 16px', color: 'var(--text-primary)' }}>
@@ -7177,7 +7472,11 @@ Instruções para resposta:
                                   value={aiConfigApiKey}
                                   onChange={(e) => setAiConfigApiKey(e.target.value)}
                                   disabled={currentUser?.role !== 'admin'}
-                                  placeholder={currentUser?.role === 'admin' ? t('aiApiKeyPlaceholderAdmin') : t('aiApiKeyPlaceholderUser')}
+                                  placeholder={
+                                    currentUser?.role === 'admin'
+                                      ? ((!liveAiConfig || !liveAiConfig.gemini_api_key) && geminiApiKey ? t('globalServerKeyPlaceholder') : t('aiApiKeyPlaceholderAdmin'))
+                                      : t('aiApiKeyPlaceholderUser')
+                                  }
                                   style={{ paddingRight: '45px', width: '100%', opacity: currentUser?.role === 'admin' ? 1 : 0.7 }}
                                 />
                                 <button
@@ -7200,6 +7499,20 @@ Instruções para resposta:
                                   {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
                                 </button>
                               </div>
+                              {(!liveAiConfig || !liveAiConfig.gemini_api_key) && geminiApiKey && (
+                                <p style={{
+                                  fontSize: '11px',
+                                  color: '#ec4899',
+                                  margin: '2px 0 0 0',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '5px',
+                                  fontWeight: '500'
+                                }}>
+                                  <Wand2 size={12} />
+                                  {t('globalServerKeyActive')}
+                                </p>
+                              )}
                               <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>
                                 {t('geminiApiKeyDescPart1')} <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" style={{ color: '#ec4899', textDecoration: 'underline' }}>Google AI Studio</a>.
                               </p>
@@ -7960,8 +8273,16 @@ Instruções para resposta:
               borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
             }}>
               <h3 style={{ fontSize: '20px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-primary)', margin: 0 }}>
-                <PlusCircle size={22} style={{ color: 'var(--accent-primary)' }} />
-                <span>{editingChore ? t('editChoreOrMed') : t('scheduleNewChoreOrMed')}</span>
+                {newChoreIsMed ? (
+                  <Activity size={22} style={{ color: 'var(--accent-info)' }} />
+                ) : (
+                  <CheckSquare size={22} style={{ color: 'var(--accent-primary)' }} />
+                )}
+                <span>
+                  {newChoreIsMed
+                    ? (editingChore ? t('editMedication') : t('scheduleNewMedication'))
+                    : (editingChore ? t('editChore') : t('scheduleNewChore'))}
+                </span>
               </h3>
               <button
                 onClick={() => {
@@ -8007,7 +8328,9 @@ Instruções para resposta:
                 <input
                   type="text"
                   className="input-field"
-                  placeholder={t('choreTitlePlaceholder')}
+                  placeholder={newChoreIsMed
+                    ? (language === 'pt' ? 'ex: Paracetamol, Ibuprofeno, Amoxicilina...' : 'e.g., Ibuprofen, Aspirin, Vitamin C...')
+                    : (language === 'pt' ? 'ex: Lavar a louça do jantar, Arrumar o quarto...' : 'e.g., Wash dinner dishes, Clean bedroom...')}
                   value={newChoreTitle}
                   onChange={(e) => setNewChoreTitle(e.target.value)}
                   onBlur={handleChoreTitleBlur}
@@ -8217,20 +8540,6 @@ Instruções para resposta:
                 </div>
               </div>
 
-              {/* Checkbox para se é medicamento */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <input
-                  type="checkbox"
-                  id="isMedicationChore"
-                  checked={newChoreIsMed}
-                  onChange={(e) => setNewChoreIsMed(e.target.checked)}
-                  style={{ width: '18px', height: '18px', accentColor: 'var(--accent-primary)', cursor: 'pointer' }}
-                />
-                <label htmlFor="isMedicationChore" style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', cursor: 'pointer' }}>
-                  {t('isMedicationLabel')}
-                </label>
-              </div>
-
               {/* Seção Medicamento: Ciclo de Dosagens Sequenciais */}
               {newChoreIsMed && (
                 <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
@@ -8365,7 +8674,7 @@ Instruções para resposta:
                   ) : (
                     <>
                       <Plus size={16} />
-                      <span>{t('createChore')}</span>
+                      <span>{newChoreIsMed ? t('addNewMedication') : t('createChore')}</span>
                     </>
                   )}
                 </button>

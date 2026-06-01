@@ -704,6 +704,13 @@ app.post('/api/family/reset-points', authenticateToken, async (req, res) => {
   }
 });
 
+// Obter chave de API global/fallback configurada pelo administrador do servidor no arquivo .env
+app.get('/api/ai/config', authenticateToken, (req, res) => {
+  res.json({
+    gemini_api_key: process.env.GEMINI_API_KEY || ''
+  });
+});
+
 
 // --- MECANISMO DE SINCRONIZAÇÃO OFFLINE-FIRST ---
 

@@ -12,11 +12,12 @@ RUN npm install
 COPY frontend/ ./
 RUN npm run build
 
-# ==========================================
 # Estágio 2: Setup e Execução do Backend
-# ==========================================
 FROM node:20-alpine AS runner
 WORKDIR /app/backend
+
+# Instalar ferramentas de compilação necessárias para o sqlite3 no Alpine (musl)
+RUN apk add --no-cache python3 make g++
 
 # Configurar variáveis de ambiente de produção
 ENV NODE_ENV=production

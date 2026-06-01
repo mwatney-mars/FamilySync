@@ -5118,7 +5118,14 @@ Instruções para resposta:
               <Timer size={16} style={{ color: activeSound ? SOUNDS_LIST.find(s => s.id === activeSound)?.color : 'var(--text-secondary)' }} />
               {timerSeconds !== null ? (
                 <span style={{ fontSize: '11px', color: 'var(--accent-success)', fontWeight: 'bold' }}>
-                  {Math.floor(timerSeconds / 60)}:{String(timerSeconds % 60).padStart(2, '0')}
+                  {(() => {
+                    const h = Math.floor(timerSeconds / 3600);
+                    const m = Math.floor((timerSeconds % 3600) / 60);
+                    const s = timerSeconds % 60;
+                    return h > 0 
+                      ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+                      : `${m}:${String(s).padStart(2, '0')}`;
+                  })()}
                 </span>
               ) : (
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
@@ -5153,6 +5160,8 @@ Instruções para resposta:
               <option value="2700" style={{ background: 'var(--bg-panels)' }}>45 Min</option>
               <option value="3600" style={{ background: 'var(--bg-panels)' }}>1 Hour</option>
               <option value="7200" style={{ background: 'var(--bg-panels)' }}>2 Hours</option>
+              <option value="14400" style={{ background: 'var(--bg-panels)' }}>4 Hours</option>
+              <option value="28800" style={{ background: 'var(--bg-panels)' }}>8 Hours</option>
             </select>
           </div>
         </div>

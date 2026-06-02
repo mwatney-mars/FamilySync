@@ -7973,7 +7973,7 @@ Instruções para resposta:
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                                     <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: seg.color }} />
                                     {renderMemberAvatar(member, 18)}
-                                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{seg.name}</span>
+                                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{member ? member.display_name : seg.name}</span>
                                   </div>
                                   <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>
                                     {seg.percent}%
@@ -8036,7 +8036,7 @@ Instruções para resposta:
                           {t('reportsTopEarner')}
                         </h4>
                         <h3 style={{ fontSize: '18px', fontWeight: '800', marginTop: '4px', color: 'var(--text-primary)', margin: 0 }}>
-                          {reportsHighlights.topEarner === 'none' ? '---' : reportsHighlights.topEarner}
+                          {reportsHighlights.topEarner === 'none' ? '---' : (familyMembers.find(m => m.username === reportsHighlights.topEarner)?.display_name || reportsHighlights.topEarner)}
                         </h3>
                         <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', margin: 0 }}>
                           {reportsHighlights.topEarner === 'none' ? '' : `+${reportsHighlights.maxEarned} XP`}
@@ -8056,7 +8056,7 @@ Instruções para resposta:
                           {t('reportsTopSpender')}
                         </h4>
                         <h3 style={{ fontSize: '18px', fontWeight: '800', marginTop: '4px', color: 'var(--text-primary)', margin: 0 }}>
-                          {reportsHighlights.topSpender === 'none' ? '---' : reportsHighlights.topSpender}
+                          {reportsHighlights.topSpender === 'none' ? '---' : (familyMembers.find(m => m.username === reportsHighlights.topSpender)?.display_name || reportsHighlights.topSpender)}
                         </h3>
                         <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', margin: 0 }}>
                           {reportsHighlights.topSpender === 'none' ? '' : `${reportsHighlights.maxSpent} XP ${t('reportsTotalRewards').toLowerCase()}`}
@@ -8162,7 +8162,10 @@ Instruções para resposta:
                                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                                 >
                                   <td style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--text-primary)' }}>
-                                    {log.user_name}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      {renderMemberAvatar(familyMembers.find(m => m.username === log.user_name), 18)}
+                                      <span>{familyMembers.find(m => m.username === log.user_name)?.display_name || log.user_name}</span>
+                                    </div>
                                   </td>
                                   <td style={{ padding: '12px 16px', color: 'var(--text-primary)' }}>
                                     {log.reason}
@@ -10156,7 +10159,7 @@ Instruções para resposta:
           rel="noopener noreferrer" 
           style={{ color: 'var(--accent-primary)', fontWeight: 'bold', textDecoration: 'underline' }}
         >
-          FamilyHub 1.2.7
+          FamilyHub 1.2.8
         </a>{' '}
         {t('footerText')}
       </footer>

@@ -6236,7 +6236,23 @@ Instruções para resposta:
                                               )}
                                             </div>
                                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}><span className="chore-responsible-label">{t('responsibleLabel')} </span><strong>{chore.assigned_to === 'all' ? t('allLabel') : (chore.assigned_to === currentUser?.username ? t('youLabel') : chore.assigned_to)}</strong></span>
+                                              <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                <span className="chore-responsible-label">{t('responsibleLabel')}</span>
+                                                {chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar ? (
+                                                  <img 
+                                                    src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
+                                                    alt={chore.assigned_to} 
+                                                    style={{ 
+                                                      width: '16px', 
+                                                      height: '16px', 
+                                                      borderRadius: '50%', 
+                                                      objectFit: 'cover',
+                                                      border: '1px solid var(--accent-primary)'
+                                                    }} 
+                                                  />
+                                                ) : null}
+                                                <strong>{chore.assigned_to === 'all' ? t('allLabel') : (chore.assigned_to === currentUser?.username ? t('youLabel') : (familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to))}</strong>
+                                              </span>
                                               {isMed && dose && (
                                                 <span style={{ fontSize: '10px', color: 'var(--accent-info)' }}>({dose})</span>
                                               )}
@@ -6245,16 +6261,34 @@ Instruções para resposta:
                                               )}
                                             </div>
                                           </div>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleCompleteChore(chore.id, selectedDateStr);
-                                            }}
-                                            className={`chore-complete-btn btn-secondary ${completed ? 'completed' : ''}`}
-                                          >
-                                            <Check size={14} strokeWidth={3} className="chore-check-icon" />
-                                            <span className="chore-btn-text">{completed ? t('doneCheck') : t('doAction')}</span>
-                                          </button>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            {chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar && (
+                                              <img 
+                                                src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
+                                                alt={chore.assigned_to} 
+                                                style={{ 
+                                                  width: '24px', 
+                                                  height: '24px', 
+                                                  borderRadius: '50%', 
+                                                  objectFit: 'cover',
+                                                  border: '2px solid var(--accent-primary)',
+                                                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                                  flexShrink: 0
+                                                }} 
+                                                title={familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to}
+                                              />
+                                            )}
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleCompleteChore(chore.id, selectedDateStr);
+                                              }}
+                                              className={`chore-complete-btn btn-secondary ${completed ? 'completed' : ''}`}
+                                            >
+                                              <Check size={14} strokeWidth={3} className="chore-check-icon" />
+                                              <span className="chore-btn-text">{completed ? t('doneCheck') : t('doAction')}</span>
+                                            </button>
+                                          </div>
                                         </div>
                                       );
                                     })}
@@ -6408,7 +6442,23 @@ Instruções para resposta:
                                               )}
                                             </div>
                                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}><span className="chore-responsible-label">{t('responsibleLabel')} </span><strong>{chore.assigned_to === 'all' ? t('allLabel') : (chore.assigned_to === currentUser?.username ? t('youLabel') : chore.assigned_to)}</strong></span>
+                                              <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                <span className="chore-responsible-label">{t('responsibleLabel')}</span>
+                                                {chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar ? (
+                                                  <img 
+                                                    src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
+                                                    alt={chore.assigned_to} 
+                                                    style={{ 
+                                                      width: '16px', 
+                                                      height: '16px', 
+                                                      borderRadius: '50%', 
+                                                      objectFit: 'cover',
+                                                      border: '1px solid var(--accent-primary)'
+                                                    }} 
+                                                  />
+                                                ) : null}
+                                                <strong>{chore.assigned_to === 'all' ? t('allLabel') : (chore.assigned_to === currentUser?.username ? t('youLabel') : (familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to))}</strong>
+                                              </span>
                                               {isMed && dose && (
                                                 <span style={{ fontSize: '10px', color: 'var(--accent-info)' }}>({dose})</span>
                                               )}
@@ -6417,16 +6467,34 @@ Instruções para resposta:
                                               )}
                                             </div>
                                           </div>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleCompleteChore(chore.id, selectedDateStr);
-                                            }}
-                                            className={`chore-complete-btn btn-secondary ${completed ? 'completed' : ''}`}
-                                          >
-                                            <Check size={14} strokeWidth={3} className="chore-check-icon" />
-                                            <span className="chore-btn-text">{completed ? t('doneCheck') : t('doAction')}</span>
-                                          </button>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            {chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar && (
+                                              <img 
+                                                src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
+                                                alt={chore.assigned_to} 
+                                                style={{ 
+                                                  width: '24px', 
+                                                  height: '24px', 
+                                                  borderRadius: '50%', 
+                                                  objectFit: 'cover',
+                                                  border: '2px solid var(--accent-primary)',
+                                                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                                  flexShrink: 0
+                                                }} 
+                                                title={familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to}
+                                              />
+                                            )}
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleCompleteChore(chore.id, selectedDateStr);
+                                              }}
+                                              className={`chore-complete-btn btn-secondary ${completed ? 'completed' : ''}`}
+                                            >
+                                              <Check size={14} strokeWidth={3} className="chore-check-icon" />
+                                              <span className="chore-btn-text">{completed ? t('doneCheck') : t('doAction')}</span>
+                                            </button>
+                                          </div>
                                         </div>
                                       );
                                     })}
@@ -6994,8 +7062,23 @@ Instruções para resposta:
                                             {chore.description || t('noDescription')}
                                           </p>
                                           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                            <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                                              👤 {chore.assigned_to === 'all' ? t('allFamily') : chore.assigned_to}
+                                            <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                              {chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar ? (
+                                                <img 
+                                                  src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
+                                                  alt={chore.assigned_to} 
+                                                  style={{ 
+                                                    width: '16px', 
+                                                    height: '16px', 
+                                                    borderRadius: '50%', 
+                                                    objectFit: 'cover',
+                                                    border: '1px solid var(--accent-primary)'
+                                                  }} 
+                                                />
+                                              ) : (
+                                                <span>👤</span>
+                                              )}
+                                              <span>{chore.assigned_to === 'all' ? t('allFamily') : (familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to)}</span>
                                             </span>
                                             {gamificationEnabled && (
                                               <span className="badge-xp" style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-success)', border: '1px solid rgba(16, 185, 129, 0.2)', fontSize: '9px', padding: '0 4px' }}>
@@ -7006,17 +7089,35 @@ Instruções para resposta:
                                         </div>
 
                                         {/* Botão de Conclusão */}
-                                        <button
-                                          onClick={async (e) => {
-                                            e.stopPropagation();
-                                            await handleCompleteChore(chore.id, cellDateStr);
-                                            showToast(`${completed ? t('reopened') : t('completed')}: "${chore.title}"!`, completed ? 'info' : 'success');
-                                          }}
-                                          className={completed ? 'btn-secondary' : 'btn-primary'}
-                                          style={{ padding: '6px 10px', fontSize: '10px', background: completed ? 'rgba(16, 185, 129, 0.15)' : 'var(--accent-primary)', borderColor: completed ? 'var(--accent-success)' : 'transparent', color: completed ? 'var(--accent-success)' : '#fff', fontWeight: '700' }}
-                                        >
-                                          {completed ? t('doneCheck') : t('doAction')}
-                                        </button>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                          {chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar && (
+                                            <img 
+                                              src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
+                                              alt={chore.assigned_to} 
+                                              style={{ 
+                                                width: '24px', 
+                                                height: '24px', 
+                                                borderRadius: '50%', 
+                                                objectFit: 'cover',
+                                                border: '2px solid var(--accent-primary)',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                                flexShrink: 0
+                                              }} 
+                                              title={familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to}
+                                            />
+                                          )}
+                                          <button
+                                            onClick={async (e) => {
+                                              e.stopPropagation();
+                                              await handleCompleteChore(chore.id, cellDateStr);
+                                              showToast(`${completed ? t('reopened') : t('completed')}: "${chore.title}"!`, completed ? 'info' : 'success');
+                                            }}
+                                            className={completed ? 'btn-secondary' : 'btn-primary'}
+                                            style={{ padding: '6px 10px', fontSize: '10px', background: completed ? 'rgba(16, 185, 129, 0.15)' : 'var(--accent-primary)', borderColor: completed ? 'var(--accent-success)' : 'transparent', color: completed ? 'var(--accent-success)' : '#fff', fontWeight: '700' }}
+                                          >
+                                            {completed ? t('doneCheck') : t('doAction')}
+                                          </button>
+                                        </div>
                                       </div>
                                     );
                                   })

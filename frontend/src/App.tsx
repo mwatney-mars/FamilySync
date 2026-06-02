@@ -10533,7 +10533,7 @@ Instruções para resposta:
           rel="noopener noreferrer" 
           style={{ color: 'var(--accent-primary)', fontWeight: 'bold', textDecoration: 'underline' }}
         >
-          FamilyHub 1.3.0
+          FamilyHub 1.3.2
         </a>{' '}
         {t('footerText')}
       </footer>

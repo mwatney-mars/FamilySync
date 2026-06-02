@@ -1016,6 +1016,7 @@ function App() {
   const [soundVolume] = useState<number>(0.5);
   const [timerSeconds, setTimerSeconds] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const keepAliveAudioRef = useRef<HTMLAudioElement | null>(null);
   const timerIntervalRef = useRef<any>(null);
 
   // Efeito para controlar a reprodução do áudio (Zen Space usando elemento HTML5 Audio para compatibilidade com segundo plano e bloqueio de tela)
@@ -1029,16 +1030,33 @@ function App() {
       }
       audioRef.current = null;
     }
+    if (keepAliveAudioRef.current) {
+      try {
+        keepAliveAudioRef.current.pause();
+      } catch (e) {
+        // Ignorar se já estava pausado ou erro
+      }
+      keepAliveAudioRef.current = null;
+    }
 
-    // 2. Se houver um som ativo, cria/configura o elemento Audio
+    // 2. Se houver um som ativo, cria/configura os elementos Audio
     if (activeSound) {
       const audio = new Audio(`/audio/${activeSound}.wav`);
       audio.loop = true;
       audio.volume = soundVolume;
       audioRef.current = audio;
 
-      // Inicia a reprodução
-      audio.play()
+      // Canal de áudio silencioso com duração > 5 segundos para ativar a Media Session e evitar congelamento em segundo plano no Android/Chrome
+      const keepAlive = new Audio('/audio/silent-keepalive.wav');
+      keepAlive.loop = true;
+      keepAlive.volume = 0.01; // Quase inaudível, mas ativa o foco de mídia do Chrome
+      keepAliveAudioRef.current = keepAlive;
+
+      // Inicia a reprodução conjunta de ambos os canais
+      Promise.all([
+        audio.play(),
+        keepAlive.play()
+      ])
         .then(() => {
           // Configura a Media Session API para suportar execução em segundo plano e controles no lock screen do Android
           if ('mediaSession' in navigator) {
@@ -1055,10 +1073,12 @@ function App() {
 
             navigator.mediaSession.setActionHandler('play', () => {
               audioRef.current?.play();
+              keepAliveAudioRef.current?.play();
               navigator.mediaSession.playbackState = 'playing';
             });
             navigator.mediaSession.setActionHandler('pause', () => {
               audioRef.current?.pause();
+              keepAliveAudioRef.current?.pause();
               navigator.mediaSession.playbackState = 'paused';
             });
           }
@@ -1083,6 +1103,13 @@ function App() {
       if (audioRef.current) {
         try {
           audioRef.current.pause();
+        } catch (e) {
+          // Ignore
+        }
+      }
+      if (keepAliveAudioRef.current) {
+        try {
+          keepAliveAudioRef.current.pause();
         } catch (e) {
           // Ignore
         }

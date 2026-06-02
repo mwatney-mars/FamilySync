@@ -5484,8 +5484,8 @@ Instruções para resposta:
                   src={currentUser.avatar} 
                   alt={currentUser.display_name || currentUser.username} 
                   style={{ 
-                    height: '36px', 
-                    width: '36px', 
+                    height: '44px', 
+                    width: '44px', 
                     borderRadius: '50%', 
                     objectFit: 'cover',
                     boxShadow: '0 2px 10px rgba(0,0,0,0.3)', 
@@ -5506,8 +5506,8 @@ Instruções para resposta:
                   src="/logo.png?v=2" 
                   alt="FamilyHub Logo" 
                   style={{ 
-                    height: '36px', 
-                    width: '36px', 
+                    height: '44px', 
+                    width: '44px', 
                     borderRadius: '50%', 
                     boxShadow: '0 2px 10px rgba(0,0,0,0.3)', 
                     border: '1px solid rgba(255,255,255,0.05)',

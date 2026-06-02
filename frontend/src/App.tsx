@@ -6238,19 +6238,42 @@ Instruções para resposta:
                                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                                               <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                                                 <span className="chore-responsible-label">{t('responsibleLabel')}</span>
-                                                {chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar ? (
-                                                  <img 
-                                                    src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
-                                                    alt={chore.assigned_to} 
-                                                    style={{ 
-                                                      width: '16px', 
-                                                      height: '16px', 
-                                                      borderRadius: '50%', 
-                                                      objectFit: 'cover',
-                                                      border: '1px solid var(--accent-primary)'
-                                                    }} 
-                                                  />
-                                                ) : null}
+                                                {chore.assigned_to === 'all' ? (
+                                                  <div style={{ display: 'flex', alignItems: 'center', marginRight: '2px' }}>
+                                                    {familyMembers.map((m: any, idx: number) => m.avatar ? (
+                                                      <img 
+                                                        key={m.id || idx}
+                                                        src={m.avatar} 
+                                                        alt={m.username} 
+                                                        title={m.display_name || m.username}
+                                                        style={{ 
+                                                          width: '16px', 
+                                                          height: '16px', 
+                                                          borderRadius: '50%', 
+                                                          objectFit: 'cover',
+                                                          border: '1px solid var(--accent-primary)',
+                                                          marginLeft: idx > 0 ? '-4px' : '0',
+                                                          zIndex: familyMembers.length - idx,
+                                                          position: 'relative'
+                                                        }} 
+                                                      />
+                                                    ) : null)}
+                                                  </div>
+                                                ) : (
+                                                  chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar ? (
+                                                    <img 
+                                                      src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
+                                                      alt={chore.assigned_to} 
+                                                      style={{ 
+                                                        width: '16px', 
+                                                        height: '16px', 
+                                                        borderRadius: '50%', 
+                                                        objectFit: 'cover',
+                                                        border: '1px solid var(--accent-primary)'
+                                                      }} 
+                                                    />
+                                                  ) : null
+                                                )}
                                                 <strong>{chore.assigned_to === 'all' ? t('allLabel') : (chore.assigned_to === currentUser?.username ? t('youLabel') : (familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to))}</strong>
                                               </span>
                                               {isMed && dose && (
@@ -6262,21 +6285,46 @@ Instruções para resposta:
                                             </div>
                                           </div>
                                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            {chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar && (
-                                              <img 
-                                                src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
-                                                alt={chore.assigned_to} 
-                                                style={{ 
-                                                  width: '24px', 
-                                                  height: '24px', 
-                                                  borderRadius: '50%', 
-                                                  objectFit: 'cover',
-                                                  border: '2px solid var(--accent-primary)',
-                                                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                                  flexShrink: 0
-                                                }} 
-                                                title={familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to}
-                                              />
+                                            {chore.assigned_to === 'all' ? (
+                                              <div style={{ display: 'flex', alignItems: 'center', marginRight: '4px' }}>
+                                                {familyMembers.map((m: any, idx: number) => m.avatar ? (
+                                                  <img 
+                                                    key={m.id || idx}
+                                                    src={m.avatar} 
+                                                    alt={m.username} 
+                                                    title={m.display_name || m.username}
+                                                    style={{ 
+                                                      width: '24px', 
+                                                      height: '24px', 
+                                                      borderRadius: '50%', 
+                                                      objectFit: 'cover',
+                                                      border: '2px solid var(--accent-primary)',
+                                                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                                      marginLeft: idx > 0 ? '-8px' : '0',
+                                                      zIndex: familyMembers.length - idx,
+                                                      position: 'relative',
+                                                      flexShrink: 0
+                                                    }} 
+                                                  />
+                                                ) : null)}
+                                              </div>
+                                            ) : (
+                                              chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar ? (
+                                                <img 
+                                                  src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
+                                                  alt={chore.assigned_to} 
+                                                  style={{ 
+                                                    width: '24px', 
+                                                    height: '24px', 
+                                                    borderRadius: '50%', 
+                                                    objectFit: 'cover',
+                                                    border: '2px solid var(--accent-primary)',
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                                    flexShrink: 0
+                                                  }} 
+                                                  title={familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to}
+                                                />
+                                              ) : null
                                             )}
                                             <button
                                               onClick={(e) => {
@@ -6444,19 +6492,42 @@ Instruções para resposta:
                                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                                               <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                                                 <span className="chore-responsible-label">{t('responsibleLabel')}</span>
-                                                {chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar ? (
-                                                  <img 
-                                                    src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
-                                                    alt={chore.assigned_to} 
-                                                    style={{ 
-                                                      width: '16px', 
-                                                      height: '16px', 
-                                                      borderRadius: '50%', 
-                                                      objectFit: 'cover',
-                                                      border: '1px solid var(--accent-primary)'
-                                                    }} 
-                                                  />
-                                                ) : null}
+                                                {chore.assigned_to === 'all' ? (
+                                                  <div style={{ display: 'flex', alignItems: 'center', marginRight: '2px' }}>
+                                                    {familyMembers.map((m: any, idx: number) => m.avatar ? (
+                                                      <img 
+                                                        key={m.id || idx}
+                                                        src={m.avatar} 
+                                                        alt={m.username} 
+                                                        title={m.display_name || m.username}
+                                                        style={{ 
+                                                          width: '16px', 
+                                                          height: '16px', 
+                                                          borderRadius: '50%', 
+                                                          objectFit: 'cover',
+                                                          border: '1px solid var(--accent-primary)',
+                                                          marginLeft: idx > 0 ? '-4px' : '0',
+                                                          zIndex: familyMembers.length - idx,
+                                                          position: 'relative'
+                                                        }} 
+                                                      />
+                                                    ) : null)}
+                                                  </div>
+                                                ) : (
+                                                  chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar ? (
+                                                    <img 
+                                                      src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
+                                                      alt={chore.assigned_to} 
+                                                      style={{ 
+                                                        width: '16px', 
+                                                        height: '16px', 
+                                                        borderRadius: '50%', 
+                                                        objectFit: 'cover',
+                                                        border: '1px solid var(--accent-primary)'
+                                                      }} 
+                                                    />
+                                                  ) : null
+                                                )}
                                                 <strong>{chore.assigned_to === 'all' ? t('allLabel') : (chore.assigned_to === currentUser?.username ? t('youLabel') : (familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to))}</strong>
                                               </span>
                                               {isMed && dose && (
@@ -6468,21 +6539,46 @@ Instruções para resposta:
                                             </div>
                                           </div>
                                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            {chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar && (
-                                              <img 
-                                                src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
-                                                alt={chore.assigned_to} 
-                                                style={{ 
-                                                  width: '24px', 
-                                                  height: '24px', 
-                                                  borderRadius: '50%', 
-                                                  objectFit: 'cover',
-                                                  border: '2px solid var(--accent-primary)',
-                                                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                                  flexShrink: 0
-                                                }} 
-                                                title={familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to}
-                                              />
+                                            {chore.assigned_to === 'all' ? (
+                                              <div style={{ display: 'flex', alignItems: 'center', marginRight: '4px' }}>
+                                                {familyMembers.map((m: any, idx: number) => m.avatar ? (
+                                                  <img 
+                                                    key={m.id || idx}
+                                                    src={m.avatar} 
+                                                    alt={m.username} 
+                                                    title={m.display_name || m.username}
+                                                    style={{ 
+                                                      width: '24px', 
+                                                      height: '24px', 
+                                                      borderRadius: '50%', 
+                                                      objectFit: 'cover',
+                                                      border: '2px solid var(--accent-primary)',
+                                                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                                      marginLeft: idx > 0 ? '-8px' : '0',
+                                                      zIndex: familyMembers.length - idx,
+                                                      position: 'relative',
+                                                      flexShrink: 0
+                                                    }} 
+                                                  />
+                                                ) : null)}
+                                              </div>
+                                            ) : (
+                                              chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar ? (
+                                                <img 
+                                                  src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
+                                                  alt={chore.assigned_to} 
+                                                  style={{ 
+                                                    width: '24px', 
+                                                    height: '24px', 
+                                                    borderRadius: '50%', 
+                                                    objectFit: 'cover',
+                                                    border: '2px solid var(--accent-primary)',
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                                    flexShrink: 0
+                                                  }} 
+                                                  title={familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to}
+                                                />
+                                              ) : null
                                             )}
                                             <button
                                               onClick={(e) => {
@@ -7063,20 +7159,43 @@ Instruções para resposta:
                                           </p>
                                           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                             <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                              {chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar ? (
-                                                <img 
-                                                  src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
-                                                  alt={chore.assigned_to} 
-                                                  style={{ 
-                                                    width: '16px', 
-                                                    height: '16px', 
-                                                    borderRadius: '50%', 
-                                                    objectFit: 'cover',
-                                                    border: '1px solid var(--accent-primary)'
-                                                  }} 
-                                                />
+                                              {chore.assigned_to === 'all' ? (
+                                                <div style={{ display: 'flex', alignItems: 'center', marginRight: '2px' }}>
+                                                  {familyMembers.map((m: any, idx: number) => m.avatar ? (
+                                                    <img 
+                                                      key={m.id || idx}
+                                                      src={m.avatar} 
+                                                      alt={m.username} 
+                                                      title={m.display_name || m.username}
+                                                      style={{ 
+                                                        width: '16px', 
+                                                        height: '16px', 
+                                                        borderRadius: '50%', 
+                                                        objectFit: 'cover',
+                                                        border: '1px solid var(--accent-primary)',
+                                                        marginLeft: idx > 0 ? '-4px' : '0',
+                                                        zIndex: familyMembers.length - idx,
+                                                        position: 'relative'
+                                                      }} 
+                                                    />
+                                                  ) : null)}
+                                                </div>
                                               ) : (
-                                                <span>👤</span>
+                                                chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar ? (
+                                                  <img 
+                                                    src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
+                                                    alt={chore.assigned_to} 
+                                                    style={{ 
+                                                      width: '16px', 
+                                                      height: '16px', 
+                                                      borderRadius: '50%', 
+                                                      objectFit: 'cover',
+                                                      border: '1px solid var(--accent-primary)'
+                                                    }} 
+                                                  />
+                                                ) : (
+                                                  <span>👤</span>
+                                                )
                                               )}
                                               <span>{chore.assigned_to === 'all' ? t('allFamily') : (familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to)}</span>
                                             </span>
@@ -7090,21 +7209,46 @@ Instruções para resposta:
 
                                         {/* Botão de Conclusão */}
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                          {chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar && (
-                                            <img 
-                                              src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
-                                              alt={chore.assigned_to} 
-                                              style={{ 
-                                                width: '24px', 
-                                                height: '24px', 
-                                                borderRadius: '50%', 
-                                                objectFit: 'cover',
-                                                border: '2px solid var(--accent-primary)',
-                                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                                flexShrink: 0
-                                              }} 
-                                              title={familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to}
-                                            />
+                                          {chore.assigned_to === 'all' ? (
+                                            <div style={{ display: 'flex', alignItems: 'center', marginRight: '4px' }}>
+                                              {familyMembers.map((m: any, idx: number) => m.avatar ? (
+                                                <img 
+                                                  key={m.id || idx}
+                                                  src={m.avatar} 
+                                                  alt={m.username} 
+                                                  title={m.display_name || m.username}
+                                                  style={{ 
+                                                    width: '24px', 
+                                                    height: '24px', 
+                                                    borderRadius: '50%', 
+                                                    objectFit: 'cover',
+                                                    border: '2px solid var(--accent-primary)',
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                                    marginLeft: idx > 0 ? '-8px' : '0',
+                                                    zIndex: familyMembers.length - idx,
+                                                    position: 'relative',
+                                                    flexShrink: 0
+                                                  }} 
+                                                />
+                                              ) : null)}
+                                            </div>
+                                          ) : (
+                                            chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar ? (
+                                              <img 
+                                                src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
+                                                alt={chore.assigned_to} 
+                                                style={{ 
+                                                  width: '24px', 
+                                                  height: '24px', 
+                                                  borderRadius: '50%', 
+                                                  objectFit: 'cover',
+                                                  border: '2px solid var(--accent-primary)',
+                                                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                                  flexShrink: 0
+                                                }} 
+                                                title={familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to}
+                                              />
+                                            ) : null
                                           )}
                                           <button
                                             onClick={async (e) => {

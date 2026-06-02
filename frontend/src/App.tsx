@@ -1875,7 +1875,7 @@ function App() {
     try {
       const promptText = `3D Character Model\n\nA highly stylized 3D caricature of this Character, with expressive facial features, and playful exaggeration. Rendered in a smooth, polished style with clean materials and soft ambient lighting. Bold color background to emphasize the character's charm and presence.`;
       
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-image-latest:generateContent?key=${geminiApiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${geminiApiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -1893,7 +1893,7 @@ function App() {
             ]
           }],
           generationConfig: {
-            responseModalities: ["IMAGE"]
+            responseModalities: ["TEXT", "IMAGE"]
           }
         })
       });

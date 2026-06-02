@@ -1105,8 +1105,17 @@ function App() {
       timerIntervalRef.current = null;
     }
 
-    // 2. Se o temporizador for nulo (desativado/Timer Off), saímos sem criar novos intervalos
+    // 2. Se o temporizador for nulo (desativado/Timer Off), restauramos o volume e saímos sem criar novos intervalos
     if (timerSeconds === null) {
+      if (gainNodeRef.current && audioContextRef.current) {
+        try {
+          const ctx = audioContextRef.current;
+          gainNodeRef.current.gain.cancelScheduledValues(ctx.currentTime);
+          gainNodeRef.current.gain.setValueAtTime(soundVolume, ctx.currentTime);
+        } catch (e) {
+          // ignore error if context is closed
+        }
+      }
       return;
     }
     
@@ -1115,6 +1124,20 @@ function App() {
       setActiveSound(null);
       setTimerSeconds(null);
       return;
+    }
+
+    // Fade-out suave nos últimos 10 segundos
+    if (timerSeconds <= 10 && gainNodeRef.current && audioContextRef.current) {
+      try {
+        const ctx = audioContextRef.current;
+        const gainNode = gainNodeRef.current;
+        const targetGain = Math.max(0, ((timerSeconds - 1) / 10) * soundVolume);
+        gainNode.gain.cancelScheduledValues(ctx.currentTime);
+        gainNode.gain.setValueAtTime(gainNode.gain.value, ctx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(targetGain, ctx.currentTime + 1.0);
+      } catch (e) {
+        console.error("Erro ao aplicar fade-out gradual:", e);
+      }
     }
 
     // 4. Inicializa o intervalo regressivo de 1 segundo
@@ -1148,7 +1171,7 @@ function App() {
         timerIntervalRef.current = null;
       }
     };
-  }, [timerSeconds]);
+  }, [timerSeconds, soundVolume]);
 
   // Estados para Edição de Perfil de Usuário
   const [profileUsername, setProfileUsername] = useState<string>('');
@@ -7946,6 +7969,7 @@ Instruções para resposta:
                               {contributionSegments.map((seg) => (
                                 <circle
                                   key={seg.name}
+                                  className="chart-ring"
                                   cx="60"
                                   cy="60"
                                   r="50"
@@ -7956,7 +7980,9 @@ Instruções para resposta:
                                   strokeDashoffset={seg.strokeDashoffset}
                                   strokeLinecap="round"
                                   style={{ transition: 'stroke-dashoffset 0.8s ease' }}
-                                />
+                                >
+                                  <title>{`${familyMembers.find(m => m.username === seg.name)?.display_name || seg.name}: ${seg.points} XP (${seg.percent}%)`}</title>
+                                </circle>
                               ))}
                             </svg>
                             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', width: '80%' }}>
@@ -7969,13 +7995,18 @@ Instruções para resposta:
                             {contributionSegments.map(seg => {
                               const member = familyMembers.find(m => m.username === seg.name || m.display_name === seg.name);
                               return (
-                                <div key={seg.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                                <div 
+                                  key={seg.name} 
+                                  className="segment-row" 
+                                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}
+                                  title={`${seg.points} XP`}
+                                >
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                                     <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: seg.color }} />
                                     {renderMemberAvatar(member, 18)}
                                     <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{member ? member.display_name : seg.name}</span>
                                   </div>
-                                  <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>
+                                  <span className="segment-percent" style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>
                                     {seg.percent}%
                                   </span>
                                 </div>
@@ -8112,7 +8143,7 @@ Instruções para resposta:
                       </div>
                     </div>
 
-                    <div style={{ overflowX: 'auto' }}>
+                    <div className="custom-scrollbar" style={{ overflowX: 'auto', paddingBottom: '4px' }}>
                       {filteredPointLogs.length === 0 ? (
                         <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
                           {t('reportsNoData')}
@@ -8153,13 +8184,7 @@ Instruções para resposta:
                               return (
                                 <tr 
                                   key={log.id} 
-                                  style={{ 
-                                    borderBottom: '1px solid rgba(255,255,255,0.02)', 
-                                    fontSize: '14px',
-                                    transition: 'background 0.2s ease'
-                                  }}
-                                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.01)' }}
-                                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                                  className="ledger-row"
                                 >
                                   <td style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--text-primary)' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -10159,7 +10184,7 @@ Instruções para resposta:
           rel="noopener noreferrer" 
           style={{ color: 'var(--accent-primary)', fontWeight: 'bold', textDecoration: 'underline' }}
         >
-          FamilyHub 1.2.8
+          FamilyHub 1.2.9
         </a>{' '}
         {t('footerText')}
       </footer>

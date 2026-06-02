@@ -10156,7 +10156,7 @@ Instruções para resposta:
           rel="noopener noreferrer" 
           style={{ color: 'var(--accent-primary)', fontWeight: 'bold', textDecoration: 'underline' }}
         >
-          FamilyHub 1.2.5
+          FamilyHub 1.2.7
         </a>{' '}
         {t('footerText')}
       </footer>

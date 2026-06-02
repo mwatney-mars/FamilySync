@@ -10378,8 +10378,16 @@ Instruções para resposta:
                     <input
                       type="date"
                       className="input-field"
+                      style={{ cursor: 'pointer' }}
                       value={newChoreStartDate}
                       onChange={(e) => setNewChoreStartDate(e.target.value)}
+                      onClick={(e) => {
+                        try {
+                          (e.target as any).showPicker();
+                        } catch (err) {
+                          console.warn(err);
+                        }
+                      }}
                       required
                     />
                   </div>
@@ -10389,8 +10397,16 @@ Instruções para resposta:
                     <input
                       type="date"
                       className="input-field"
+                      style={{ cursor: 'pointer' }}
                       value={newChoreEndDate}
                       onChange={(e) => setNewChoreEndDate(e.target.value)}
+                      onClick={(e) => {
+                        try {
+                          (e.target as any).showPicker();
+                        } catch (err) {
+                          console.warn(err);
+                        }
+                      }}
                     />
                   </div>
                 </div>

@@ -1015,86 +1015,85 @@ function App() {
   const [activeSound, setActiveSound] = useState<string | null>(null);
   const [soundVolume] = useState<number>(0.5);
   const [timerSeconds, setTimerSeconds] = useState<number | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
-  const gainNodeRef = useRef<GainNode | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerIntervalRef = useRef<any>(null);
 
-  // Efeito para controlar a reprodução do áudio (Zen Space usando Web Audio API para loop gapless)
+  // Efeito para controlar a reprodução do áudio (Zen Space usando elemento HTML5 Audio para compatibilidade com segundo plano e bloqueio de tela)
   useEffect(() => {
-    let isCancelled = false;
-
     // 1. Pausa e limpa qualquer áudio existente de forma segura
-    if (sourceNodeRef.current) {
+    if (audioRef.current) {
       try {
-        sourceNodeRef.current.stop();
+        audioRef.current.pause();
       } catch (e) {
-        // Já estava parado ou não inicializado
+        // Ignorar se já estava pausado ou erro
       }
-      sourceNodeRef.current = null;
+      audioRef.current = null;
     }
 
-    // 2. Se houver um som ativo, inicializa o contexto e decodifica o arquivo para reprodução gapless
+    // 2. Se houver um som ativo, cria/configura o elemento Audio
     if (activeSound) {
-      if (!audioContextRef.current) {
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-        audioContextRef.current = new AudioContextClass();
-      }
-      
-      const ctx = audioContextRef.current;
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
+      const audio = new Audio(`/audio/${activeSound}.wav`);
+      audio.loop = true;
+      audio.volume = soundVolume;
+      audioRef.current = audio;
 
-      fetch(`/audio/${activeSound}.wav`)
-        .then(res => {
-          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-          return res.arrayBuffer();
-        })
-        .then(arrayBuffer => ctx.decodeAudioData(arrayBuffer))
-        .then(audioBuffer => {
-          if (isCancelled) return;
+      // Inicia a reprodução
+      audio.play()
+        .then(() => {
+          // Configura a Media Session API para suportar execução em segundo plano e controles no lock screen do Android
+          if ('mediaSession' in navigator) {
+            const soundTitle = ZEN_TRANSLATIONS[language]?.[activeSound] || ZEN_TRANSLATIONS['en']?.[activeSound] || activeSound;
+            navigator.mediaSession.playbackState = 'playing';
+            navigator.mediaSession.metadata = new MediaMetadata({
+              title: soundTitle,
+              artist: language === 'pt' ? 'Espaço Zen 🏡' : 'Zen Space 🏡',
+              album: 'FamilyHub',
+              artwork: [
+                { src: '/favicon.svg', sizes: '512x512', type: 'image/svg+xml' }
+              ]
+            });
 
-          // Cria a fonte e configura o loop de precisão em nível de sample
-          const source = ctx.createBufferSource();
-          source.buffer = audioBuffer;
-          source.loop = true;
-
-          // Cria o nó de ganho para controle de volume analógico/suave
-          const gainNode = ctx.createGain();
-          gainNode.gain.setValueAtTime(soundVolume, ctx.currentTime);
-
-          source.connect(gainNode);
-          gainNode.connect(ctx.destination);
-
-          source.start(0);
-
-          sourceNodeRef.current = source;
-          gainNodeRef.current = gainNode;
+            navigator.mediaSession.setActionHandler('play', () => {
+              audioRef.current?.play();
+              navigator.mediaSession.playbackState = 'playing';
+            });
+            navigator.mediaSession.setActionHandler('pause', () => {
+              audioRef.current?.pause();
+              navigator.mediaSession.playbackState = 'paused';
+            });
+          }
         })
         .catch(error => {
-          console.error("Erro ao carregar/reproduzir áudio via Web Audio API:", error);
+          console.error("Erro ao carregar/reproduzir áudio via HTML5 Audio:", error);
         });
+    } else {
+      // Se não houver som ativo, limpa o estado de Media Session
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'none';
+        try {
+          navigator.mediaSession.metadata = null;
+        } catch (e) {
+          // Ignore
+        }
+      }
     }
 
     // Limpeza ao desmontar ou alterar o som ativo
     return () => {
-      isCancelled = true;
-      if (sourceNodeRef.current) {
+      if (audioRef.current) {
         try {
-          sourceNodeRef.current.stop();
+          audioRef.current.pause();
         } catch (e) {
-          // Já estava parado
+          // Ignore
         }
-        sourceNodeRef.current = null;
       }
     };
   }, [activeSound]);
 
   // Efeito para sincronizar o volume em tempo real
   useEffect(() => {
-    if (gainNodeRef.current && audioContextRef.current) {
-      gainNodeRef.current.gain.setValueAtTime(soundVolume, audioContextRef.current.currentTime);
+    if (audioRef.current) {
+      audioRef.current.volume = soundVolume;
     }
   }, [soundVolume]);
 
@@ -1108,14 +1107,8 @@ function App() {
 
     // 2. Se o temporizador for nulo (desativado/Timer Off), restauramos o volume e saímos sem criar novos intervalos
     if (timerSeconds === null) {
-      if (gainNodeRef.current && audioContextRef.current) {
-        try {
-          const ctx = audioContextRef.current;
-          gainNodeRef.current.gain.cancelScheduledValues(ctx.currentTime);
-          gainNodeRef.current.gain.setValueAtTime(soundVolume, ctx.currentTime);
-        } catch (e) {
-          // ignore error if context is closed
-        }
+      if (audioRef.current) {
+        audioRef.current.volume = soundVolume;
       }
       return;
     }
@@ -1128,14 +1121,10 @@ function App() {
     }
 
     // Fade-out suave nos últimos 10 segundos
-    if (timerSeconds <= 10 && gainNodeRef.current && audioContextRef.current) {
+    if (timerSeconds !== null && timerSeconds <= 10 && audioRef.current) {
       try {
-        const ctx = audioContextRef.current;
-        const gainNode = gainNodeRef.current;
-        const targetGain = Math.max(0, ((timerSeconds - 1) / 10) * soundVolume);
-        gainNode.gain.cancelScheduledValues(ctx.currentTime);
-        gainNode.gain.setValueAtTime(gainNode.gain.value, ctx.currentTime);
-        gainNode.gain.linearRampToValueAtTime(targetGain, ctx.currentTime + 1.0);
+        const targetVolume = Math.max(0, ((timerSeconds - 1) / 10) * soundVolume);
+        audioRef.current.volume = targetVolume;
       } catch (e) {
         console.error("Erro ao aplicar fade-out gradual:", e);
       }
@@ -5507,19 +5496,6 @@ Instruções para resposta:
               <div
                 key={sound.id}
                 onClick={() => {
-                  // Inicializa/retoma o contexto de áudio em resposta direta ao clique do usuário (necessário para iOS/Safari)
-                  if (!audioContextRef.current) {
-                    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-                    if (AudioContextClass) {
-                      audioContextRef.current = new AudioContextClass();
-                    }
-                  }
-                  if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
-                    audioContextRef.current.resume().catch(err => {
-                      console.error('Erro ao retomar AudioContext:', err);
-                    });
-                  }
-
                   if (isSelected) {
                     setActiveSound(null);
                   } else {

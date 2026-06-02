@@ -3582,9 +3582,8 @@ function App() {
       );
     } else {
       // transição de marcado para desmarcado (cancelar compra)
-      const linkedRecords = await db.purchase_history
-        .filter(rec => rec.shopping_item_id === item.id)
-        .toArray();
+      const allRecords = await db.purchase_history.toArray();
+      const linkedRecords = allRecords.filter(rec => rec.shopping_item_id === item.id);
 
       for (const rec of linkedRecords) {
         await db.purchase_history.update(rec.id, {
@@ -10493,7 +10492,7 @@ Instruções para resposta:
           rel="noopener noreferrer" 
           style={{ color: 'var(--accent-primary)', fontWeight: 'bold', textDecoration: 'underline' }}
         >
-          FamilyHub 1.3.5
+          FamilyHub 1.3.6
         </a>{' '}
         {t('footerText')}
       </footer>

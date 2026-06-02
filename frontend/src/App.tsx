@@ -1054,139 +1054,100 @@ function App() {
 
     // 2. Se houver um som ativo, inicia o motor de áudio adequado
     if (activeSound) {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-
-      if (isIOS) {
-        // --- MOTOR PARA iOS: HTML5 Audio Nativo (Garante reprodução contínua em segundo plano no iOS) ---
-        const audio = new Audio(`/audio/${activeSound}.wav`);
-        audio.loop = true;
-        audio.volume = soundVolume;
-        audioRef.current = audio;
-
-        // Ativa o audioSession de playback se suportado (iOS 16.4+)
-        if ('audioSession' in navigator) {
-          try {
-            (navigator as any).audioSession.type = 'playback';
-          } catch (e) {
-            console.warn("Erro ao configurar navigator.audioSession.type:", e);
-          }
+      // Ativa o audioSession de playback se suportado (iOS 16.4+)
+      if ('audioSession' in navigator) {
+        try {
+          (navigator as any).audioSession.type = 'playback';
+        } catch (e) {
+          console.warn("Erro ao configurar navigator.audioSession.type:", e);
         }
-
-        audio.play()
-          .then(() => {
-            // Configura controles de bloqueio/notificação nativos no iOS
-            if ('mediaSession' in navigator) {
-              const soundTitle = ZEN_TRANSLATIONS[language]?.[activeSound] || ZEN_TRANSLATIONS['en']?.[activeSound] || activeSound;
-              navigator.mediaSession.playbackState = 'playing';
-              navigator.mediaSession.metadata = new MediaMetadata({
-                title: soundTitle,
-                artist: language === 'pt' ? 'Espaço Zen 🏡' : 'Zen Space 🏡',
-                album: 'FamilyHub',
-                artwork: [
-                  { src: '/favicon.svg', sizes: '512x512', type: 'image/svg+xml' }
-                ]
-              });
-
-              navigator.mediaSession.setActionHandler('play', () => {
-                audioRef.current?.play();
-                navigator.mediaSession.playbackState = 'playing';
-              });
-              navigator.mediaSession.setActionHandler('pause', () => {
-                audioRef.current?.pause();
-                navigator.mediaSession.playbackState = 'paused';
-              });
-            }
-          })
-          .catch(error => {
-            console.error("Erro ao iniciar áudio principal no iOS:", error);
-          });
-
-      } else {
-        // --- MOTOR PARA ANDROID/DESKTOP: Web Audio API (Loop gapless com latencyHint: 'playback' + Keep-Alive) ---
-        
-        // 2.1. Inicializa o AudioContext com latencyHint otimizado para evitar cliques de buffer
-        if (!audioContextRef.current) {
-          const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-          audioContextRef.current = new AudioContextClass({ latencyHint: 'playback' });
-        }
-        
-        const ctx = audioContextRef.current;
-        if (ctx.state === 'suspended') {
-          ctx.resume();
-        }
-
-        // 2.2. Inicializa o HTML5 Audio Keep-Alive para habilitar MediaSession e segundo plano no Android (> 5 segundos)
-        const keepAlive = new Audio('/audio/silent-keepalive.wav?v=1.3.1');
-        keepAlive.loop = true;
-        keepAlive.volume = 1.0; // Canal 100% silencioso (44100Hz), volume alto evita gating de energia/DAC do Android
-        keepAliveAudioRef.current = keepAlive;
-
-        keepAlive.play()
-          .then(() => {
-            // Configura controles de bloqueio/notificação no Android
-            if ('mediaSession' in navigator) {
-              const soundTitle = ZEN_TRANSLATIONS[language]?.[activeSound] || ZEN_TRANSLATIONS['en']?.[activeSound] || activeSound;
-              navigator.mediaSession.playbackState = 'playing';
-              navigator.mediaSession.metadata = new MediaMetadata({
-                title: soundTitle,
-                artist: language === 'pt' ? 'Espaço Zen 🏡' : 'Zen Space 🏡',
-                album: 'FamilyHub',
-                artwork: [
-                  { src: '/favicon.svg', sizes: '512x512', type: 'image/svg+xml' }
-                ]
-              });
-
-              navigator.mediaSession.setActionHandler('play', () => {
-                if (audioContextRef.current?.state === 'suspended') {
-                  audioContextRef.current.resume();
-                }
-                keepAliveAudioRef.current?.play();
-                navigator.mediaSession.playbackState = 'playing';
-              });
-              navigator.mediaSession.setActionHandler('pause', () => {
-                if (audioContextRef.current?.state === 'running') {
-                  audioContextRef.current.suspend();
-                }
-                keepAliveAudioRef.current?.pause();
-                navigator.mediaSession.playbackState = 'paused';
-              });
-            }
-          })
-          .catch(error => {
-            console.error("Erro ao reproduzir canal keep-alive HTML5 Audio:", error);
-          });
-
-        // Carrega e decodifica o arquivo .wav para reprodução gapless com Web Audio API
-        fetch(`/audio/${activeSound}.wav`)
-          .then(res => {
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-            return res.arrayBuffer();
-          })
-          .then(arrayBuffer => ctx.decodeAudioData(arrayBuffer))
-          .then(audioBuffer => {
-            if (isCancelled) return;
-
-            // Cria a fonte e configura o loop de precisão em nível de sample
-            const source = ctx.createBufferSource();
-            source.buffer = audioBuffer;
-            source.loop = true;
-
-            // Cria o nó de ganho para controle de volume analógico/suave
-            const gainNode = ctx.createGain();
-            gainNode.gain.setValueAtTime(soundVolume, ctx.currentTime);
-
-            source.connect(gainNode);
-            gainNode.connect(ctx.destination);
-
-            source.start(0);
-
-            sourceNodeRef.current = source;
-            gainNodeRef.current = gainNode;
-          })
-          .catch(error => {
-            console.error("Erro ao carregar/reproduzir áudio via Web Audio API:", error);
-          });
       }
+
+      // --- MOTOR UNIFICADO (Web Audio API + HTML5 Audio Keep-Alive) ---
+      // Garante looping perfeitamente gapless (sample-accurate) e reprodução contínua em segundo plano no Android e iOS.
+      
+      // 2.1. Inicializa o AudioContext com latencyHint otimizado para evitar cliques de buffer
+      if (!audioContextRef.current) {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        audioContextRef.current = new AudioContextClass({ latencyHint: 'playback' });
+      }
+      
+      const ctx = audioContextRef.current;
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+
+      // 2.2. Inicializa o HTML5 Audio Keep-Alive para habilitar MediaSession e segundo plano (> 5 segundos)
+      const keepAlive = new Audio('/audio/silent-keepalive.wav?v=1.3.4');
+      keepAlive.loop = true;
+      keepAlive.volume = 1.0; // Canal 100% silencioso (44100Hz), volume alto evita gating de energia/DAC do Android e iOS
+      keepAliveAudioRef.current = keepAlive;
+
+      keepAlive.play()
+        .then(() => {
+          // Configura controles de bloqueio/notificação no Android e iOS
+          if ('mediaSession' in navigator) {
+            const soundTitle = ZEN_TRANSLATIONS[language]?.[activeSound] || ZEN_TRANSLATIONS['en']?.[activeSound] || activeSound;
+            navigator.mediaSession.playbackState = 'playing';
+            navigator.mediaSession.metadata = new MediaMetadata({
+              title: soundTitle,
+              artist: language === 'pt' ? 'Espaço Zen 🏡' : 'Zen Space 🏡',
+              album: 'FamilyHub',
+              artwork: [
+                { src: '/favicon.svg', sizes: '512x512', type: 'image/svg+xml' }
+              ]
+            });
+
+            navigator.mediaSession.setActionHandler('play', () => {
+              if (audioContextRef.current?.state === 'suspended') {
+                audioContextRef.current.resume();
+              }
+              keepAliveAudioRef.current?.play();
+              navigator.mediaSession.playbackState = 'playing';
+            });
+            navigator.mediaSession.setActionHandler('pause', () => {
+              if (audioContextRef.current?.state === 'running') {
+                audioContextRef.current.suspend();
+              }
+              keepAliveAudioRef.current?.pause();
+              navigator.mediaSession.playbackState = 'paused';
+            });
+          }
+        })
+        .catch(error => {
+          console.error("Erro ao reproduzir canal keep-alive HTML5 Audio:", error);
+        });
+
+      // Carrega e decodifica o arquivo .wav para reprodução gapless com Web Audio API
+      fetch(`/audio/${activeSound}.wav`)
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          return res.arrayBuffer();
+        })
+        .then(arrayBuffer => ctx.decodeAudioData(arrayBuffer))
+        .then(audioBuffer => {
+          if (isCancelled) return;
+
+          // Cria a fonte e configura o loop de precisão em nível de sample
+          const source = ctx.createBufferSource();
+          source.buffer = audioBuffer;
+          source.loop = true;
+
+          // Cria o nó de ganho para controle de volume analógico/suave
+          const gainNode = ctx.createGain();
+          gainNode.gain.setValueAtTime(soundVolume, ctx.currentTime);
+
+          source.connect(gainNode);
+          gainNode.connect(ctx.destination);
+
+          source.start(0);
+
+          sourceNodeRef.current = source;
+          gainNodeRef.current = gainNode;
+        })
+        .catch(error => {
+          console.error("Erro ao carregar/reproduzir áudio via Web Audio API:", error);
+        });
     } else {
       // Se não houver som ativo, limpa o estado de Media Session
       if ('mediaSession' in navigator) {
@@ -10533,7 +10494,7 @@ Instruções para resposta:
           rel="noopener noreferrer" 
           style={{ color: 'var(--accent-primary)', fontWeight: 'bold', textDecoration: 'underline' }}
         >
-          FamilyHub 1.3.2
+          FamilyHub 1.3.4
         </a>{' '}
         {t('footerText')}
       </footer>

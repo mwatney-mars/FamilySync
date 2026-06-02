@@ -1,73 +1,50 @@
-# React + TypeScript + Vite
+# 💻 FamilyHub Frontend Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This directory houses the modern, high-fidelity React Single Page Application (SPA) that powers **FamilyHub**. It is optimized for high-performance wall-mounted tablets, smart-home dashboards, and mobile views.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🛠️ Technology Stack
 
-## React Compiler
+1. **Framework**: [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) for robust static analysis.
+2. **Build Tool**: [Vite](https://vite.dev/) for extremely fast Hot Module Replacement (HMR) and optimized rollup production bundles.
+3. **Styling**: Vanilla CSS with custom CSS Custom Properties (Variables) for themed state control, rich micro-animations, and responsive layouts.
+4. **Security & Cryptography**: Native **Web Crypto API (subtle)** for clientside secure AES-GCM 256-bit encryption.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🚀 Key Architectural Improvements
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 📺 1. Ticking Performance Isolation (Fridge Mode)
+The wall-mounted "Fridge Mode" includes live ticking clocks, local calendars, and live weather indicators. To prevent full component-tree re-renders on every clock tick (every second), we implement isolated rendering scopes:
+- The clock component operates on local state.
+- Dynamic seasonal greetings execute local checks.
+- Eliminates CPU/GPU rendering overhead on wall tablets, keeping memory utilization flat.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 🔒 2. Secure Context & AES Cryptography
+Modern browsers strictly restrict `window.crypto.subtle` to **Secure Contexts** (localhost or active HTTPS/SSL connections).
+- **Proactive Fallback Audits**: The application checks for Secure Context capabilities at boot time.
+- If in an insecure environment (e.g., standard HTTP over LAN), cryptographic components proactively warn the user and enforce secure routing to protect private family data.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 📦 Local Development Scripts
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Inside the `frontend` directory, you can run the following commands:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### `npm run dev`
+Runs the application in development mode with active HMR.<br>
+Open [http://localhost:5173](http://localhost:5173) to view it in the browser.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### `npm run build`
+Compiles and bundles the TypeScript and CSS assets into the highly optimized static folder `/dist` for production deployment.
+
+### `npm run lint`
+Runs ESLint to inspect, enforce code quality, and maintain standard TypeScript coding guidelines.
+
+---
+
+## 🎨 Design System
+All UI tokens (colors, font sizes, transitions) are managed inside `/src/index.css` to guarantee maximum design consistency.
+- **Vibrant Modern Palette**: Curated dark-themed glassmorphism and smooth gradient animations.
+- **Premium Typography**: Structured around the beautiful, modern *Outfit* and *Inter* fonts.

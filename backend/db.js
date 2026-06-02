@@ -124,6 +124,34 @@ export const initDb = async () => {
   // Criar índices para otimizar busca de sincronização
   await run(`CREATE INDEX IF NOT EXISTS idx_sync_family_time ON sync_items (family_id, updated_at)`);
   await run(`CREATE INDEX IF NOT EXISTS idx_sync_collection ON sync_items (collection)`);
+
+  // Criar tabela para Assinaturas de Notificação Push
+  await run(`
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      family_id TEXT NOT NULL,
+      endpoint TEXT UNIQUE NOT NULL,
+      p256dh TEXT NOT NULL,
+      auth TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (family_id) REFERENCES families(id)
+    )
+  `);
+
+  // Criar tabela para Credenciais Biométricas (WebAuthn Passkeys)
+  await run(`
+    CREATE TABLE IF NOT EXISTS biometric_credentials (
+      credential_id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      public_key TEXT NOT NULL,
+      counter INTEGER NOT NULL DEFAULT 0,
+      transports TEXT,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
   
   // Criar índice único para username para garantir integridade
   try {
@@ -168,6 +196,8 @@ export const initDb = async () => {
 
 export const resetDb = async () => {
   try {
+    await run(`DROP TABLE IF EXISTS push_subscriptions`);
+    await run(`DROP TABLE IF EXISTS biometric_credentials`);
     await run(`DROP TABLE IF EXISTS sync_items`);
     await run(`DROP TABLE IF EXISTS users`);
     await run(`DROP TABLE IF EXISTS families`);

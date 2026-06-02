@@ -54,11 +54,13 @@ import {
   Music,
   Timer,
   Pencil,
+  Fingerprint,
   X
 } from 'lucide-react';
 
 
 import { db, queueSyncOperation, generateUUID } from './db';
+import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 import { TRANSLATIONS } from './translations';
 import type {
   Chore,
@@ -989,6 +991,7 @@ function App() {
   // Telas de Autenticação
   const [loginUsername, setLoginUsername] = useState<string>('');
   const [loginPassword, setLoginPassword] = useState<string>('');
+  const [biometricLoading, setBiometricLoading] = useState<boolean>(false);
 
   // Membros Dinâmicos e Títulos
   const [familyMembers, setFamilyMembers] = useState<any[]>([]);
@@ -1572,16 +1575,228 @@ function App() {
     loadAuth();
   }, []);
 
-  // --- GERENCIAMENTO DE PERMISSÕES DE NOTIFICAÇÃO ---
+  // --- GERENCIAMENTO DE NOTIFICAÇÕES PUSH NATIVAS (SERVICE WORKER) ---
+  
+  // Utilitário para converter a chave pública VAPID (base64 URL Safe) para Uint8Array
+  const urlBase64ToUint8Array = (base64String: string) => {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
+  // Inscreve o navegador do usuário no serviço de notificações Push nativo
+  const subscribeToPushNotifications = async (userToken: string) => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+      console.warn('Este navegador ou dispositivo não possui suporte para Notificações Push nativas.');
+      return;
+    }
+
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      
+      // 1. Obter a chave pública VAPID do backend
+      const keyRes = await fetch(`${backendUrl}/api/notifications/vapid-public-key`);
+      if (!keyRes.ok) throw new Error('Não foi possível obter a chave pública VAPID do servidor.');
+      const { publicKey } = await keyRes.json();
+      
+      // 2. Inscrever o dispositivo no gateway do navegador (FCM / APNs / Mozilla)
+      const subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      });
+
+      // 3. Enviar a assinatura de push para salvar no banco do backend SQLite
+      await fetch(`${backendUrl}/api/notifications/subscribe`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userToken}`
+        },
+        body: JSON.stringify({ subscription })
+      });
+
+      console.log('Inscrito e sincronizado no canal de Notificações Push nativas!');
+    } catch (err) {
+      console.error('Falha ao configurar assinatura de Notificações Push nativas:', err);
+    }
+  };
+
+  // Solicita permissões de sistema e inicia auto-inscrição se aceito
   const requestNotificationPermission = () => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
-      if (Notification.permission === 'default') {
-        Notification.requestPermission().then((permission) => {
-          if (permission === 'granted') {
-            console.log('Permissão de notificações concedida pelo usuário.');
+      Notification.requestPermission().then((permission) => {
+        if (permission === 'granted') {
+          console.log('Permissão de notificações concedida! Sincronizando canal de push...');
+          if (token) {
+            subscribeToPushNotifications(token);
           }
-        });
+        }
+      });
+    }
+  };
+
+  // --- GERENCIAMENTO DE WEBAUTHN (PASSKEYS / BIOMETRIA) ---
+
+  const handleBiometricRegister = async () => {
+    if (!window.PublicKeyCredential) {
+      showToast(
+        language === 'pt' 
+          ? 'Seu navegador ou dispositivo não suporta autenticação biométrica.' 
+          : 'Your browser or device does not support biometric authentication.', 
+        'error'
+      );
+      return;
+    }
+
+    setBiometricLoading(true);
+    try {
+      // 1. Obter opções de registro do backend
+      const res = await fetch(`${backendUrl}/api/auth/webauthn/register-options`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Erro ao carregar opções de registro biométrico.');
       }
+      const options = await res.json();
+
+      // 2. Chamar API nativa do navegador usando @simplewebauthn/browser
+      const registrationResponse = await startRegistration(options);
+
+      // 3. Enviar resposta de verificação para o backend
+      const verifyRes = await fetch(`${backendUrl}/api/auth/webauthn/register-verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ registrationResponse })
+      });
+      if (!verifyRes.ok) {
+        const verifyErr = await verifyRes.json();
+        throw new Error(verifyErr.error || 'Erro ao verificar biometria no servidor.');
+      }
+      const verifyData = await verifyRes.json();
+
+      if (verifyData.success) {
+        showToast(
+          language === 'pt' 
+            ? 'Biometria registrada com sucesso!' 
+            : 'Biometrics registered successfully!', 
+          'success'
+        );
+      } else {
+        throw new Error('Falha na verificação de biometria.');
+      }
+    } catch (err: any) {
+      console.error('Erro de registro biométrico:', err);
+      if (err.name === 'NotAllowedError') {
+        showToast(
+          language === 'pt' ? 'Operação cancelada pelo usuário.' : 'Operation cancelled by user.', 
+          'info'
+        );
+      } else {
+        showToast(err.message || 'Erro ao registrar biometria.', 'error');
+      }
+    } finally {
+      setBiometricLoading(false);
+    }
+  };
+
+  const handleBiometricLogin = async () => {
+    if (!loginUsername || !loginUsername.trim()) {
+      showToast(
+        language === 'pt' 
+          ? 'Por favor, digite seu nome de usuário primeiro.' 
+          : 'Please enter your username first.', 
+        'error'
+      );
+      return;
+    }
+
+    if (!window.PublicKeyCredential) {
+      showToast(
+        language === 'pt' 
+          ? 'Seu navegador ou dispositivo não suporta autenticação biométrica.' 
+          : 'Your browser or device does not support biometric authentication.', 
+        'error'
+      );
+      return;
+    }
+
+    setBiometricLoading(true);
+    setAuthError(null);
+    try {
+      // 1. Obter opções de login do backend
+      const res = await fetch(`${backendUrl}/api/auth/webauthn/login-options`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: loginUsername.trim() })
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Erro ao carregar opções de login biométrico.');
+      }
+      const options = await res.json();
+
+      // 2. Autenticar no dispositivo via SimpleWebAuthn
+      const authenticationResponse = await startAuthentication(options);
+
+      // 3. Verificar com o backend
+      const verifyRes = await fetch(`${backendUrl}/api/auth/webauthn/login-verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: loginUsername.trim(), authenticationResponse })
+      });
+      if (!verifyRes.ok) {
+        const verifyErr = await verifyRes.json();
+        throw new Error(verifyErr.error || 'Falha ao autenticar biometria.');
+      }
+      const data = await verifyRes.json();
+
+      // Salvar credenciais no banco do navegador (IndexedDB)
+      await db.metadata.put({ key: 'auth_token', value: data.token });
+      await db.metadata.put({ key: 'user_info', value: data.user });
+      await db.metadata.put({ key: 'family_info', value: data.family });
+
+      if (data.user.theme) {
+        setTheme(data.user.theme);
+      }
+      if (data.user.accent_theme) {
+        setAccentTheme(data.user.accent_theme);
+        await db.metadata.put({ key: 'accent_theme', value: data.user.accent_theme });
+      }
+
+      setToken(data.token);
+      setCurrentUser(data.user);
+      setFamily(data.family);
+      setIsAuth(true);
+      fetchFamilyMembers(data.token, backendUrl);
+      
+      showToast(
+        language === 'pt' ? 'Login biométrico efetuado com sucesso!' : 'Biometric login successful!', 
+        'success'
+      );
+    } catch (err: any) {
+      console.error('Erro de login biométrico:', err);
+      if (err.name === 'NotAllowedError') {
+        showToast(
+          language === 'pt' ? 'Autenticação cancelada pelo usuário.' : 'Authentication cancelled by user.', 
+          'info'
+        );
+      } else {
+        setAuthError(err.message);
+        showToast(err.message || 'Falha ao efetuar login biométrico.', 'error');
+      }
+    } finally {
+      setBiometricLoading(false);
     }
   };
 
@@ -5206,9 +5421,36 @@ Instruções para resposta:
                 />
               </div>
 
-              <button type="submit" className="btn-primary" style={{ width: '100%', padding: '14px' }}>
-                {t('loginButton')}
-              </button>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button type="submit" className="btn-primary" style={{ flex: 1, padding: '14px' }}>
+                  {t('loginButton')}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBiometricLogin}
+                  disabled={biometricLoading}
+                  className="btn-secondary"
+                  style={{
+                    padding: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-light)',
+                    background: 'rgba(139, 92, 246, 0.08)',
+                    boxShadow: '0 0 10px rgba(139, 92, 246, 0.1)',
+                    width: '60px',
+                    cursor: biometricLoading ? 'not-allowed' : 'pointer'
+                  }}
+                  title={language === 'pt' ? 'Login biométrico (Passkey)' : 'Biometric login (Passkey)'}
+                >
+                  {biometricLoading ? (
+                    <RefreshCw size={18} className="animate-spin" />
+                  ) : (
+                    <Fingerprint size={18} style={{ color: 'var(--accent-primary)' }} />
+                  )}
+                </button>
+              </div>
 
               <div className="glass-panel" style={{ marginTop: '24px', border: '1px solid rgba(59, 130, 246, 0.25)', background: 'rgba(59, 130, 246, 0.03)', padding: '14px', borderRadius: 'var(--radius-md)', textAlign: 'left' }}>
                 <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600' }}>
@@ -8340,6 +8582,27 @@ Instruções para resposta:
                             {t('aiSettingsDesc')}
                           </p>
                         </div>
+
+                        {/* CARD 8: Biometria e Notificações Push */}
+                        <div 
+                          className="glass-panel glass-panel-hover" 
+                          onClick={() => setActiveSettingsSection('biometrics_push')}
+                          style={{ padding: '20px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)' }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Fingerprint size={20} style={{ color: 'var(--accent-primary)' }} />
+                            </div>
+                            <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>
+                              {language === 'pt' ? 'Biometria & Notificações' : 'Biometrics & Notifications'}
+                            </h4>
+                          </div>
+                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
+                            {language === 'pt' 
+                              ? 'Configure biometria do seu dispositivo (Face ID/Fingerprint) e controle o recebimento de notificações push.' 
+                              : 'Configure device biometrics (Face ID/Fingerprint) and control push notification delivery.'}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -9223,6 +9486,191 @@ Instruções para resposta:
                                   );
                                 }
                               })()}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 0.75. BIOMETRIA E NOTIFICAÇÕES PUSH */}
+                      {activeSettingsSection === 'biometrics_push' && (
+                        <div className="animate-slide-up">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                            <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Fingerprint size={18} style={{ color: 'var(--accent-primary)' }} />
+                            </div>
+                            <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
+                              {language === 'pt' ? 'Biometria & Notificações' : 'Biometrics & Notifications'}
+                            </h3>
+                          </div>
+
+                          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: '1.5' }}>
+                            {language === 'pt' 
+                              ? 'Aumente a segurança e a conveniência de sua família configurando o desbloqueio biométrico instantâneo e mantendo-se sempre informado com notificações push nativas do sistema.'
+                              : 'Increase security and convenience for your family by configuring instant biometric unlock and staying informed with native system push notifications.'}
+                          </p>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            {/* Bloco de Biometria */}
+                            <div style={{ 
+                              padding: '20px', 
+                              borderRadius: 'var(--radius-md)', 
+                              background: 'rgba(255, 255, 255, 0.02)', 
+                              border: '1px solid var(--border-light)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '16px'
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ 
+                                  width: '40px', 
+                                  height: '40px', 
+                                  borderRadius: '50%', 
+                                  background: 'rgba(139, 92, 246, 0.1)', 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  justifyContent: 'center',
+                                  boxShadow: '0 0 15px rgba(139, 92, 246, 0.2)'
+                                }}>
+                                  <Fingerprint size={20} style={{ color: 'var(--accent-primary)' }} />
+                                </div>
+                                <div>
+                                  <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>
+                                    {language === 'pt' ? 'Acesso Biométrico (Passkey)' : 'Biometric Access (Passkey)'}
+                                  </h4>
+                                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0, marginTop: '2px' }}>
+                                    {language === 'pt' ? 'Use Face ID, Touch ID ou a biometria do celular para fazer login.' : 'Use Face ID, Touch ID or phone biometrics to sign in.'}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.5' }}>
+                                {language === 'pt'
+                                  ? 'Ao registrar sua chave de segurança biométrica neste dispositivo, você poderá fazer login rapidamente na tela inicial apenas informando seu usuário e escaneando sua digital ou rosto. Nenhuma senha será necessária.'
+                                  : 'By registering your biometric security key on this device, you can log in quickly on the welcome screen just by providing your username and scanning your fingerprint or face. No password is required.'}
+                              </p>
+
+                              <button
+                                onClick={handleBiometricRegister}
+                                disabled={biometricLoading}
+                                className="btn-primary"
+                                style={{
+                                  alignSelf: 'flex-start',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  padding: '10px 18px',
+                                  fontSize: '13px',
+                                  borderRadius: 'var(--radius-sm)',
+                                  boxShadow: '0 4px 14px rgba(139, 92, 246, 0.3)',
+                                  cursor: biometricLoading ? 'not-allowed' : 'pointer'
+                                }}
+                              >
+                                {biometricLoading ? (
+                                  <RefreshCw size={14} className="animate-spin" />
+                                ) : (
+                                  <Fingerprint size={14} />
+                                )}
+                                {language === 'pt' ? 'Registrar Biometria Deste Dispositivo' : 'Register Biometrics on This Device'}
+                              </button>
+                            </div>
+
+                            {/* Bloco de Notificações Push */}
+                            <div style={{ 
+                              padding: '20px', 
+                              borderRadius: 'var(--radius-md)', 
+                              background: 'rgba(255, 255, 255, 0.02)', 
+                              border: '1px solid var(--border-light)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '16px'
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ 
+                                  width: '40px', 
+                                  height: '40px', 
+                                  borderRadius: '50%', 
+                                  background: 'rgba(16, 185, 129, 0.1)', 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  justifyContent: 'center',
+                                  boxShadow: '0 0 15px rgba(16, 185, 129, 0.2)'
+                                }}>
+                                  <span style={{ fontSize: '18px' }}>🔔</span>
+                                </div>
+                                <div>
+                                  <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>
+                                    {language === 'pt' ? 'Notificações Push do Sistema' : 'System Push Notifications'}
+                                  </h4>
+                                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0, marginTop: '2px' }}>
+                                    {language === 'pt' ? 'Receba alertas críticos de tarefas e remédios em tempo real.' : 'Receive critical task and medication alerts in real-time.'}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.5' }}>
+                                {language === 'pt'
+                                  ? 'As notificações do sistema permitem que o FamilyHub envie alertas urgentes diretamente para a sua tela de bloqueio ou central de notificações, mesmo que o navegador esteja fechado ou o aparelho bloqueado.'
+                                  : 'System notifications allow FamilyHub to send urgent alerts directly to your lock screen or notification center, even if your browser is closed or your device is locked.'}
+                              </p>
+
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+                                {('Notification' in window) ? (
+                                  Notification.permission === 'granted' ? (
+                                    <>
+                                      <div style={{ 
+                                        padding: '6px 12px', 
+                                        borderRadius: 'var(--radius-sm)', 
+                                        background: 'rgba(16, 185, 129, 0.12)', 
+                                        border: '1px solid rgba(16, 185, 129, 0.3)', 
+                                        color: 'var(--accent-success)', 
+                                        fontSize: '12px', 
+                                        fontWeight: '600',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px'
+                                      }}>
+                                        <Check size={14} />
+                                        {language === 'pt' ? 'Notificações Ativadas no Sistema' : 'System Notifications Enabled'}
+                                      </div>
+                                      <button
+                                        onClick={() => {
+                                          if (token) {
+                                            subscribeToPushNotifications(token);
+                                            showToast(
+                                              language === 'pt' ? 'Inscrição de push recarregada!' : 'Push subscription reloaded!', 
+                                              'success'
+                                            );
+                                          }
+                                        }}
+                                        className="btn-secondary"
+                                        style={{ padding: '8px 14px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}
+                                      >
+                                        🔄 {language === 'pt' ? 'Recarregar Assinatura' : 'Sync Subscription'}
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <button
+                                      onClick={requestNotificationPermission}
+                                      className="btn-primary"
+                                      style={{ 
+                                        padding: '10px 18px', 
+                                        fontSize: '13px', 
+                                        borderRadius: 'var(--radius-sm)', 
+                                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                        border: 'none',
+                                        boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)',
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      🔔 {language === 'pt' ? 'Ativar Notificações no Dispositivo' : 'Enable Notifications on Device'}
+                                    </button>
+                                  )
+                                ) : (
+                                  <div style={{ color: '#ef4444', fontSize: '12px', fontWeight: '500' }}>
+                                    ⚠️ {language === 'pt' ? 'Este navegador não suporta notificações do sistema.' : 'This browser does not support system notifications.'}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>

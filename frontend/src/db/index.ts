@@ -46,8 +46,10 @@ export interface AiConfig {
   collection: 'ai_config';
   gemini_api_key: string;
   ai_categorization_enabled: boolean;
+  gemini_model?: string;
   updated_at: number;
 }
+
 
 // --- DEFINIÇÕES DE TIPOS ---
 

@@ -54,7 +54,9 @@ import {
   Music,
   Volume2,
   VolumeX,
-  Timer
+  Timer,
+  Pencil,
+  X
 } from 'lucide-react';
 
 
@@ -806,6 +808,14 @@ function App() {
   const [familyMembers, setFamilyMembers] = useState<any[]>([]);
   const [newFamilyName, setNewFamilyName] = useState<string>('');
   const [addMemUsername, setAddMemUsername] = useState<string>('');
+  const [addMemDisplayName, setAddMemDisplayName] = useState<string>('');
+  
+  // Estados para edição inline de integrantes
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [editMemUsername, setEditMemUsername] = useState<string>('');
+  const [editMemDisplayName, setEditMemDisplayName] = useState<string>('');
+  const [editMemTitle, setEditMemTitle] = useState<string>('');
+  const [editMemRole, setEditMemRole] = useState<string>('');
   const [addMemPassword, setAddMemPassword] = useState<string>('');
   const [addMemRole, setAddMemRole] = useState<string>('user');
   const [addMemTitle, setAddMemTitle] = useState<string>('Filho');
@@ -1121,6 +1131,7 @@ function App() {
   // --- ESTADOS PARA LISTA DE COMPRAS E INTELIGÊNCIA ARTIFICIAL (GEMINI) ---
   const [keepItemName, setKeepItemName] = useState<string>('');
   const [geminiApiKey, setGeminiApiKey] = useState<string>('');
+  const [geminiModel, setGeminiModel] = useState<string>('gemini-flash-latest');
   const [aiCategorizationEnabled, setAiCategorizationEnabled] = useState<boolean>(true);
   const [itemsBeingClassified, setItemsBeingClassified] = useState<Set<string>>(new Set());
   const [smartSuggestions, setSmartSuggestions] = useState<any[]>([]);
@@ -1195,6 +1206,7 @@ function App() {
       setAiConfigApiKey(activeKey);
       setAiCategorizationEnabled(activeEnabled);
       setAiConfigEnabled(activeEnabled);
+      setGeminiModel('gemini-flash-latest');
     };
 
     applyAiConfig();
@@ -3154,7 +3166,8 @@ function App() {
     itemName: string,
     apiKey: string
   ): Promise<{ category: string; correctedName: string; defaultUnit: string }> => {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const activeModel = geminiModel || 'gemini-flash-latest';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${apiKey}`;
     
     const prompt = `Você é um assistente de organização doméstica inteligente.
 Classifique o item de lista de compras fornecido, corrija qualquer erro de digitação, ortografia, concordância ou acentuação no nome do item, e também determine a unidade de medida padrão/típica em português brasileiro (ex: "un", "kg", "g", "l", "ml", "pct", "cx", "gf").
@@ -3278,7 +3291,8 @@ Siga estritamente as regras abaixo:
     fixed_time: string;
     period_time: 'manha' | 'tarde' | 'noite';
   }> => {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const activeModel = geminiModel || 'gemini-flash-latest';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${apiKey}`;
     
     const prompt = `Você é um assistente de organização doméstica inteligente.
 Gere sugestões inteligentes para uma nova tarefa/atividade doméstica com base no título fornecido.
@@ -3428,14 +3442,14 @@ Responda APENAS com um objeto JSON válido seguindo a estrutura abaixo, sem expl
     throw new Error('Não foi possível obter uma resposta de tarefa válida do Gemini');
   };
 
-  // Classificador em lote com correção ortográfica e categoria/unidade padrão via Gemini
   const fetchBatchRefinedItemsFromGemini = async (
     items: { id: string; name: string }[],
     apiKey: string
   ): Promise<Record<string, { category: string; correctedName: string; defaultUnit: string }>> => {
     if (items.length === 0) return {};
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const activeModel = geminiModel || 'gemini-flash-latest';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${apiKey}`;
     const itemsJsonStr = JSON.stringify(items.map(item => ({ id: item.id, name: item.name })));
 
     const prompt = `Você é um assistente de organização doméstica inteligente.
@@ -3716,13 +3730,13 @@ Siga estritamente as regras abaixo:
     }
   };
 
-  // Chamada remota ao Gemini para predições de compras baseadas em histórico
   const fetchSmartSuggestionsFromGemini = async (
     history: PurchaseRecord[],
     activeItemNames: string[],
     apiKey: string
   ): Promise<any[]> => {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const activeModel = geminiModel || 'gemini-flash-latest';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${apiKey}`;
 
     const summaryMap: Record<string, { purchaseDates: string[]; quantities: string[] }> = {};
     history.forEach(rec => {
@@ -3863,9 +3877,11 @@ Instruções para resposta:
 
       setGeminiApiKey(apiKey);
       setAiCategorizationEnabled(enabled);
+      setGeminiModel('gemini-flash-latest');
       
       await db.metadata.put({ key: 'gemini_api_key', value: apiKey });
       await db.metadata.put({ key: 'ai_categorization_enabled', value: enabled });
+      await db.metadata.put({ key: 'gemini_model', value: 'gemini-flash-latest' });
 
       // Salvar na tabela de sincronização de configurações de IA
       const aiConfigItem = {
@@ -3873,6 +3889,7 @@ Instruções para resposta:
         collection: 'ai_config' as const,
         gemini_api_key: apiKey,
         ai_categorization_enabled: enabled,
+        gemini_model: 'gemini-flash-latest',
         updated_at: Date.now()
       };
       await db.ai_config.put(aiConfigItem);
@@ -3984,7 +4001,10 @@ Instruções para resposta:
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!addMemUsername.trim() || !addMemPassword.trim()) {
+    const cleanUsername = addMemUsername.trim().toLowerCase().replace(/\s+/g, '');
+    const cleanDisplayName = addMemDisplayName.trim();
+
+    if (!cleanUsername || !addMemPassword.trim()) {
       showToast(t('toastFillRequiredFields'), 'error');
       return;
     }
@@ -4001,7 +4021,8 @@ Instruções para resposta:
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          username: addMemUsername,
+          username: cleanUsername,
+          display_name: cleanDisplayName || cleanUsername,
           password: addMemPassword,
           role: addMemRole,
           familyTitle: addMemTitle
@@ -4011,6 +4032,7 @@ Instruções para resposta:
       if (response.ok) {
         showToast(t('toastMemberAddSuccess'), 'success');
         setAddMemUsername('');
+        setAddMemDisplayName('');
         setAddMemPassword('');
         setAddMemRole('user');
         setAddMemTitle('Filho');
@@ -4025,7 +4047,7 @@ Instruções para resposta:
     }
   };
 
-  const handleUpdateMember = async (memberId: string, role?: string, familyTitle?: string) => {
+  const handleUpdateMember = async (memberId: string, role?: string, familyTitle?: string, username?: string, display_name?: string) => {
     if (!isOnline || !token) {
       showToast(t('toastNeedOnlineToManageMembers'), 'error');
       return;
@@ -4037,9 +4059,10 @@ Instruções para resposta:
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ role, familyTitle })
+        body: JSON.stringify({ role, familyTitle, username, display_name })
       });
       if (response.ok) {
+        showToast(t('toastMemberUpdateSuccess') || (language === 'pt' ? 'Membro atualizado com sucesso!' : 'Member updated successfully!'), 'success');
         await fetchFamilyMembers();
       } else {
         const errData = await response.json();
@@ -8862,99 +8885,219 @@ Instruções para resposta:
                                   </div>
                                 ) : (
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    {familyMembers.map((member) => (
-                                      <div
-                                        key={member.id}
-                                        style={{
-                                          display: 'grid',
-                                          gridTemplateColumns: '1.2fr 1fr 1fr 40px 40px',
-                                          alignItems: 'center',
-                                          gap: '10px',
-                                          background: 'rgba(255,255,255,0.02)',
-                                          padding: '10px 12px',
-                                          borderRadius: 'var(--radius-md)',
-                                          border: '1px solid var(--border-light)'
-                                        }}
-                                      >
-                                        <div style={{ fontSize: '13px', fontWeight: '600', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                                          {member.display_name || member.username} {member.id === currentUser.id && <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>({t('youLabel')})</span>}
-                                          {(member.display_name && member.display_name !== member.username) && (
-                                            <div style={{ fontSize: '11px', fontWeight: '400', color: 'var(--text-secondary)' }}>@{member.username}</div>
-                                          )}
+                                    {familyMembers.map((member) => {
+                                      const isEditing = editingMemberId === member.id;
+                                      if (isEditing) {
+                                        return (
+                                          <div
+                                            key={member.id}
+                                            style={{
+                                              display: 'grid',
+                                              gridTemplateColumns: '1.2fr 1fr 1fr 40px 40px 40px',
+                                              alignItems: 'center',
+                                              gap: '10px',
+                                              background: 'rgba(255,255,255,0.04)',
+                                              padding: '10px 12px',
+                                              borderRadius: 'var(--radius-md)',
+                                              border: '1px solid var(--accent-primary-hover)'
+                                            }}
+                                          >
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                              <input
+                                                type="text"
+                                                className="input-field"
+                                                style={{ padding: '4px 8px', fontSize: '11px', height: '28px' }}
+                                                value={editMemDisplayName}
+                                                onChange={(e) => setEditMemDisplayName(e.target.value)}
+                                                placeholder={t('addMemberDisplayNamePlaceholder')}
+                                                required
+                                              />
+                                              <input
+                                                type="text"
+                                                className="input-field"
+                                                style={{ padding: '4px 8px', fontSize: '11px', height: '28px' }}
+                                                value={editMemUsername}
+                                                onChange={(e) => setEditMemUsername(e.target.value)}
+                                                placeholder={t('addMemberUsernamePlaceholder')}
+                                                required
+                                              />
+                                            </div>
+
+                                            <select
+                                              className="input-field"
+                                              style={{ padding: '6px 10px', fontSize: '12px', height: '34px' }}
+                                              value={editMemTitle || 'Outro'}
+                                              onChange={(e) => setEditMemTitle(e.target.value)}
+                                            >
+                                              <option value="Pai">{t('titleFather')}</option>
+                                              <option value="Mãe">{t('titleMother')}</option>
+                                              <option value="Filho">{t('titleSon')}</option>
+                                              <option value="Filha">{t('titleDaughter')}</option>
+                                              <option value="Avô">{t('titleGrandfather')}</option>
+                                              <option value="Avó">{t('titleGrandmother')}</option>
+                                              <option value="Tio">{t('titleUncle')}</option>
+                                              <option value="Tia">{t('titleAunt')}</option>
+                                              <option value="Outro">{t('titleOther')}</option>
+                                            </select>
+
+                                            <select
+                                              className="input-field"
+                                              style={{ padding: '6px 10px', fontSize: '12px', height: '34px' }}
+                                              value={editMemRole}
+                                              onChange={(e) => setEditMemRole(e.target.value)}
+                                              disabled={member.id === currentUser.id || member.id === family?.creator_id}
+                                              title={member.id === family?.creator_id ? t('creatorMustBeAdmin') : undefined}
+                                            >
+                                              <option value="admin">{t('roleAdmin')}</option>
+                                              <option value="user">{t('roleUser')}</option>
+                                            </select>
+
+                                            <button
+                                              onClick={async () => {
+                                                await handleUpdateMember(member.id, editMemRole, editMemTitle, editMemUsername, editMemDisplayName);
+                                                setEditingMemberId(null);
+                                              }}
+                                              className="btn-primary"
+                                              style={{
+                                                height: '34px',
+                                                width: '34px',
+                                                padding: '0',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                              }}
+                                              title={t('updateButton')}
+                                            >
+                                              <Check size={14} />
+                                            </button>
+
+                                            <button
+                                              onClick={() => setEditingMemberId(null)}
+                                              className="btn-secondary"
+                                              style={{
+                                                height: '34px',
+                                                width: '34px',
+                                                padding: '0',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                borderColor: 'rgba(239, 68, 68, 0.2)',
+                                                color: 'var(--accent-danger)'
+                                              }}
+                                              title={t('cancel')}
+                                            >
+                                              <X size={14} />
+                                            </button>
+
+                                            <div style={{ width: '34px' }}></div>
+                                          </div>
+                                        );
+                                      }
+
+                                      return (
+                                        <div
+                                          key={member.id}
+                                          style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: '1.2fr 1fr 1fr 40px 40px 40px',
+                                            alignItems: 'center',
+                                            gap: '10px',
+                                            background: 'rgba(255,255,255,0.02)',
+                                            padding: '10px 12px',
+                                            borderRadius: 'var(--radius-md)',
+                                            border: '1px solid var(--border-light)'
+                                          }}
+                                        >
+                                          <div style={{ fontSize: '13px', fontWeight: '600', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                            {member.display_name || member.username} {member.id === currentUser.id && <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>({t('youLabel')})</span>}
+                                            {(member.display_name && member.display_name !== member.username) && (
+                                              <div style={{ fontSize: '11px', fontWeight: '400', color: 'var(--text-secondary)' }}>@{member.username}</div>
+                                            )}
+                                          </div>
+                                          
+                                          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                                            {member.family_title === 'Pai' && t('titleFather')}
+                                            {member.family_title === 'Mãe' && t('titleMother')}
+                                            {member.family_title === 'Filho' && t('titleSon')}
+                                            {member.family_title === 'Filha' && t('titleDaughter')}
+                                            {member.family_title === 'Avô' && t('titleGrandfather')}
+                                            {member.family_title === 'Avó' && t('titleGrandmother')}
+                                            {member.family_title === 'Tio' && t('titleUncle')}
+                                            {member.family_title === 'Tia' && t('titleAunt')}
+                                            {member.family_title === 'Outro' && t('titleOther')}
+                                            {(!member.family_title || (member.family_title !== 'Pai' && member.family_title !== 'Mãe' && member.family_title !== 'Filho' && member.family_title !== 'Filha' && member.family_title !== 'Avô' && member.family_title !== 'Avó' && member.family_title !== 'Tio' && member.family_title !== 'Tia' && member.family_title !== 'Outro')) && (member.family_title || t('titleOther'))}
+                                          </div>
+
+                                          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                                            {member.role === 'admin' ? t('roleAdmin') : t('roleUser')}
+                                          </div>
+
+                                          <button
+                                            onClick={() => {
+                                              setEditingMemberId(member.id);
+                                              setEditMemDisplayName(member.display_name || '');
+                                              setEditMemUsername(member.username || '');
+                                              setEditMemTitle(member.family_title || 'Outro');
+                                              setEditMemRole(member.role || 'user');
+                                            }}
+                                            className="btn-secondary"
+                                            style={{
+                                              height: '34px',
+                                              width: '34px',
+                                              padding: '0',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                            }}
+                                            title={language === 'pt' ? 'Editar integrante' : 'Edit member'}
+                                          >
+                                            <Pencil size={14} />
+                                          </button>
+
+                                          <button
+                                            onClick={() => {
+                                              setResetPasswordMemberId(member.id);
+                                              setResetPasswordNewValue('');
+                                            }}
+                                            className="btn-secondary"
+                                            style={{
+                                              height: '34px',
+                                              width: '34px',
+                                              padding: '0',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              borderColor: 'rgba(245, 158, 11, 0.2)',
+                                              color: 'var(--accent-warning)',
+                                              background: 'rgba(245, 158, 11, 0.05)'
+                                            }}
+                                            title={t('resetUserPassword')}
+                                          >
+                                            <Key size={14} />
+                                          </button>
+
+                                          <button
+                                            onClick={() => handleEvictMember(member.id)}
+                                            disabled={member.id === currentUser.id || member.id === family?.creator_id}
+                                            className="btn-secondary"
+                                            style={{
+                                              height: '34px',
+                                              width: '34px',
+                                              padding: '0',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              borderColor: (member.id === currentUser.id || member.id === family?.creator_id) ? 'transparent' : 'rgba(239, 68, 68, 0.2)',
+                                              color: (member.id === currentUser.id || member.id === family?.creator_id) ? 'var(--text-muted)' : 'var(--accent-danger)',
+                                              opacity: (member.id === currentUser.id || member.id === family?.creator_id) ? 0.3 : 1
+                                            }}
+                                            title={member.id === family?.creator_id ? t('creatorCannotBeRemoved') : t('removeFamilyMember')}
+                                          >
+                                            <Trash2 size={14} />
+                                          </button>
                                         </div>
-                                        
-                                        <select
-                                          className="input-field"
-                                          style={{ padding: '6px 10px', fontSize: '12px', height: '34px' }}
-                                          value={member.family_title || 'Outro'}
-                                          onChange={(e) => handleUpdateMember(member.id, undefined, e.target.value)}
-                                        >
-                                          <option value="Pai">{t('titleFather')}</option>
-                                          <option value="Mãe">{t('titleMother')}</option>
-                                          <option value="Filho">{t('titleSon')}</option>
-                                          <option value="Filha">{t('titleDaughter')}</option>
-                                          <option value="Avô">{t('titleGrandfather')}</option>
-                                          <option value="Avó">{t('titleGrandmother')}</option>
-                                          <option value="Tio">{t('titleUncle')}</option>
-                                          <option value="Tia">{t('titleAunt')}</option>
-                                          <option value="Outro">{t('titleOther')}</option>
-                                        </select>
-
-                                        <select
-                                          className="input-field"
-                                          style={{ padding: '6px 10px', fontSize: '12px', height: '34px' }}
-                                          value={member.role}
-                                          onChange={(e) => handleUpdateMember(member.id, e.target.value, undefined)}
-                                          disabled={member.id === currentUser.id || member.id === family?.creator_id}
-                                          title={member.id === family?.creator_id ? t('creatorMustBeAdmin') : undefined}
-                                        >
-                                          <option value="admin">{t('roleAdmin')}</option>
-                                          <option value="user">{t('roleUser')}</option>
-                                        </select>
-
-                                        <button
-                                          onClick={() => {
-                                            setResetPasswordMemberId(member.id);
-                                            setResetPasswordNewValue('');
-                                          }}
-                                          className="btn-secondary"
-                                          style={{
-                                            height: '34px',
-                                            width: '34px',
-                                            padding: '0',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            borderColor: 'rgba(245, 158, 11, 0.2)',
-                                            color: 'var(--accent-warning)',
-                                            background: 'rgba(245, 158, 11, 0.05)'
-                                          }}
-                                          title={t('resetUserPassword')}
-                                        >
-                                          <Key size={14} />
-                                        </button>
-
-                                        <button
-                                          onClick={() => handleEvictMember(member.id)}
-                                          disabled={member.id === currentUser.id || member.id === family?.creator_id}
-                                          className="btn-secondary"
-                                          style={{
-                                            height: '34px',
-                                            width: '34px',
-                                            padding: '0',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            borderColor: (member.id === currentUser.id || member.id === family?.creator_id) ? 'transparent' : 'rgba(239, 68, 68, 0.2)',
-                                            color: (member.id === currentUser.id || member.id === family?.creator_id) ? 'var(--text-muted)' : 'var(--accent-danger)',
-                                            opacity: (member.id === currentUser.id || member.id === family?.creator_id) ? 0.3 : 1
-                                          }}
-                                          title={member.id === family?.creator_id ? t('creatorCannotBeRemoved') : t('removeFamilyMember')}
-                                        >
-                                          <Trash2 size={14} />
-                                        </button>
-                                      </div>
-                                    ))}
+                                      );
+                                    })}
                                   </div>
                                 )}
                               </div>
@@ -8970,7 +9113,18 @@ Instruções para resposta:
                                 </p>
                                 
                                 <form onSubmit={handleAddMember} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
+                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                    <div>
+                                      <input
+                                        type="text"
+                                        className="input-field"
+                                        style={{ padding: '8px 10px', fontSize: '13px' }}
+                                        value={addMemDisplayName}
+                                        onChange={(e) => setAddMemDisplayName(e.target.value)}
+                                        placeholder={t('addMemberDisplayNamePlaceholder')}
+                                        required
+                                      />
+                                    </div>
                                     <div>
                                       <input
                                         type="text"

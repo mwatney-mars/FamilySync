@@ -291,7 +291,7 @@ app.post('/api/family/members', authenticateToken, async (req, res) => {
 app.put('/api/family/members/:memberId', authenticateToken, async (req, res) => {
   const { familyId, userId } = req.user;
   const { memberId } = req.params;
-  const { role, familyTitle } = req.body;
+  const { role, familyTitle, username, display_name } = req.body;
 
   try {
     // Verificar se quem está requisitando é admin da mesma família
@@ -301,7 +301,7 @@ app.put('/api/family/members/:memberId', authenticateToken, async (req, res) => 
     }
 
     // Verificar se o membro a ser editado pertence à mesma família
-    const targetMember = await get('SELECT role, family_id FROM users WHERE id = ?', [memberId]);
+    const targetMember = await get('SELECT role, family_id, username, display_name FROM users WHERE id = ?', [memberId]);
     if (!targetMember || targetMember.family_id !== familyId) {
       return res.status(400).json({ error: 'Usuário não pertence a esta família.' });
     }
@@ -329,8 +329,28 @@ app.put('/api/family/members/:memberId', authenticateToken, async (req, res) => 
       await run('UPDATE users SET role = ? WHERE id = ?', [role, memberId]);
     }
 
-    if (familyTitle) {
+    if (familyTitle !== undefined) {
       await run('UPDATE users SET family_title = ? WHERE id = ?', [familyTitle, memberId]);
+    }
+
+    if (username) {
+      const cleanUsername = username.trim().toLowerCase().replace(/\s+/g, '');
+      if (cleanUsername) {
+        // Verificar se usuário com este username já existe (excluindo o próprio memberId)
+        const existingUser = await get(
+          'SELECT id FROM users WHERE LOWER(username) = LOWER(?) AND id != ?',
+          [cleanUsername, memberId]
+        );
+        if (existingUser) {
+          return res.status(400).json({ error: 'Este nome de usuário já está em uso.' });
+        }
+        await run('UPDATE users SET username = ? WHERE id = ?', [cleanUsername, memberId]);
+      }
+    }
+
+    if (display_name !== undefined) {
+      const cleanDisplayName = display_name.trim();
+      await run('UPDATE users SET display_name = ? WHERE id = ?', [cleanDisplayName, memberId]);
     }
 
     // Notificar os outros clientes para puxarem membros atualizados via SSE
@@ -710,6 +730,8 @@ app.get('/api/ai/config', authenticateToken, (req, res) => {
     gemini_api_key: process.env.GEMINI_API_KEY || ''
   });
 });
+
+
 
 
 // --- MECANISMO DE SINCRONIZAÇÃO OFFLINE-FIRST ---

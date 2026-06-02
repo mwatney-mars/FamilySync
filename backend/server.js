@@ -906,7 +906,17 @@ const getWebAuthnRpID = (req) => {
 const getWebAuthnOrigin = (req) => {
   const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
   const host = req.headers.host || '';
-  return `${protocol}://${host}`; // e.g., 'http://localhost:5173'
+  return `${protocol}://${host}`; // e.g., 'http://localhost:5173';
+};
+
+const getCredentialIdBuffer = (dbCredentialId) => {
+  if (Buffer.isBuffer(dbCredentialId)) {
+    return dbCredentialId;
+  }
+  if (dbCredentialId instanceof Uint8Array) {
+    return Buffer.from(dbCredentialId);
+  }
+  return Buffer.from(dbCredentialId, 'base64url');
 };
 
 // Broadcast de notificações customizadas para a família via SSE e Web Push nativo
@@ -1019,11 +1029,11 @@ app.get('/api/auth/webauthn/register-options', authenticateToken, async (req, re
     const options = await generateRegistrationOptions({
       rpName: 'FamilyHub 🏡',
       rpID,
-      userID: userId,
+      userID: Buffer.from(userId),
       userName: username,
       userDisplayName: user.display_name || username,
       excludeCredentials: userCredentials.map(cred => ({
-        id: cred.credential_id,
+        id: getCredentialIdBuffer(cred.credential_id),
         type: 'public-key',
       })),
       authenticatorSelection: {
@@ -1065,13 +1075,14 @@ app.post('/api/auth/webauthn/register-verify', authenticateToken, async (req, re
     if (verification.verified) {
       const { credentialID, credentialPublicKey, counter, transports } = verification.registrationInfo;
 
+      const credentialIdStr = registrationResponse.id || Buffer.from(credentialID).toString('base64url');
       const pubKeyStr = Buffer.from(credentialPublicKey).toString('base64');
       const transportsStr = transports ? JSON.stringify(transports) : null;
 
       await run(`
         INSERT INTO biometric_credentials (credential_id, user_id, public_key, counter, transports, created_at)
         VALUES (?, ?, ?, ?, ?, ?)
-      `, [credentialID, userId, pubKeyStr, counter, transportsStr, Date.now()]);
+      `, [credentialIdStr, userId, pubKeyStr, counter, transportsStr, Date.now()]);
 
       res.json({ success: true, verified: true });
     } else {
@@ -1103,7 +1114,7 @@ app.post('/api/auth/webauthn/login-options', async (req, res) => {
     const options = await generateAuthenticationOptions({
       rpID,
       allowCredentials: userCredentials.map(cred => ({
-        id: cred.credential_id,
+        id: getCredentialIdBuffer(cred.credential_id),
         type: 'public-key',
       })),
       userVerification: 'preferred',
@@ -1150,7 +1161,7 @@ app.post('/api/auth/webauthn/login-verify', async (req, res) => {
       expectedOrigin,
       expectedRPID: rpID,
       authenticator: {
-        credentialID: dbCredential.credential_id,
+        credentialID: getCredentialIdBuffer(dbCredential.credential_id),
         credentialPublicKey: publicKeyBuffer,
         counter: dbCredential.counter,
       },

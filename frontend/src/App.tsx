@@ -52,8 +52,6 @@ import {
   Flame,
   Droplets,
   Music,
-  Volume2,
-  VolumeX,
   Timer,
   Pencil,
   X
@@ -1014,7 +1012,7 @@ function App() {
 
   // Estados para o Zen Space (White Noise & Ambient Sounds)
   const [activeSound, setActiveSound] = useState<string | null>(null);
-  const [soundVolume, setSoundVolume] = useState<number>(0.5);
+  const [soundVolume] = useState<number>(0.5);
   const [timerSeconds, setTimerSeconds] = useState<number | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
@@ -5489,11 +5487,11 @@ Instruções para resposta:
           })}
         </div>
 
-        {/* CONTROLS (VOLUME AND SLEEP TIMER) */}
+        {/* CONTROLS (SLEEP TIMER ONLY) */}
         <div 
           style={{ 
             display: 'flex', 
-            justifyContent: 'space-between', 
+            justifyContent: 'center', 
             alignItems: 'center', 
             borderTop: '1px solid var(--border-light)', 
             paddingTop: '14px',
@@ -5501,38 +5499,6 @@ Instruções para resposta:
             flexWrap: 'wrap'
           }}
         >
-          {/* VOLUME SLIDER */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '130px' }}>
-            <button
-              onClick={() => setSoundVolume(v => (v > 0 ? 0 : 0.5))}
-              style={{
-                border: 'none',
-                background: 'none',
-                padding: 0,
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center'
-              }}
-            >
-              {soundVolume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
-            </button>
-            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '4px' }}>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={soundVolume}
-                onChange={(e) => setSoundVolume(parseFloat(e.target.value))}
-                className="zen-slider"
-                style={{
-                  '--accent-primary': activeSound ? SOUNDS_LIST.find(s => s.id === activeSound)?.color : 'var(--accent-primary)'
-                } as React.CSSProperties}
-              />
-            </div>
-          </div>
-
           {/* TIMER CONTROL */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -7777,6 +7743,7 @@ Instruções para resposta:
                         .sort((a, b) => b[1].points - a[1].points)
                         .map(([name, stats], idx) => {
                           const levelPercent = Math.round((stats.points % 150) / 150 * 100);
+                          const member = familyMembers.find(m => m.username === name);
                           return (
                             <div key={name} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '16px' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
@@ -7784,6 +7751,7 @@ Instruções para resposta:
                                   <span style={{ fontSize: '18px', fontWeight: '800', color: idx === 0 ? 'var(--accent-warning)' : idx === 1 ? '#d1d5db' : '#b45309' }}>
                                     #{idx + 1}
                                   </span>
+                                  {renderMemberAvatar(member, 24)}
                                   <span style={{ fontWeight: '600', fontSize: '15px' }}>{stats.displayName || name}</span>
                                 </div>
                                 <span className="badge-xp">{stats.points} {t('totalXpLabel')}</span>
@@ -7998,17 +7966,21 @@ Instruções para resposta:
                           </div>
 
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '140px' }}>
-                            {contributionSegments.map(seg => (
-                              <div key={seg.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: seg.color }} />
-                                  <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{seg.name}</span>
+                            {contributionSegments.map(seg => {
+                              const member = familyMembers.find(m => m.username === seg.name || m.display_name === seg.name);
+                              return (
+                                <div key={seg.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: seg.color }} />
+                                    {renderMemberAvatar(member, 18)}
+                                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{seg.name}</span>
+                                  </div>
+                                  <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>
+                                    {seg.percent}%
+                                  </span>
                                 </div>
-                                <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>
-                                  {seg.percent}%
-                                </span>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
 
                         </div>

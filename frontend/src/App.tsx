@@ -971,6 +971,7 @@ function App() {
   const [uploadedPhotoMimeType, setUploadedPhotoMimeType] = useState<string>('');
   const [isGeneratingAvatar, setIsGeneratingAvatar] = useState<boolean>(false);
   const [avatarGenerationError, setAvatarGenerationError] = useState<string | null>(null);
+  const [generatedAvatars, setGeneratedAvatars] = useState<string[]>([]);
   const [profileDisplayName, setProfileDisplayName] = useState<string>('');
   const [profileEmail, setProfileEmail] = useState<string>('');
   const [profileBirthDate, setProfileBirthDate] = useState<string>('');
@@ -1837,11 +1838,13 @@ function App() {
     if (!file) {
       setUploadedPhotoBase64(null);
       setUploadedPhotoMimeType('');
+      setGeneratedAvatars([]);
       return;
     }
 
     setUploadedPhotoMimeType(file.type);
     setAvatarGenerationError(null);
+    setGeneratedAvatars([]);
 
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -1871,56 +1874,83 @@ function App() {
 
     setIsGeneratingAvatar(true);
     setAvatarGenerationError(null);
+    setGeneratedAvatars([]);
 
     try {
       const promptText = `3D Character Model\n\nA highly stylized 3D caricature of this Character, with expressive facial features, and playful exaggeration. Rendered in a smooth, polished style with clean materials and soft ambient lighting. Bold color background to emphasize the character's charm and presence.`;
       
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${geminiApiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: promptText },
-              {
-                inlineData: {
-                  mimeType: uploadedPhotoMimeType || 'image/jpeg',
-                  data: uploadedPhotoBase64
+      // Criar 3 requisições em paralelo com variações no prompt para garantir diferentes opções
+      const fetchPromises = Array.from({ length: 3 }).map(async (_, idx) => {
+        const styleVariations = [
+          "Expressive and highly stylized caricature.",
+          "Playful exaggeration with vibrant atmospheric lighting.",
+          "Polished claymation 3D look with clean material shading."
+        ];
+        const detailedPrompt = `${promptText}\nVariation Style Element: ${styleVariations[idx]}`;
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${geminiApiKey}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: detailedPrompt },
+                {
+                  inlineData: {
+                    mimeType: uploadedPhotoMimeType || 'image/jpeg',
+                    data: uploadedPhotoBase64
+                  }
                 }
-              }
-            ]
-          }],
-          generationConfig: {
-            responseModalities: ["TEXT", "IMAGE"]
-          }
-        })
+              ]
+            }],
+            generationConfig: {
+              responseModalities: ["TEXT", "IMAGE"]
+            }
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error?.message || `Erro do Gemini: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const parts = data.candidates?.[0]?.content?.parts;
+        if (!parts || parts.length === 0) {
+          throw new Error('A IA não retornou nenhuma resposta.');
+        }
+
+        const imagePart = parts.find((p: any) => p.inlineData && p.inlineData.data);
+        if (!imagePart) {
+          throw new Error('Não foi encontrada nenhuma imagem gerada na resposta da IA.');
+        }
+
+        const mimeType = imagePart.inlineData.mimeType || 'image/png';
+        const base64Data = imagePart.inlineData.data;
+        return `data:${mimeType};base64,${base64Data}`;
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `Erro do Gemini: ${response.status} ${response.statusText}`);
+      const results = await Promise.allSettled(fetchPromises);
+      const successfulAvatars = results
+        .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled')
+        .map(r => r.value);
+
+      if (successfulAvatars.length === 0) {
+        const errors = results
+          .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+          .map(r => r.reason?.message || 'Erro desconhecido');
+        throw new Error(`Falha ao gerar avatares: ${errors.join(' | ')}`);
       }
 
-      const data = await response.json();
-      const parts = data.candidates?.[0]?.content?.parts;
-      if (!parts || parts.length === 0) {
-        throw new Error('A IA não retornou nenhuma resposta.');
-      }
-
-      const imagePart = parts.find((p: any) => p.inlineData && p.inlineData.data);
-      if (!imagePart) {
-        throw new Error('Não foi encontrada nenhuma imagem gerada na resposta da IA.');
-      }
-
-      const mimeType = imagePart.inlineData.mimeType || 'image/png';
-      const base64Data = imagePart.inlineData.data;
-      const fullBase64Image = `data:${mimeType};base64,${base64Data}`;
+      setGeneratedAvatars(successfulAvatars);
+      setProfileAvatar(successfulAvatars[0]); // Seleciona a primeira opção por padrão
       
-      setProfileAvatar(fullBase64Image);
       setToast({
-        message: 'Avatar 3D gerado com sucesso! Clique em salvar perfil abaixo para mantê-lo.',
+        message: language === 'pt' 
+          ? `${successfulAvatars.length} opções de avatares 3D geradas com sucesso! Escolha sua favorita abaixo e clique em Salvar Perfil.`
+          : `${successfulAvatars.length} 3D avatar options generated successfully! Pick your favorite below and click Save Profile.`,
         type: 'success',
         id: Date.now()
       });
@@ -9133,6 +9163,7 @@ Instruções para resposta:
                                       onClick={() => {
                                         setProfileAvatar('');
                                         setUploadedPhotoBase64(null);
+                                        setGeneratedAvatars([]);
                                       }}
                                       style={{
                                         display: 'inline-flex',
@@ -9172,6 +9203,77 @@ Instruções para resposta:
                                     marginTop: '4px'
                                   }}>
                                     {avatarGenerationError}
+                                  </div>
+                                )}
+
+                                {/* Opções de Avatares Gerados por IA */}
+                                {generatedAvatars.length > 0 && (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                                    <span style={{ 
+                                      fontSize: '11px', 
+                                      fontWeight: '700', 
+                                      color: 'var(--accent-primary)', 
+                                      textTransform: 'uppercase', 
+                                      letterSpacing: '0.5px' 
+                                    }}>
+                                      {language === 'pt' ? 'Escolha sua Versão Favorita:' : 'Choose your Favorite Version:'}
+                                    </span>
+                                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '4px' }}>
+                                      {generatedAvatars.map((avatar, idx) => (
+                                        <div 
+                                          key={idx}
+                                          onClick={() => setProfileAvatar(avatar)}
+                                          style={{
+                                            position: 'relative',
+                                            width: '72px',
+                                            height: '72px',
+                                            borderRadius: '12px',
+                                            overflow: 'hidden',
+                                            cursor: 'pointer',
+                                            border: profileAvatar === avatar ? '3px solid var(--accent-primary)' : '2px solid rgba(255, 255, 255, 0.1)',
+                                            boxShadow: profileAvatar === avatar ? '0 0 12px rgba(139, 92, 246, 0.5)' : 'none',
+                                            transition: 'all 0.2s',
+                                            transform: profileAvatar === avatar ? 'scale(1.05)' : 'none'
+                                          }}
+                                          onMouseOver={(e) => {
+                                            if (profileAvatar !== avatar) {
+                                              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                                              e.currentTarget.style.transform = 'scale(1.03)';
+                                            }
+                                          }}
+                                          onMouseOut={(e) => {
+                                            if (profileAvatar !== avatar) {
+                                              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                                              e.currentTarget.style.transform = 'none';
+                                            }
+                                          }}
+                                        >
+                                          <img 
+                                            src={avatar} 
+                                            alt={`Versão ${idx + 1}`} 
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                          />
+                                          {profileAvatar === avatar && (
+                                            <div style={{
+                                              position: 'absolute',
+                                              bottom: '4px',
+                                              right: '4px',
+                                              background: 'var(--accent-primary)',
+                                              borderRadius: '50%',
+                                              width: '18px',
+                                              height: '18px',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              color: 'white',
+                                              boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                                            }}>
+                                              <Check size={11} strokeWidth={3} />
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
                                 )}
                               </div>

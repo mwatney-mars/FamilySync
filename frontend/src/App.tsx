@@ -1015,20 +1015,24 @@ function App() {
   const [activeSound, setActiveSound] = useState<string | null>(null);
   const [soundVolume] = useState<number>(0.5);
   const [timerSeconds, setTimerSeconds] = useState<number | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
   const keepAliveAudioRef = useRef<HTMLAudioElement | null>(null);
   const timerIntervalRef = useRef<any>(null);
 
-  // Efeito para controlar a reprodução do áudio (Zen Space usando elemento HTML5 Audio para compatibilidade com segundo plano e bloqueio de tela)
+  // Efeito para controlar a reprodução do áudio (Zen Space usando Web Audio API para loop gapless e HTML5 Audio para manter Media Session ativa)
   useEffect(() => {
+    let isCancelled = false;
+
     // 1. Pausa e limpa qualquer áudio existente de forma segura
-    if (audioRef.current) {
+    if (sourceNodeRef.current) {
       try {
-        audioRef.current.pause();
+        sourceNodeRef.current.stop();
       } catch (e) {
-        // Ignorar se já estava pausado ou erro
+        // Já estava parado ou não inicializado
       }
-      audioRef.current = null;
+      sourceNodeRef.current = null;
     }
     if (keepAliveAudioRef.current) {
       try {
@@ -1039,24 +1043,27 @@ function App() {
       keepAliveAudioRef.current = null;
     }
 
-    // 2. Se houver um som ativo, cria/configura os elementos Audio
+    // 2. Se houver um som ativo, inicializa o contexto Web Audio e o canal keep-alive HTML5
     if (activeSound) {
-      const audio = new Audio(`/audio/${activeSound}.wav`);
-      audio.loop = true;
-      audio.volume = soundVolume;
-      audioRef.current = audio;
+      // 2.1. Inicializa o AudioContext para o som principal gapless
+      if (!audioContextRef.current) {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        audioContextRef.current = new AudioContextClass();
+      }
+      
+      const ctx = audioContextRef.current;
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
 
-      // Canal de áudio silencioso com duração > 5 segundos para ativar a Media Session e evitar congelamento em segundo plano no Android/Chrome
+      // 2.2. Inicializa o HTML5 Audio Keep-Alive para habilitar MediaSession e segundo plano no Android (> 5 segundos)
       const keepAlive = new Audio('/audio/silent-keepalive.wav');
       keepAlive.loop = true;
       keepAlive.volume = 0.01; // Quase inaudível, mas ativa o foco de mídia do Chrome
       keepAliveAudioRef.current = keepAlive;
 
-      // Inicia a reprodução conjunta de ambos os canais
-      Promise.all([
-        audio.play(),
-        keepAlive.play()
-      ])
+      // Inicia a reprodução do canal keep-alive e carrega o áudio principal
+      keepAlive.play()
         .then(() => {
           // Configura a Media Session API para suportar execução em segundo plano e controles no lock screen do Android
           if ('mediaSession' in navigator) {
@@ -1072,19 +1079,54 @@ function App() {
             });
 
             navigator.mediaSession.setActionHandler('play', () => {
-              audioRef.current?.play();
+              if (audioContextRef.current?.state === 'suspended') {
+                audioContextRef.current.resume();
+              }
               keepAliveAudioRef.current?.play();
               navigator.mediaSession.playbackState = 'playing';
             });
             navigator.mediaSession.setActionHandler('pause', () => {
-              audioRef.current?.pause();
+              if (audioContextRef.current?.state === 'running') {
+                audioContextRef.current.suspend();
+              }
               keepAliveAudioRef.current?.pause();
               navigator.mediaSession.playbackState = 'paused';
             });
           }
         })
         .catch(error => {
-          console.error("Erro ao carregar/reproduzir áudio via HTML5 Audio:", error);
+          console.error("Erro ao reproduzir canal keep-alive HTML5 Audio:", error);
+        });
+
+      // Carrega e decodifica o arquivo .wav para reprodução gapless com Web Audio API
+      fetch(`/audio/${activeSound}.wav`)
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          return res.arrayBuffer();
+        })
+        .then(arrayBuffer => ctx.decodeAudioData(arrayBuffer))
+        .then(audioBuffer => {
+          if (isCancelled) return;
+
+          // Cria a fonte e configura o loop de precisão em nível de sample
+          const source = ctx.createBufferSource();
+          source.buffer = audioBuffer;
+          source.loop = true;
+
+          // Cria o nó de ganho para controle de volume analógico/suave
+          const gainNode = ctx.createGain();
+          gainNode.gain.setValueAtTime(soundVolume, ctx.currentTime);
+
+          source.connect(gainNode);
+          gainNode.connect(ctx.destination);
+
+          source.start(0);
+
+          sourceNodeRef.current = source;
+          gainNodeRef.current = gainNode;
+        })
+        .catch(error => {
+          console.error("Erro ao carregar/reproduzir áudio via Web Audio API:", error);
         });
     } else {
       // Se não houver som ativo, limpa o estado de Media Session
@@ -1100,12 +1142,14 @@ function App() {
 
     // Limpeza ao desmontar ou alterar o som ativo
     return () => {
-      if (audioRef.current) {
+      isCancelled = true;
+      if (sourceNodeRef.current) {
         try {
-          audioRef.current.pause();
+          sourceNodeRef.current.stop();
         } catch (e) {
-          // Ignore
+          // Já estava parado
         }
+        sourceNodeRef.current = null;
       }
       if (keepAliveAudioRef.current) {
         try {
@@ -1117,10 +1161,14 @@ function App() {
     };
   }, [activeSound]);
 
-  // Efeito para sincronizar o volume em tempo real
+  // Efeito para sincronizar o volume em tempo real no gainNode da Web Audio API
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = soundVolume;
+    if (gainNodeRef.current && audioContextRef.current) {
+      try {
+        gainNodeRef.current.gain.setValueAtTime(soundVolume, audioContextRef.current.currentTime);
+      } catch (e) {
+        // ignore
+      }
     }
   }, [soundVolume]);
 
@@ -1134,8 +1182,14 @@ function App() {
 
     // 2. Se o temporizador for nulo (desativado/Timer Off), restauramos o volume e saímos sem criar novos intervalos
     if (timerSeconds === null) {
-      if (audioRef.current) {
-        audioRef.current.volume = soundVolume;
+      if (gainNodeRef.current && audioContextRef.current) {
+        try {
+          const ctx = audioContextRef.current;
+          gainNodeRef.current.gain.cancelScheduledValues(ctx.currentTime);
+          gainNodeRef.current.gain.setValueAtTime(soundVolume, ctx.currentTime);
+        } catch (e) {
+          // ignore error if context is closed
+        }
       }
       return;
     }
@@ -1148,10 +1202,14 @@ function App() {
     }
 
     // Fade-out suave nos últimos 10 segundos
-    if (timerSeconds !== null && timerSeconds <= 10 && audioRef.current) {
+    if (timerSeconds !== null && timerSeconds <= 10 && gainNodeRef.current && audioContextRef.current) {
       try {
-        const targetVolume = Math.max(0, ((timerSeconds - 1) / 10) * soundVolume);
-        audioRef.current.volume = targetVolume;
+        const ctx = audioContextRef.current;
+        const gainNode = gainNodeRef.current;
+        const targetGain = Math.max(0, ((timerSeconds - 1) / 10) * soundVolume);
+        gainNode.gain.cancelScheduledValues(ctx.currentTime);
+        gainNode.gain.setValueAtTime(gainNode.gain.value, ctx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(targetGain, ctx.currentTime + 1.0);
       } catch (e) {
         console.error("Erro ao aplicar fade-out gradual:", e);
       }

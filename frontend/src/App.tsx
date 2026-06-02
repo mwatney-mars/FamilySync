@@ -410,19 +410,29 @@ const isChoreActiveOnDate = (chore: Chore, dateStr: string): boolean => {
     return false;
   }
 
-  if (chore.end_date && dateStr > chore.end_date) {
-    return false;
-  }
-
   if (!chore.repeats) {
     const isCompletedOnThisDate = isChoreCompletedOnDate(chore, dateStr);
     const hasAnyCompletion = !!(chore.completed_at || (chore.completed_dates && chore.completed_dates.length > 0));
     
+    if (isCompletedOnThisDate) {
+      return true;
+    }
+    
+    if (chore.end_date && dateStr > chore.end_date) {
+      if (dateStr === todayStr && !hasAnyCompletion) {
+        return true;
+      }
+      return false;
+    }
+    
     return (
       dateStr === startDateStr ||
-      isCompletedOnThisDate ||
       (dateStr === todayStr && !hasAnyCompletion)
     );
+  }
+
+  if (chore.end_date && dateStr > chore.end_date) {
+    return false;
   }
 
   const startDate = parseDateStr(startDateStr);
@@ -771,6 +781,184 @@ const SOUNDS_LIST = [
   { id: 'washingmachine', icon: 'RotateCcw', color: '#22d3ee', activeBg: 'rgba(34, 211, 238, 0.12)', glow: 'rgba(34, 211, 238, 0.25)' },
   { id: 'train', icon: 'RotateCcw', color: '#34d399', activeBg: 'rgba(52, 211, 153, 0.12)', glow: 'rgba(52, 211, 153, 0.25)' }
 ];
+
+const getAvatarColor = (username: string) => {
+  const colors = [
+    '#3b82f6', // blue
+    '#10b981', // green
+    '#f59e0b', // amber
+    '#ef4444', // red
+    '#8b5cf6', // violet
+    '#ec4899', // pink
+    '#06b6d4', // cyan
+    '#f97316', // orange
+  ];
+  let hash = 0;
+  const str = username || '';
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+};
+
+const renderMemberAvatar = (m: any, size: number, isStacked: boolean = false, index: number = 0, totalCount: number = 1) => {
+  if (!m) return null;
+  const initial = (m.display_name || m.username || '?').charAt(0).toUpperCase();
+  const color = getAvatarColor(m.username);
+  const marginLeft = isStacked && index > 0 ? (size === 16 ? '-4px' : '-8px') : '0';
+  const zIndex = isStacked ? totalCount - index : 1;
+
+  if (m.avatar) {
+    return (
+      <img
+        key={m.id || index || m.username}
+        src={m.avatar}
+        alt={m.username}
+        title={m.display_name || m.username}
+        style={{
+          width: `${size}px`,
+          height: `${size}px`,
+          borderRadius: '50%',
+          objectFit: 'cover',
+          border: size === 16 ? '1px solid var(--accent-primary)' : '2px solid var(--accent-primary)',
+          boxShadow: size === 16 ? '0 1px 2px rgba(0,0,0,0.15)' : '0 2px 4px rgba(0,0,0,0.2)',
+          marginLeft,
+          zIndex,
+          position: 'relative',
+          flexShrink: 0
+        }}
+      />
+    );
+  }
+
+  return (
+    <div
+      key={m.id || index || m.username}
+      title={m.display_name || m.username}
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        borderRadius: '50%',
+        backgroundColor: color,
+        color: '#ffffff',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: size === 16 ? '9px' : '11px',
+        fontWeight: 'bold',
+        border: size === 16 ? '1px solid var(--accent-primary)' : '2px solid var(--accent-primary)',
+        boxShadow: size === 16 ? '0 1px 2px rgba(0,0,0,0.15)' : '0 2px 4px rgba(0,0,0,0.2)',
+        marginLeft,
+        zIndex,
+        position: 'relative',
+        flexShrink: 0,
+        textTransform: 'uppercase'
+      }}
+    >
+      {initial}
+    </div>
+  );
+};
+
+const getDueStatusText = (status: 'overdue' | 'due_today' | 'due_soon', daysLeft: number, lang: string): string => {
+  if (lang === 'pt') {
+    if (status === 'overdue') return 'Em atraso';
+    if (status === 'due_today') return 'Vence hoje';
+    return `Vence em ${daysLeft} ${daysLeft === 1 ? 'dia' : 'dias'}`;
+  }
+  if (lang === 'es') {
+    if (status === 'overdue') return 'Con retraso';
+    if (status === 'due_today') return 'Vence hoy';
+    return `Vence en ${daysLeft} ${daysLeft === 1 ? 'día' : 'días'}`;
+  }
+  if (lang === 'fr') {
+    if (status === 'overdue') return 'En retard';
+    if (status === 'due_today') return "Échéance aujourd'hui";
+    return `Échéance dans ${daysLeft} ${daysLeft === 1 ? 'jour' : 'jours'}`;
+  }
+  if (lang === 'de') {
+    if (status === 'overdue') return 'Überfällig';
+    if (status === 'due_today') return 'Heute fällig';
+    return `Fällig in ${daysLeft} ${daysLeft === 1 ? 'Tag' : 'Tagen'}`;
+  }
+  if (lang === 'it') {
+    if (status === 'overdue') return 'In ritardo';
+    if (status === 'due_today') return 'Scade oggi';
+    return `Scade in ${daysLeft} ${daysLeft === 1 ? 'giorno' : 'giorni'}`;
+  }
+  if (lang === 'pl') {
+    if (status === 'overdue') return 'Zaległe';
+    if (status === 'due_today') return 'Dzisiaj termin';
+    return `Termin za ${daysLeft} ${daysLeft === 1 ? 'dzień' : 'dni'}`;
+  }
+  if (status === 'overdue') return 'Overdue';
+  if (status === 'due_today') return 'Due today';
+  return `Due in ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'}`;
+};
+
+const renderChoreDueBadge = (chore: Chore, language: string = 'en') => {
+  if (chore.repeats || !chore.end_date) return null;
+
+  const hasAnyCompletion = !!(chore.completed_at || (chore.completed_dates && chore.completed_dates.length > 0));
+  if (hasAnyCompletion) return null;
+
+  const todayStr = getTodayStr();
+  const today = parseDateStr(todayStr);
+  const dueDate = parseDateStr(chore.end_date);
+  const daysDiff = getDaysDiff(today, dueDate);
+
+  let status: 'overdue' | 'due_today' | 'due_soon' | null = null;
+  if (todayStr > chore.end_date) {
+    status = 'overdue';
+  } else if (todayStr === chore.end_date) {
+    status = 'due_today';
+  } else if (daysDiff >= 0 && daysDiff <= 2) {
+    status = 'due_soon';
+  }
+
+  if (!status) return null;
+
+  let badgeColor = 'var(--accent-info, #3b82f6)';
+  let bg = 'rgba(59, 130, 246, 0.12)';
+  let border = '1px solid rgba(59, 130, 246, 0.25)';
+
+  if (status === 'overdue') {
+    badgeColor = 'var(--accent-danger, #ef4444)';
+    bg = 'rgba(239, 68, 68, 0.12)';
+    border = '1px solid rgba(239, 68, 68, 0.25)';
+  } else if (status === 'due_today') {
+    badgeColor = 'var(--accent-warning, #f59e0b)';
+    bg = 'rgba(245, 158, 11, 0.12)';
+    border = '1px solid rgba(245, 158, 11, 0.25)';
+  }
+
+  const text = getDueStatusText(status, daysDiff, language);
+
+  return (
+    <span style={{
+      fontSize: '9px',
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      padding: '2px 6px',
+      borderRadius: '4px',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px',
+      color: badgeColor,
+      backgroundColor: bg,
+      border,
+      marginLeft: '6px',
+      lineHeight: '1',
+      verticalAlign: 'middle',
+      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+      flexShrink: 0
+    }}>
+      <span style={{ display: 'inline-block', width: '5px', height: '5px', borderRadius: '50%', backgroundColor: badgeColor }} />
+      {text}
+    </span>
+  );
+};
 
 function App() {
   // --- ESTADO GLOBAL ---
@@ -6226,6 +6414,7 @@ Instruções para resposta:
                                               >
                                                 {chore.title}
                                               </p>
+                                                {renderChoreDueBadge(chore, language)}
                                               {isMed ? (
                                                 <span style={{ fontSize: '8px', background: 'rgba(6, 182, 212, 0.15)', padding: '1px 4px', borderRadius: '3px', color: 'var(--accent-info)', fontWeight: 'bold' }}>💊</span>
                                               ) : (
@@ -6240,39 +6429,10 @@ Instruções para resposta:
                                                 <span className="chore-responsible-label">{t('responsibleLabel')}</span>
                                                 {chore.assigned_to === 'all' ? (
                                                   <div style={{ display: 'flex', alignItems: 'center', marginRight: '2px' }}>
-                                                    {familyMembers.map((m: any, idx: number) => m.avatar ? (
-                                                      <img 
-                                                        key={m.id || idx}
-                                                        src={m.avatar} 
-                                                        alt={m.username} 
-                                                        title={m.display_name || m.username}
-                                                        style={{ 
-                                                          width: '16px', 
-                                                          height: '16px', 
-                                                          borderRadius: '50%', 
-                                                          objectFit: 'cover',
-                                                          border: '1px solid var(--accent-primary)',
-                                                          marginLeft: idx > 0 ? '-4px' : '0',
-                                                          zIndex: familyMembers.length - idx,
-                                                          position: 'relative'
-                                                        }} 
-                                                      />
-                                                    ) : null)}
+                                                    {familyMembers.map((m: any, idx: number) => renderMemberAvatar(m, 16, true, idx, familyMembers.length))}
                                                   </div>
                                                 ) : (
-                                                  chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar ? (
-                                                    <img 
-                                                      src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
-                                                      alt={chore.assigned_to} 
-                                                      style={{ 
-                                                        width: '16px', 
-                                                        height: '16px', 
-                                                        borderRadius: '50%', 
-                                                        objectFit: 'cover',
-                                                        border: '1px solid var(--accent-primary)'
-                                                      }} 
-                                                    />
-                                                  ) : null
+                                                  renderMemberAvatar(familyMembers.find(m => m.username === chore.assigned_to), 16)
                                                 )}
                                                 <strong>{chore.assigned_to === 'all' ? t('allLabel') : (chore.assigned_to === currentUser?.username ? t('youLabel') : (familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to))}</strong>
                                               </span>
@@ -6287,44 +6447,10 @@ Instruções para resposta:
                                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             {chore.assigned_to === 'all' ? (
                                               <div style={{ display: 'flex', alignItems: 'center', marginRight: '4px' }}>
-                                                {familyMembers.map((m: any, idx: number) => m.avatar ? (
-                                                  <img 
-                                                    key={m.id || idx}
-                                                    src={m.avatar} 
-                                                    alt={m.username} 
-                                                    title={m.display_name || m.username}
-                                                    style={{ 
-                                                      width: '24px', 
-                                                      height: '24px', 
-                                                      borderRadius: '50%', 
-                                                      objectFit: 'cover',
-                                                      border: '2px solid var(--accent-primary)',
-                                                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                                      marginLeft: idx > 0 ? '-8px' : '0',
-                                                      zIndex: familyMembers.length - idx,
-                                                      position: 'relative',
-                                                      flexShrink: 0
-                                                    }} 
-                                                  />
-                                                ) : null)}
+                                                {familyMembers.map((m: any, idx: number) => renderMemberAvatar(m, 24, true, idx, familyMembers.length))}
                                               </div>
                                             ) : (
-                                              chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar ? (
-                                                <img 
-                                                  src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
-                                                  alt={chore.assigned_to} 
-                                                  style={{ 
-                                                    width: '24px', 
-                                                    height: '24px', 
-                                                    borderRadius: '50%', 
-                                                    objectFit: 'cover',
-                                                    border: '2px solid var(--accent-primary)',
-                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                                    flexShrink: 0
-                                                  }} 
-                                                  title={familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to}
-                                                />
-                                              ) : null
+                                              renderMemberAvatar(familyMembers.find(m => m.username === chore.assigned_to), 24)
                                             )}
                                             <button
                                               onClick={(e) => {
@@ -6480,6 +6606,7 @@ Instruções para resposta:
                                               >
                                                 {chore.title}
                                               </p>
+                                                {renderChoreDueBadge(chore, language)}
                                               {isMed ? (
                                                 <span style={{ fontSize: '8px', background: 'rgba(6, 182, 212, 0.15)', padding: '1px 4px', borderRadius: '3px', color: 'var(--accent-info)', fontWeight: 'bold' }}>💊</span>
                                               ) : (
@@ -6494,39 +6621,10 @@ Instruções para resposta:
                                                 <span className="chore-responsible-label">{t('responsibleLabel')}</span>
                                                 {chore.assigned_to === 'all' ? (
                                                   <div style={{ display: 'flex', alignItems: 'center', marginRight: '2px' }}>
-                                                    {familyMembers.map((m: any, idx: number) => m.avatar ? (
-                                                      <img 
-                                                        key={m.id || idx}
-                                                        src={m.avatar} 
-                                                        alt={m.username} 
-                                                        title={m.display_name || m.username}
-                                                        style={{ 
-                                                          width: '16px', 
-                                                          height: '16px', 
-                                                          borderRadius: '50%', 
-                                                          objectFit: 'cover',
-                                                          border: '1px solid var(--accent-primary)',
-                                                          marginLeft: idx > 0 ? '-4px' : '0',
-                                                          zIndex: familyMembers.length - idx,
-                                                          position: 'relative'
-                                                        }} 
-                                                      />
-                                                    ) : null)}
+                                                    {familyMembers.map((m: any, idx: number) => renderMemberAvatar(m, 16, true, idx, familyMembers.length))}
                                                   </div>
                                                 ) : (
-                                                  chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar ? (
-                                                    <img 
-                                                      src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
-                                                      alt={chore.assigned_to} 
-                                                      style={{ 
-                                                        width: '16px', 
-                                                        height: '16px', 
-                                                        borderRadius: '50%', 
-                                                        objectFit: 'cover',
-                                                        border: '1px solid var(--accent-primary)'
-                                                      }} 
-                                                    />
-                                                  ) : null
+                                                  renderMemberAvatar(familyMembers.find(m => m.username === chore.assigned_to), 16)
                                                 )}
                                                 <strong>{chore.assigned_to === 'all' ? t('allLabel') : (chore.assigned_to === currentUser?.username ? t('youLabel') : (familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to))}</strong>
                                               </span>
@@ -6541,44 +6639,10 @@ Instruções para resposta:
                                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             {chore.assigned_to === 'all' ? (
                                               <div style={{ display: 'flex', alignItems: 'center', marginRight: '4px' }}>
-                                                {familyMembers.map((m: any, idx: number) => m.avatar ? (
-                                                  <img 
-                                                    key={m.id || idx}
-                                                    src={m.avatar} 
-                                                    alt={m.username} 
-                                                    title={m.display_name || m.username}
-                                                    style={{ 
-                                                      width: '24px', 
-                                                      height: '24px', 
-                                                      borderRadius: '50%', 
-                                                      objectFit: 'cover',
-                                                      border: '2px solid var(--accent-primary)',
-                                                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                                      marginLeft: idx > 0 ? '-8px' : '0',
-                                                      zIndex: familyMembers.length - idx,
-                                                      position: 'relative',
-                                                      flexShrink: 0
-                                                    }} 
-                                                  />
-                                                ) : null)}
+                                                {familyMembers.map((m: any, idx: number) => renderMemberAvatar(m, 24, true, idx, familyMembers.length))}
                                               </div>
                                             ) : (
-                                              chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar ? (
-                                                <img 
-                                                  src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
-                                                  alt={chore.assigned_to} 
-                                                  style={{ 
-                                                    width: '24px', 
-                                                    height: '24px', 
-                                                    borderRadius: '50%', 
-                                                    objectFit: 'cover',
-                                                    border: '2px solid var(--accent-primary)',
-                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                                    flexShrink: 0
-                                                  }} 
-                                                  title={familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to}
-                                                />
-                                              ) : null
+                                              renderMemberAvatar(familyMembers.find(m => m.username === chore.assigned_to), 24)
                                             )}
                                             <button
                                               onClick={(e) => {
@@ -7150,6 +7214,7 @@ Instruções para resposta:
                                             <h4 style={{ fontSize: '13px', fontWeight: '700', color: completed ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: completed ? 'line-through' : 'none', margin: 0 }}>
                                               {chore.title}
                                             </h4>
+                                             {renderChoreDueBadge(chore, language)}
                                             <span style={{ fontSize: '8px', background: isMed ? 'rgba(6, 182, 212, 0.12)' : 'rgba(139, 92, 246, 0.12)', color: isMed ? 'var(--accent-info)' : 'var(--accent-primary-hover)', padding: '1px 5px', borderRadius: '10px', fontWeight: 'bold' }}>
                                               {isMed ? t('medication') : t('routine')}
                                             </span>
@@ -7161,41 +7226,10 @@ Instruções para resposta:
                                             <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                                               {chore.assigned_to === 'all' ? (
                                                 <div style={{ display: 'flex', alignItems: 'center', marginRight: '2px' }}>
-                                                  {familyMembers.map((m: any, idx: number) => m.avatar ? (
-                                                    <img 
-                                                      key={m.id || idx}
-                                                      src={m.avatar} 
-                                                      alt={m.username} 
-                                                      title={m.display_name || m.username}
-                                                      style={{ 
-                                                        width: '16px', 
-                                                        height: '16px', 
-                                                        borderRadius: '50%', 
-                                                        objectFit: 'cover',
-                                                        border: '1px solid var(--accent-primary)',
-                                                        marginLeft: idx > 0 ? '-4px' : '0',
-                                                        zIndex: familyMembers.length - idx,
-                                                        position: 'relative'
-                                                      }} 
-                                                    />
-                                                  ) : null)}
+                                                  {familyMembers.map((m: any, idx: number) => renderMemberAvatar(m, 16, true, idx, familyMembers.length))}
                                                 </div>
                                               ) : (
-                                                chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar ? (
-                                                  <img 
-                                                    src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
-                                                    alt={chore.assigned_to} 
-                                                    style={{ 
-                                                      width: '16px', 
-                                                      height: '16px', 
-                                                      borderRadius: '50%', 
-                                                      objectFit: 'cover',
-                                                      border: '1px solid var(--accent-primary)'
-                                                    }} 
-                                                  />
-                                                ) : (
-                                                  <span>👤</span>
-                                                )
+                                                renderMemberAvatar(familyMembers.find(m => m.username === chore.assigned_to), 16)
                                               )}
                                               <span>{chore.assigned_to === 'all' ? t('allFamily') : (familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to)}</span>
                                             </span>
@@ -7211,44 +7245,10 @@ Instruções para resposta:
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                           {chore.assigned_to === 'all' ? (
                                             <div style={{ display: 'flex', alignItems: 'center', marginRight: '4px' }}>
-                                              {familyMembers.map((m: any, idx: number) => m.avatar ? (
-                                                <img 
-                                                  key={m.id || idx}
-                                                  src={m.avatar} 
-                                                  alt={m.username} 
-                                                  title={m.display_name || m.username}
-                                                  style={{ 
-                                                    width: '24px', 
-                                                    height: '24px', 
-                                                    borderRadius: '50%', 
-                                                    objectFit: 'cover',
-                                                    border: '2px solid var(--accent-primary)',
-                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                                    marginLeft: idx > 0 ? '-8px' : '0',
-                                                    zIndex: familyMembers.length - idx,
-                                                    position: 'relative',
-                                                    flexShrink: 0
-                                                  }} 
-                                                />
-                                              ) : null)}
+                                              {familyMembers.map((m: any, idx: number) => renderMemberAvatar(m, 24, true, idx, familyMembers.length))}
                                             </div>
                                           ) : (
-                                            chore.assigned_to !== 'all' && familyMembers.find(m => m.username === chore.assigned_to)?.avatar ? (
-                                              <img 
-                                                src={familyMembers.find(m => m.username === chore.assigned_to).avatar} 
-                                                alt={chore.assigned_to} 
-                                                style={{ 
-                                                  width: '24px', 
-                                                  height: '24px', 
-                                                  borderRadius: '50%', 
-                                                  objectFit: 'cover',
-                                                  border: '2px solid var(--accent-primary)',
-                                                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                                  flexShrink: 0
-                                                }} 
-                                                title={familyMembers.find(m => m.username === chore.assigned_to)?.display_name || chore.assigned_to}
-                                              />
-                                            ) : null
+                                            renderMemberAvatar(familyMembers.find(m => m.username === chore.assigned_to), 24)
                                           )}
                                           <button
                                             onClick={async (e) => {

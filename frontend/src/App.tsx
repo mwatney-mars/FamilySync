@@ -1019,13 +1019,14 @@ function App() {
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
   const keepAliveAudioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerIntervalRef = useRef<any>(null);
 
-  // Efeito para controlar a reprodução do áudio (Zen Space usando Web Audio API para loop gapless e HTML5 Audio para manter Media Session ativa)
+  // Efeito para controlar a reprodução do áudio (Zen Space usando Web Audio API para Android/Desktop e HTML5 Audio para iOS)
   useEffect(() => {
     let isCancelled = false;
 
-    // 1. Pausa e limpa qualquer áudio existente de forma segura
+    // 1. Pausa e limpa qualquer áudio existente de forma segura em todos os motores
     if (sourceNodeRef.current) {
       try {
         sourceNodeRef.current.stop();
@@ -1042,92 +1043,150 @@ function App() {
       }
       keepAliveAudioRef.current = null;
     }
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+      } catch (e) {
+        // Ignorar
+      }
+      audioRef.current = null;
+    }
 
-    // 2. Se houver um som ativo, inicializa o contexto Web Audio e o canal keep-alive HTML5
+    // 2. Se houver um som ativo, inicia o motor de áudio adequado
     if (activeSound) {
-      // 2.1. Inicializa o AudioContext para o som principal gapless
-      if (!audioContextRef.current) {
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-        audioContextRef.current = new AudioContextClass();
-      }
-      
-      const ctx = audioContextRef.current;
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
-      // 2.2. Inicializa o HTML5 Audio Keep-Alive para habilitar MediaSession e segundo plano no Android (> 5 segundos)
-      const keepAlive = new Audio('/audio/silent-keepalive.wav?v=1.3.1');
-      keepAlive.loop = true;
-      keepAlive.volume = 1.0; // Canal 100% silencioso (44100Hz), volume alto evita gating de energia/DAC do Android
-      keepAliveAudioRef.current = keepAlive;
+      if (isIOS) {
+        // --- MOTOR PARA iOS: HTML5 Audio Nativo (Garante reprodução contínua em segundo plano no iOS) ---
+        const audio = new Audio(`/audio/${activeSound}.wav`);
+        audio.loop = true;
+        audio.volume = soundVolume;
+        audioRef.current = audio;
 
-      // Inicia a reprodução do canal keep-alive e carrega o áudio principal
-      keepAlive.play()
-        .then(() => {
-          // Configura a Media Session API para suportar execução em segundo plano e controles no lock screen do Android
-          if ('mediaSession' in navigator) {
-            const soundTitle = ZEN_TRANSLATIONS[language]?.[activeSound] || ZEN_TRANSLATIONS['en']?.[activeSound] || activeSound;
-            navigator.mediaSession.playbackState = 'playing';
-            navigator.mediaSession.metadata = new MediaMetadata({
-              title: soundTitle,
-              artist: language === 'pt' ? 'Espaço Zen 🏡' : 'Zen Space 🏡',
-              album: 'FamilyHub',
-              artwork: [
-                { src: '/favicon.svg', sizes: '512x512', type: 'image/svg+xml' }
-              ]
-            });
-
-            navigator.mediaSession.setActionHandler('play', () => {
-              if (audioContextRef.current?.state === 'suspended') {
-                audioContextRef.current.resume();
-              }
-              keepAliveAudioRef.current?.play();
-              navigator.mediaSession.playbackState = 'playing';
-            });
-            navigator.mediaSession.setActionHandler('pause', () => {
-              if (audioContextRef.current?.state === 'running') {
-                audioContextRef.current.suspend();
-              }
-              keepAliveAudioRef.current?.pause();
-              navigator.mediaSession.playbackState = 'paused';
-            });
+        // Ativa o audioSession de playback se suportado (iOS 16.4+)
+        if ('audioSession' in navigator) {
+          try {
+            (navigator as any).audioSession.type = 'playback';
+          } catch (e) {
+            console.warn("Erro ao configurar navigator.audioSession.type:", e);
           }
-        })
-        .catch(error => {
-          console.error("Erro ao reproduzir canal keep-alive HTML5 Audio:", error);
-        });
+        }
 
-      // Carrega e decodifica o arquivo .wav para reprodução gapless com Web Audio API
-      fetch(`/audio/${activeSound}.wav`)
-        .then(res => {
-          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-          return res.arrayBuffer();
-        })
-        .then(arrayBuffer => ctx.decodeAudioData(arrayBuffer))
-        .then(audioBuffer => {
-          if (isCancelled) return;
+        audio.play()
+          .then(() => {
+            // Configura controles de bloqueio/notificação nativos no iOS
+            if ('mediaSession' in navigator) {
+              const soundTitle = ZEN_TRANSLATIONS[language]?.[activeSound] || ZEN_TRANSLATIONS['en']?.[activeSound] || activeSound;
+              navigator.mediaSession.playbackState = 'playing';
+              navigator.mediaSession.metadata = new MediaMetadata({
+                title: soundTitle,
+                artist: language === 'pt' ? 'Espaço Zen 🏡' : 'Zen Space 🏡',
+                album: 'FamilyHub',
+                artwork: [
+                  { src: '/favicon.svg', sizes: '512x512', type: 'image/svg+xml' }
+                ]
+              });
 
-          // Cria a fonte e configura o loop de precisão em nível de sample
-          const source = ctx.createBufferSource();
-          source.buffer = audioBuffer;
-          source.loop = true;
+              navigator.mediaSession.setActionHandler('play', () => {
+                audioRef.current?.play();
+                navigator.mediaSession.playbackState = 'playing';
+              });
+              navigator.mediaSession.setActionHandler('pause', () => {
+                audioRef.current?.pause();
+                navigator.mediaSession.playbackState = 'paused';
+              });
+            }
+          })
+          .catch(error => {
+            console.error("Erro ao iniciar áudio principal no iOS:", error);
+          });
 
-          // Cria o nó de ganho para controle de volume analógico/suave
-          const gainNode = ctx.createGain();
-          gainNode.gain.setValueAtTime(soundVolume, ctx.currentTime);
+      } else {
+        // --- MOTOR PARA ANDROID/DESKTOP: Web Audio API (Loop gapless com latencyHint: 'playback' + Keep-Alive) ---
+        
+        // 2.1. Inicializa o AudioContext com latencyHint otimizado para evitar cliques de buffer
+        if (!audioContextRef.current) {
+          const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+          audioContextRef.current = new AudioContextClass({ latencyHint: 'playback' });
+        }
+        
+        const ctx = audioContextRef.current;
+        if (ctx.state === 'suspended') {
+          ctx.resume();
+        }
 
-          source.connect(gainNode);
-          gainNode.connect(ctx.destination);
+        // 2.2. Inicializa o HTML5 Audio Keep-Alive para habilitar MediaSession e segundo plano no Android (> 5 segundos)
+        const keepAlive = new Audio('/audio/silent-keepalive.wav?v=1.3.1');
+        keepAlive.loop = true;
+        keepAlive.volume = 1.0; // Canal 100% silencioso (44100Hz), volume alto evita gating de energia/DAC do Android
+        keepAliveAudioRef.current = keepAlive;
 
-          source.start(0);
+        keepAlive.play()
+          .then(() => {
+            // Configura controles de bloqueio/notificação no Android
+            if ('mediaSession' in navigator) {
+              const soundTitle = ZEN_TRANSLATIONS[language]?.[activeSound] || ZEN_TRANSLATIONS['en']?.[activeSound] || activeSound;
+              navigator.mediaSession.playbackState = 'playing';
+              navigator.mediaSession.metadata = new MediaMetadata({
+                title: soundTitle,
+                artist: language === 'pt' ? 'Espaço Zen 🏡' : 'Zen Space 🏡',
+                album: 'FamilyHub',
+                artwork: [
+                  { src: '/favicon.svg', sizes: '512x512', type: 'image/svg+xml' }
+                ]
+              });
 
-          sourceNodeRef.current = source;
-          gainNodeRef.current = gainNode;
-        })
-        .catch(error => {
-          console.error("Erro ao carregar/reproduzir áudio via Web Audio API:", error);
-        });
+              navigator.mediaSession.setActionHandler('play', () => {
+                if (audioContextRef.current?.state === 'suspended') {
+                  audioContextRef.current.resume();
+                }
+                keepAliveAudioRef.current?.play();
+                navigator.mediaSession.playbackState = 'playing';
+              });
+              navigator.mediaSession.setActionHandler('pause', () => {
+                if (audioContextRef.current?.state === 'running') {
+                  audioContextRef.current.suspend();
+                }
+                keepAliveAudioRef.current?.pause();
+                navigator.mediaSession.playbackState = 'paused';
+              });
+            }
+          })
+          .catch(error => {
+            console.error("Erro ao reproduzir canal keep-alive HTML5 Audio:", error);
+          });
+
+        // Carrega e decodifica o arquivo .wav para reprodução gapless com Web Audio API
+        fetch(`/audio/${activeSound}.wav`)
+          .then(res => {
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            return res.arrayBuffer();
+          })
+          .then(arrayBuffer => ctx.decodeAudioData(arrayBuffer))
+          .then(audioBuffer => {
+            if (isCancelled) return;
+
+            // Cria a fonte e configura o loop de precisão em nível de sample
+            const source = ctx.createBufferSource();
+            source.buffer = audioBuffer;
+            source.loop = true;
+
+            // Cria o nó de ganho para controle de volume analógico/suave
+            const gainNode = ctx.createGain();
+            gainNode.gain.setValueAtTime(soundVolume, ctx.currentTime);
+
+            source.connect(gainNode);
+            gainNode.connect(ctx.destination);
+
+            source.start(0);
+
+            sourceNodeRef.current = source;
+            gainNodeRef.current = gainNode;
+          })
+          .catch(error => {
+            console.error("Erro ao carregar/reproduzir áudio via Web Audio API:", error);
+          });
+      }
     } else {
       // Se não houver som ativo, limpa o estado de Media Session
       if ('mediaSession' in navigator) {
@@ -1140,7 +1199,7 @@ function App() {
       }
     }
 
-    // Limpeza ao desmontar ou alterar o som ativo
+    // Limpeza completa de todos os nós e canais ao desmontar ou alterar o som
     return () => {
       isCancelled = true;
       if (sourceNodeRef.current) {
@@ -1157,15 +1216,31 @@ function App() {
         } catch (e) {
           // Ignore
         }
+        keepAliveAudioRef.current = null;
+      }
+      if (audioRef.current) {
+        try {
+          audioRef.current.pause();
+        } catch (e) {
+          // Ignore
+        }
+        audioRef.current = null;
       }
     };
   }, [activeSound]);
 
-  // Efeito para sincronizar o volume em tempo real no gainNode da Web Audio API
+  // Efeito para sincronizar o volume em tempo real no gainNode da Web Audio API ou HTML5 Audio
   useEffect(() => {
     if (gainNodeRef.current && audioContextRef.current) {
       try {
         gainNodeRef.current.gain.setValueAtTime(soundVolume, audioContextRef.current.currentTime);
+      } catch (e) {
+        // ignore
+      }
+    }
+    if (audioRef.current) {
+      try {
+        audioRef.current.volume = soundVolume;
       } catch (e) {
         // ignore
       }
@@ -1191,6 +1266,13 @@ function App() {
           // ignore error if context is closed
         }
       }
+      if (audioRef.current) {
+        try {
+          audioRef.current.volume = soundVolume;
+        } catch (e) {
+          // ignore
+        }
+      }
       return;
     }
     
@@ -1202,16 +1284,26 @@ function App() {
     }
 
     // Fade-out suave nos últimos 10 segundos
-    if (timerSeconds !== null && timerSeconds <= 10 && gainNodeRef.current && audioContextRef.current) {
-      try {
-        const ctx = audioContextRef.current;
-        const gainNode = gainNodeRef.current;
-        const targetGain = Math.max(0, ((timerSeconds - 1) / 10) * soundVolume);
-        gainNode.gain.cancelScheduledValues(ctx.currentTime);
-        gainNode.gain.setValueAtTime(gainNode.gain.value, ctx.currentTime);
-        gainNode.gain.linearRampToValueAtTime(targetGain, ctx.currentTime + 1.0);
-      } catch (e) {
-        console.error("Erro ao aplicar fade-out gradual:", e);
+    if (timerSeconds !== null && timerSeconds <= 10) {
+      if (gainNodeRef.current && audioContextRef.current) {
+        try {
+          const ctx = audioContextRef.current;
+          const gainNode = gainNodeRef.current;
+          const targetGain = Math.max(0, ((timerSeconds - 1) / 10) * soundVolume);
+          gainNode.gain.cancelScheduledValues(ctx.currentTime);
+          gainNode.gain.setValueAtTime(gainNode.gain.value, ctx.currentTime);
+          gainNode.gain.linearRampToValueAtTime(targetGain, ctx.currentTime + 1.0);
+        } catch (e) {
+          console.error("Erro ao aplicar fade-out gradual (Web Audio):", e);
+        }
+      }
+      if (audioRef.current) {
+        try {
+          const targetVolume = Math.max(0, ((timerSeconds - 1) / 10) * soundVolume);
+          audioRef.current.volume = targetVolume;
+        } catch (e) {
+          console.error("Erro ao aplicar fade-out gradual (HTML5):", e);
+        }
       }
     }
 

@@ -6,12 +6,6 @@ import crypto from 'crypto';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import webpush from 'web-push';
-import {
-  generateRegistrationOptions,
-  verifyRegistrationResponse,
-  generateAuthenticationOptions,
-  verifyAuthenticationResponse,
-} from '@simplewebauthn/server';
 import { initDb, run, get, query, resetDb } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -97,7 +91,7 @@ app.post('/api/auth/login', async (req, res) => {
       familyDetails = await get('SELECT * FROM families WHERE id = ?', [user.family_id]);
     }
 
-    const token = jwt.sign({ userId: user.id, username: user.username, familyId: user.family_id, role: user.role }, JWT_SECRET, { expiresIn: '30d' });
+    const token = jwt.sign({ userId: user.id, username: user.username, familyId: user.family_id, role: user.role }, JWT_SECRET);
 
     res.json({
       token,
@@ -227,8 +221,7 @@ app.put('/api/user/profile', authenticateToken, async (req, res) => {
 
     const token = jwt.sign(
       { userId: updatedUser.id, username: updatedUser.username, familyId: updatedUser.family_id, role: updatedUser.role },
-      JWT_SECRET,
-      { expiresIn: '30d' }
+      JWT_SECRET
     );
 
     res.json({
@@ -894,30 +887,7 @@ webpush.setVapidDetails(
   VAPID_PRIVATE_KEY
 );
 
-// --- MEMÓRIA TEMPORÁRIA WEBAUTHN ---
-const webauthnChallenges = new Map(); // userId/username -> challenge
 
-// Helpers para WebAuthn Dinâmico
-const getWebAuthnRpID = (req) => {
-  const host = req.headers.host || '';
-  return host.split(':')[0]; // e.g., 'localhost' ou IP do host
-};
-
-const getWebAuthnOrigin = (req) => {
-  const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
-  const host = req.headers.host || '';
-  return `${protocol}://${host}`; // e.g., 'http://localhost:5173';
-};
-
-const getCredentialIdBuffer = (dbCredentialId) => {
-  if (Buffer.isBuffer(dbCredentialId)) {
-    return dbCredentialId;
-  }
-  if (dbCredentialId instanceof Uint8Array) {
-    return Buffer.from(dbCredentialId);
-  }
-  return Buffer.from(dbCredentialId, 'base64url');
-};
 
 // Broadcast de notificações customizadas para a família via SSE e Web Push nativo
 async function broadcastNotificationEvent(familyId, message, excludeClientId) {
@@ -1011,202 +981,6 @@ app.post('/api/notifications/unsubscribe', authenticateToken, async (req, res) =
   } catch (err) {
     console.error('Erro ao remover assinatura push:', err);
     res.status(500).json({ error: 'Erro ao desativar notificações push.' });
-  }
-});
-
-// --- ROTAS WEBAUTHN (PASSKEYS / BIOMETRIA) ---
-
-app.get('/api/auth/webauthn/register-options', authenticateToken, async (req, res) => {
-  const { userId, username } = req.user;
-
-  try {
-    const user = await get('SELECT * FROM users WHERE id = ?', [userId]);
-    if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
-
-    const userCredentials = await query('SELECT credential_id FROM biometric_credentials WHERE user_id = ?', [userId]);
-    const rpID = getWebAuthnRpID(req);
-
-    const options = await generateRegistrationOptions({
-      rpName: 'FamilyHub 🏡',
-      rpID,
-      userID: Buffer.from(userId),
-      userName: username,
-      userDisplayName: user.display_name || username,
-      excludeCredentials: userCredentials.map(cred => ({
-        id: getCredentialIdBuffer(cred.credential_id),
-        type: 'public-key',
-      })),
-      authenticatorSelection: {
-        userVerification: 'preferred',
-        residentKey: 'preferred',
-      },
-    });
-
-    webauthnChallenges.set(userId, options.challenge);
-    res.json(options);
-  } catch (err) {
-    console.error('Erro ao gerar opções de registro WebAuthn:', err);
-    res.status(500).json({ error: 'Erro ao configurar login biométrico.' });
-  }
-});
-
-app.post('/api/auth/webauthn/register-verify', authenticateToken, async (req, res) => {
-  const { userId } = req.user;
-  const { registrationResponse } = req.body;
-
-  const expectedChallenge = webauthnChallenges.get(userId);
-  if (!expectedChallenge) {
-    return res.status(400).json({ error: 'Desafio de biometria inválido ou expirado.' });
-  }
-
-  webauthnChallenges.delete(userId);
-
-  try {
-    const rpID = getWebAuthnRpID(req);
-    const expectedOrigin = getWebAuthnOrigin(req);
-
-    const verification = await verifyRegistrationResponse({
-      response: registrationResponse,
-      expectedChallenge,
-      expectedOrigin,
-      expectedRPID: rpID,
-    });
-
-    if (verification.verified) {
-      const { credentialID, credentialPublicKey, counter, transports } = verification.registrationInfo;
-
-      const credentialIdStr = registrationResponse.id || Buffer.from(credentialID).toString('base64url');
-      const pubKeyStr = Buffer.from(credentialPublicKey).toString('base64');
-      const transportsStr = transports ? JSON.stringify(transports) : null;
-
-      await run(`
-        INSERT INTO biometric_credentials (credential_id, user_id, public_key, counter, transports, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `, [credentialIdStr, userId, pubKeyStr, counter, transportsStr, Date.now()]);
-
-      res.json({ success: true, verified: true });
-    } else {
-      res.status(400).json({ error: 'Falha ao autenticar biometria.' });
-    }
-  } catch (err) {
-    console.error('Erro ao verificar registro WebAuthn:', err);
-    res.status(500).json({ error: 'Erro ao validar login biométrico.' });
-  }
-});
-
-app.post('/api/auth/webauthn/login-options', async (req, res) => {
-  const { username } = req.body;
-  if (!username || !username.trim()) {
-    return res.status(400).json({ error: 'Nome de usuário obrigatório.' });
-  }
-
-  try {
-    const user = await get('SELECT * FROM users WHERE username = ?', [username.trim()]);
-    if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
-
-    const userCredentials = await query('SELECT credential_id FROM biometric_credentials WHERE user_id = ?', [user.id]);
-    if (userCredentials.length === 0) {
-      return res.status(400).json({ error: 'Nenhuma biometria registrada neste dispositivo para este usuário.' });
-    }
-
-    const rpID = getWebAuthnRpID(req);
-
-    const options = await generateAuthenticationOptions({
-      rpID,
-      allowCredentials: userCredentials.map(cred => ({
-        id: getCredentialIdBuffer(cred.credential_id),
-        type: 'public-key',
-      })),
-      userVerification: 'preferred',
-    });
-
-    webauthnChallenges.set(user.username, { challenge: options.challenge, userId: user.id });
-    res.json(options);
-  } catch (err) {
-    console.error('Erro ao gerar opções de autenticação WebAuthn:', err);
-    res.status(500).json({ error: 'Erro ao iniciar login biométrico.' });
-  }
-});
-
-app.post('/api/auth/webauthn/login-verify', async (req, res) => {
-  const { username, authenticationResponse } = req.body;
-
-  if (!username || !authenticationResponse) {
-    return res.status(400).json({ error: 'Dados biométricos incompletos.' });
-  }
-
-  const cached = webauthnChallenges.get(username);
-  if (!cached) {
-    return res.status(400).json({ error: 'Desafio biométrico expirado.' });
-  }
-
-  const { challenge: expectedChallenge, userId } = cached;
-  webauthnChallenges.delete(username);
-
-  try {
-    const credentialId = authenticationResponse.id;
-    const dbCredential = await get('SELECT * FROM biometric_credentials WHERE credential_id = ? AND user_id = ?', [credentialId, userId]);
-
-    if (!dbCredential) {
-      return res.status(400).json({ error: 'Chave biométrica não registrada ou inválida.' });
-    }
-
-    const rpID = getWebAuthnRpID(req);
-    const expectedOrigin = getWebAuthnOrigin(req);
-    const publicKeyBuffer = Buffer.from(dbCredential.public_key, 'base64');
-
-    const verification = await verifyAuthenticationResponse({
-      response: authenticationResponse,
-      expectedChallenge,
-      expectedOrigin,
-      expectedRPID: rpID,
-      authenticator: {
-        credentialID: getCredentialIdBuffer(dbCredential.credential_id),
-        credentialPublicKey: publicKeyBuffer,
-        counter: dbCredential.counter,
-      },
-    });
-
-    if (verification.verified) {
-      const { newCounter } = verification.authenticationInfo;
-      await run('UPDATE biometric_credentials SET counter = ? WHERE credential_id = ?', [newCounter, credentialId]);
-
-      const user = await get('SELECT * FROM users WHERE id = ?', [userId]);
-      let familyDetails = null;
-      if (user.family_id) {
-        familyDetails = await get('SELECT * FROM families WHERE id = ?', [user.family_id]);
-      }
-
-      const token = jwt.sign(
-        { userId: user.id, username: user.username, familyId: user.family_id, role: user.role },
-        JWT_SECRET,
-        { expiresIn: '30d' }
-      );
-
-      res.json({
-        token,
-        user: {
-          id: user.id,
-          username: user.username,
-          display_name: user.display_name,
-          email: user.email,
-          familyId: user.family_id,
-          role: user.role,
-          family_title: user.family_title,
-          birth_date: user.birth_date,
-          gender: user.gender,
-          theme: user.theme || 'dark',
-          accent_theme: user.accent_theme || 'violet',
-          avatar: user.avatar
-        },
-        family: familyDetails
-      });
-    } else {
-      res.status(400).json({ error: 'Erro de assinatura biométrica.' });
-    }
-  } catch (err) {
-    console.error('Erro ao verificar autenticação WebAuthn:', err);
-    res.status(500).json({ error: 'Erro ao processar login biométrico.' });
   }
 });
 

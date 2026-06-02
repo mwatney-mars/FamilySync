@@ -88,6 +88,16 @@ export const initDb = async () => {
     // Coluna já existe
   }
   try {
+    await run(`ALTER TABLE users ADD COLUMN theme TEXT DEFAULT 'dark'`);
+  } catch (e) {
+    // Coluna já existe
+  }
+  try {
+    await run(`ALTER TABLE users ADD COLUMN accent_theme TEXT DEFAULT 'violet'`);
+  } catch (e) {
+    // Coluna já existe
+  }
+  try {
     await run(`ALTER TABLE families ADD COLUMN creator_id TEXT`);
   } catch (e) {
     // Coluna já existe

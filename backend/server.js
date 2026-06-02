@@ -93,7 +93,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     res.json({
       token,
-      user: { id: user.id, username: user.username, display_name: user.display_name, email: user.email, familyId: user.family_id, role: user.role, family_title: user.family_title, birth_date: user.birth_date, gender: user.gender },
+      user: { id: user.id, username: user.username, display_name: user.display_name, email: user.email, familyId: user.family_id, role: user.role, family_title: user.family_title, birth_date: user.birth_date, gender: user.gender, theme: user.theme || 'dark', accent_theme: user.accent_theme || 'violet' },
       family: familyDetails
     });
   } catch (err) {
@@ -153,7 +153,7 @@ app.get('/api/family/members', authenticateToken, async (req, res) => {
 
   try {
     const members = await query(
-      'SELECT id, username, display_name, email, role, family_title, birth_date, gender FROM users WHERE family_id = ?',
+      'SELECT id, username, display_name, email, role, family_title, birth_date, gender, theme, accent_theme FROM users WHERE family_id = ?',
       [familyId]
     );
     res.json(members);
@@ -166,7 +166,7 @@ app.get('/api/family/members', authenticateToken, async (req, res) => {
 // Atualizar próprio perfil do usuário logado
 app.put('/api/user/profile', authenticateToken, async (req, res) => {
   const { userId } = req.user;
-  const { username, display_name, email, birth_date, gender, family_title, password } = req.body;
+  const { username, display_name, email, birth_date, gender, family_title, password, theme, accentTheme } = req.body;
 
   try {
     // Buscar usuário atual para validar email
@@ -202,14 +202,16 @@ app.put('/api/user/profile', authenticateToken, async (req, res) => {
     const updatedBirthDate = birth_date !== undefined ? birth_date : currentUser.birth_date;
     const updatedGender = gender !== undefined ? gender : currentUser.gender;
     const updatedFamilyTitle = family_title !== undefined ? family_title : currentUser.family_title;
+    const updatedTheme = theme !== undefined ? theme : (currentUser.theme || 'dark');
+    const updatedAccentTheme = accentTheme !== undefined ? accentTheme : (currentUser.accent_theme || 'violet');
 
     await run(
-      'UPDATE users SET username = ?, display_name = ?, email = ?, password_hash = ?, birth_date = ?, gender = ?, family_title = ? WHERE id = ?',
-      [updatedUsername, updatedDisplayName, updatedEmail, passwordHash, updatedBirthDate, updatedGender, updatedFamilyTitle, userId]
+      'UPDATE users SET username = ?, display_name = ?, email = ?, password_hash = ?, birth_date = ?, gender = ?, family_title = ?, theme = ?, accent_theme = ? WHERE id = ?',
+      [updatedUsername, updatedDisplayName, updatedEmail, passwordHash, updatedBirthDate, updatedGender, updatedFamilyTitle, updatedTheme, updatedAccentTheme, userId]
     );
 
     // Buscar dados atualizados
-    const updatedUser = await get('SELECT id, username, display_name, email, family_id, role, family_title, birth_date, gender FROM users WHERE id = ?', [userId]);
+    const updatedUser = await get('SELECT id, username, display_name, email, family_id, role, family_title, birth_date, gender, theme, accent_theme FROM users WHERE id = ?', [userId]);
 
     // SSE Broadcast para sincronizar a família (ex: se mudou nome ou título)
     broadcastSyncEvent(currentUser.family_id, null);

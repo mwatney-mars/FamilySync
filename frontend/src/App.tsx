@@ -1238,14 +1238,31 @@ function App() {
         setFamilyMembers(data);
         await db.metadata.put({ key: 'family_members', value: data });
 
-        // Sincronizar dados do usuário logado (ex: role, título) caso tenham mudado no backend
+        // Sincronizar dados do usuário logado (ex: role, título, tema) caso tenham mudado no backend
         const storedUser = await db.metadata.get('user_info');
         if (storedUser && storedUser.value) {
           const myUpdatedInfo = data.find((m: any) => m.id === storedUser.value.id);
-          if (myUpdatedInfo && (myUpdatedInfo.role !== storedUser.value.role || myUpdatedInfo.family_title !== storedUser.value.family_title)) {
-            const newUser = { ...storedUser.value, ...myUpdatedInfo };
-            setCurrentUser(newUser);
-            await db.metadata.put({ key: 'user_info', value: newUser });
+          if (myUpdatedInfo) {
+            let hasChanged = false;
+            if (myUpdatedInfo.role !== storedUser.value.role || 
+                myUpdatedInfo.family_title !== storedUser.value.family_title ||
+                myUpdatedInfo.theme !== storedUser.value.theme ||
+                myUpdatedInfo.accent_theme !== storedUser.value.accent_theme) {
+              hasChanged = true;
+            }
+            if (hasChanged) {
+              const newUser = { ...storedUser.value, ...myUpdatedInfo };
+              setCurrentUser(newUser);
+              await db.metadata.put({ key: 'user_info', value: newUser });
+              
+              if (myUpdatedInfo.theme && myUpdatedInfo.theme !== theme) {
+                setTheme(myUpdatedInfo.theme);
+              }
+              if (myUpdatedInfo.accent_theme && myUpdatedInfo.accent_theme !== accentTheme) {
+                setAccentTheme(myUpdatedInfo.accent_theme);
+                await db.metadata.put({ key: 'accent_theme', value: myUpdatedInfo.accent_theme });
+              }
+            }
           }
         }
       } else {
@@ -1318,6 +1335,12 @@ function App() {
       if (storedToken && storedUser && storedFamily) {
         setToken(storedToken.value);
         setCurrentUser(storedUser.value);
+        if (storedUser.value.theme) {
+          setTheme(storedUser.value.theme);
+        }
+        if (storedUser.value.accent_theme) {
+          setAccentTheme(storedUser.value.accent_theme);
+        }
         setFamily(storedFamily.value);
         setIsAuth(true);
         // Carregar membros imediatamente
@@ -1585,8 +1608,36 @@ function App() {
     try {
       await db.metadata.put({ key: 'accent_theme', value: themeName });
       showToast(t('toastThemeUpdated'), 'success');
+      if (isAuthenticated && token) {
+        await fetch(`${backendUrl}/api/user/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ accentTheme: themeName })
+        });
+      }
     } catch (err) {
       console.error('Erro ao salvar tema:', err);
+    }
+  };
+
+  const handleChangeAtmosphere = async (atmosphereName: string) => {
+    setTheme(atmosphereName as any);
+    try {
+      if (isAuthenticated && token) {
+        await fetch(`${backendUrl}/api/user/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ theme: atmosphereName })
+        });
+      }
+    } catch (err) {
+      console.error('Erro ao salvar atmosfera no servidor:', err);
     }
   };
 
@@ -2004,6 +2055,14 @@ function App() {
       await db.metadata.put({ key: 'auth_token', value: data.token });
       await db.metadata.put({ key: 'user_info', value: data.user });
       await db.metadata.put({ key: 'family_info', value: data.family });
+
+      if (data.user.theme) {
+        setTheme(data.user.theme);
+      }
+      if (data.user.accent_theme) {
+        setAccentTheme(data.user.accent_theme);
+        await db.metadata.put({ key: 'accent_theme', value: data.user.accent_theme });
+      }
 
       setToken(data.token);
       setCurrentUser(data.user);
@@ -8051,7 +8110,7 @@ Instruções para resposta:
                                       <div
                                         key={atmOpt.id}
                                         onClick={() => {
-                                          setTheme(atmOpt.id as any);
+                                          handleChangeAtmosphere(atmOpt.id);
                                           if (typeof setToast === 'function') {
                                             setToast({
                                               message: language === 'pt' ? `Atmosfera "${atmOpt.name}" ativada!` : `Atmosphere "${atmOpt.name}" activated!`,
@@ -8159,7 +8218,7 @@ Instruções para resposta:
                                       <div
                                         key={atmOpt.id}
                                         onClick={() => {
-                                          setTheme(atmOpt.id as any);
+                                          handleChangeAtmosphere(atmOpt.id);
                                           if (typeof setToast === 'function') {
                                             setToast({
                                               message: language === 'pt' ? `Atmosfera "${atmOpt.name}" ativada!` : `Atmosphere "${atmOpt.name}" activated!`,

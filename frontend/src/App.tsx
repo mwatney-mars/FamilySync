@@ -3544,7 +3544,7 @@ function App() {
 
     await db.shopping.update(itemId, {
       checked: isChecked ? 0 : 1,
-      checked_by: isChecked ? undefined : checkerName,
+      checked_by: isChecked ? '' : checkerName,
       updated_at: now
     });
 
@@ -3583,8 +3583,7 @@ function App() {
     } else {
       // transição de marcado para desmarcado (cancelar compra)
       const linkedRecords = await db.purchase_history
-        .where('shopping_item_id')
-        .equals(item.id)
+        .filter(rec => rec.shopping_item_id === item.id)
         .toArray();
 
       for (const rec of linkedRecords) {
@@ -10494,7 +10493,7 @@ Instruções para resposta:
           rel="noopener noreferrer" 
           style={{ color: 'var(--accent-primary)', fontWeight: 'bold', textDecoration: 'underline' }}
         >
-          FamilyHub 1.3.4
+          FamilyHub 1.3.5
         </a>{' '}
         {t('footerText')}
       </footer>

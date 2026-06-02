@@ -5107,6 +5107,19 @@ Instruções para resposta:
               <div
                 key={sound.id}
                 onClick={() => {
+                  // Inicializa/retoma o contexto de áudio em resposta direta ao clique do usuário (necessário para iOS/Safari)
+                  if (!audioContextRef.current) {
+                    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+                    if (AudioContextClass) {
+                      audioContextRef.current = new AudioContextClass();
+                    }
+                  }
+                  if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+                    audioContextRef.current.resume().catch(err => {
+                      console.error('Erro ao retomar AudioContext:', err);
+                    });
+                  }
+
                   if (isSelected) {
                     setActiveSound(null);
                   } else {

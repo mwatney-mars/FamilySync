@@ -966,6 +966,11 @@ function App() {
 
   // Estados para Edição de Perfil de Usuário
   const [profileUsername, setProfileUsername] = useState<string>('');
+  const [profileAvatar, setProfileAvatar] = useState<string>('');
+  const [uploadedPhotoBase64, setUploadedPhotoBase64] = useState<string | null>(null);
+  const [uploadedPhotoMimeType, setUploadedPhotoMimeType] = useState<string>('');
+  const [isGeneratingAvatar, setIsGeneratingAvatar] = useState<boolean>(false);
+  const [avatarGenerationError, setAvatarGenerationError] = useState<string | null>(null);
   const [profileDisplayName, setProfileDisplayName] = useState<string>('');
   const [profileEmail, setProfileEmail] = useState<string>('');
   const [profileBirthDate, setProfileBirthDate] = useState<string>('');
@@ -1671,6 +1676,7 @@ function App() {
     if (currentUser) {
       Promise.resolve().then(() => {
         setProfileUsername(currentUser.username || '');
+        setProfileAvatar(currentUser.avatar || '');
         setProfileDisplayName(currentUser.display_name || currentUser.username || '');
         setProfileEmail(currentUser.email || '');
         setProfileBirthDate(currentUser.birth_date || '');
@@ -1799,7 +1805,8 @@ function App() {
             birth_date: profileBirthDate,
             gender: profileGender,
             family_title: profileFamilyTitle,
-            password: profilePassword || undefined
+            password: profilePassword || undefined,
+            avatar: profileAvatar || ''
           })
         });
 
@@ -1821,6 +1828,107 @@ function App() {
       }
     } catch (err: any) {
       setProfileSaveError(err.message || 'Ocorreu um erro ao salvar o perfil.');
+    }
+  };
+
+  // --- HANDLER DE ARQUIVO E GERAÇÃO DE AVATAR POR IA ---
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setUploadedPhotoBase64(null);
+      setUploadedPhotoMimeType('');
+      return;
+    }
+
+    setUploadedPhotoMimeType(file.type);
+    setAvatarGenerationError(null);
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      if (result) {
+        // Obter apenas a parte base64 (sem o prefixo data:image/png;base64,)
+        const base64Data = result.split(',')[1];
+        setUploadedPhotoBase64(base64Data);
+      }
+    };
+    reader.onerror = () => {
+      setAvatarGenerationError('Erro ao ler o arquivo selecionado.');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleGenerateAIAvatar = async () => {
+    if (!geminiApiKey) {
+      setAvatarGenerationError('Por favor, configure sua chave de API do Gemini nas configurações de IA primeiro.');
+      return;
+    }
+
+    if (!uploadedPhotoBase64) {
+      setAvatarGenerationError('Por favor, faça o upload de uma foto primeiro para que possamos gerar o avatar.');
+      return;
+    }
+
+    setIsGeneratingAvatar(true);
+    setAvatarGenerationError(null);
+
+    try {
+      const promptText = `3D Character Model\n\nA highly stylized 3D caricature of this Character, with expressive facial features, and playful exaggeration. Rendered in a smooth, polished style with clean materials and soft ambient lighting. Bold color background to emphasize the character's charm and presence.`;
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-image-latest:generateContent?key=${geminiApiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: promptText },
+              {
+                inlineData: {
+                  mimeType: uploadedPhotoMimeType || 'image/jpeg',
+                  data: uploadedPhotoBase64
+                }
+              }
+            ]
+          }],
+          generationConfig: {
+            responseModalities: ["IMAGE"]
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `Erro do Gemini: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const parts = data.candidates?.[0]?.content?.parts;
+      if (!parts || parts.length === 0) {
+        throw new Error('A IA não retornou nenhuma resposta.');
+      }
+
+      const imagePart = parts.find((p: any) => p.inlineData && p.inlineData.data);
+      if (!imagePart) {
+        throw new Error('Não foi encontrada nenhuma imagem gerada na resposta da IA.');
+      }
+
+      const mimeType = imagePart.inlineData.mimeType || 'image/png';
+      const base64Data = imagePart.inlineData.data;
+      const fullBase64Image = `data:${mimeType};base64,${base64Data}`;
+      
+      setProfileAvatar(fullBase64Image);
+      setToast({
+        message: 'Avatar 3D gerado com sucesso! Clique em salvar perfil abaixo para mantê-lo.',
+        type: 'success',
+        id: Date.now()
+      });
+    } catch (err: any) {
+      console.error('Erro ao gerar avatar do Gemini:', err);
+      setAvatarGenerationError(err.message || 'Erro inesperado ao gerar avatar.');
+    } finally {
+      setIsGeneratingAvatar(false);
     }
   };
 
@@ -5333,7 +5441,57 @@ Instruções para resposta:
           
           {/* Identificação de Família */}
           <div className="header-identity" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <img src="/logo.png?v=2" alt="FamilyHub Logo" style={{ height: '36px', width: '36px', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)' }} />
+            <div 
+              onClick={() => {
+                setActiveTab('settings');
+                setActiveSettingsSection('profile');
+              }}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              title={language === 'pt' ? 'Ir para o Perfil' : 'Go to Profile'}
+            >
+              {currentUser && currentUser.avatar ? (
+                <img 
+                  src={currentUser.avatar} 
+                  alt={currentUser.display_name || currentUser.username} 
+                  style={{ 
+                    height: '36px', 
+                    width: '36px', 
+                    borderRadius: '50%', 
+                    objectFit: 'cover',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.3)', 
+                    border: '2px solid var(--accent-primary)',
+                    transition: 'all 0.3s ease'
+                  }} 
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.08)';
+                    e.currentTarget.style.borderColor = 'var(--accent-primary-hover)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.borderColor = 'var(--accent-primary)';
+                  }}
+                />
+              ) : (
+                <img 
+                  src="/logo.png?v=2" 
+                  alt="FamilyHub Logo" 
+                  style={{ 
+                    height: '36px', 
+                    width: '36px', 
+                    borderRadius: '50%', 
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.3)', 
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    transition: 'all 0.3s ease'
+                  }} 
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.08)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                />
+              )}
+            </div>
             <div>
               <h2 style={{ fontSize: '16px', fontWeight: '700', letterSpacing: '-0.3px' }}>
                 {family ? family.name : 'Grupo Local Demo'}
@@ -8827,6 +8985,198 @@ Instruções para resposta:
                           </div>
 
                           <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {/* SEÇÃO DE AVATAR */}
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '24px',
+                              padding: '16px',
+                              borderRadius: 'var(--radius-lg)',
+                              background: 'rgba(255, 255, 255, 0.03)',
+                              border: '1px solid rgba(255, 255, 255, 0.05)',
+                              marginBottom: '16px',
+                              flexWrap: 'wrap'
+                            }}>
+                              {/* Preview Circular */}
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                <div style={{
+                                  position: 'relative',
+                                  width: '90px',
+                                  height: '90px',
+                                  borderRadius: '50%',
+                                  overflow: 'hidden',
+                                  border: '3px solid var(--accent-primary)',
+                                  boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
+                                  background: 'rgba(0,0,0,0.2)'
+                                }}>
+                                  {profileAvatar ? (
+                                    <img 
+                                      src={profileAvatar} 
+                                      alt="Preview Avatar" 
+                                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    />
+                                  ) : (
+                                    <div style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      width: '100%',
+                                      height: '100%',
+                                      color: 'var(--text-secondary)',
+                                      fontSize: '11px',
+                                      fontWeight: '600'
+                                    }}>
+                                      {language === 'pt' ? 'Sem Foto' : 'No Photo'}
+                                    </div>
+                                  )}
+                                </div>
+                                <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                                  {language === 'pt' ? 'Avatar Atual' : 'Current Avatar'}
+                                </span>
+                              </div>
+
+                              {/* Upload de Foto e Geração de IA */}
+                              <div style={{ flex: '1', minWidth: '240px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                                  {language === 'pt' ? 'Geração de Avatar 3D (IA)' : '3D Avatar Generation (AI)'}
+                                </label>
+                                <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0 }}>
+                                  {language === 'pt' 
+                                    ? 'Faça o upload de uma foto de rosto e use a inteligência artificial do Gemini para criar uma caricatura 3D incrível!' 
+                                    : 'Upload a face photo and use Gemini AI to create an amazing 3D caricature!'}
+                                </p>
+
+                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginTop: '4px' }}>
+                                  {/* Botão de Upload Personalizado */}
+                                  <label style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '8px 14px',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    background: 'rgba(255, 255, 255, 0.08)',
+                                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                                    borderRadius: 'var(--radius-md)',
+                                    color: 'var(--text-primary)',
+                                    cursor: 'pointer',
+                                    transition: 'background 0.2s'
+                                  }}
+                                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'}
+                                  onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'}
+                                  >
+                                    <Upload size={14} />
+                                    <span>{uploadedPhotoBase64 ? (language === 'pt' ? 'Alterar Foto' : 'Change Photo') : (language === 'pt' ? 'Enviar Foto' : 'Upload Photo')}</span>
+                                    <input 
+                                      type="file" 
+                                      accept="image/*" 
+                                      onChange={handleFileChange} 
+                                      style={{ display: 'none' }} 
+                                    />
+                                  </label>
+
+                                  {/* Botão de Gerar Avatar com Gemini */}
+                                  <button
+                                    type="button"
+                                    onClick={handleGenerateAIAvatar}
+                                    disabled={isGeneratingAvatar || !uploadedPhotoBase64}
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '8px',
+                                      padding: '8px 14px',
+                                      fontSize: '12px',
+                                      fontWeight: '600',
+                                      background: uploadedPhotoBase64 ? 'var(--accent-primary)' : 'rgba(255, 255, 255, 0.03)',
+                                      border: 'none',
+                                      borderRadius: 'var(--radius-md)',
+                                      color: uploadedPhotoBase64 ? 'white' : 'var(--text-muted)',
+                                      cursor: uploadedPhotoBase64 && !isGeneratingAvatar ? 'pointer' : 'not-allowed',
+                                      transition: 'all 0.2s',
+                                      boxShadow: uploadedPhotoBase64 ? '0 4px 12px rgba(139, 92, 246, 0.25)' : 'none'
+                                    }}
+                                    onMouseOver={(e) => {
+                                      if (uploadedPhotoBase64 && !isGeneratingAvatar) {
+                                        e.currentTarget.style.background = 'var(--accent-primary-hover)';
+                                      }
+                                    }}
+                                    onMouseOut={(e) => {
+                                      if (uploadedPhotoBase64 && !isGeneratingAvatar) {
+                                        e.currentTarget.style.background = 'var(--accent-primary)';
+                                      }
+                                    }}
+                                  >
+                                    {isGeneratingAvatar ? (
+                                      <>
+                                        <div className="spinner-mini" style={{
+                                          width: '12px',
+                                          height: '12px',
+                                          border: '2px solid rgba(255,255,255,0.3)',
+                                          borderTop: '2px solid white',
+                                          borderRadius: '50%',
+                                          animation: 'spin 1s linear infinite'
+                                        }} />
+                                        <span>{language === 'pt' ? 'Gerando...' : 'Generating...'}</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Sparkles size={14} />
+                                        <span>{language === 'pt' ? 'Gerar Avatar 3D' : 'Generate 3D Avatar'}</span>
+                                      </>
+                                    )}
+                                  </button>
+
+                                  {/* Botão para limpar / remover avatar */}
+                                  {profileAvatar && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setProfileAvatar('');
+                                        setUploadedPhotoBase64(null);
+                                      }}
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        padding: '8px 12px',
+                                        fontSize: '12px',
+                                        fontWeight: '600',
+                                        background: 'rgba(239, 68, 68, 0.1)',
+                                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                                        borderRadius: 'var(--radius-md)',
+                                        color: '#ef4444',
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      <Trash2 size={13} />
+                                      <span>{language === 'pt' ? 'Remover' : 'Remove'}</span>
+                                    </button>
+                                  )}
+                                </div>
+
+                                {uploadedPhotoBase64 && !isGeneratingAvatar && !profileAvatar && (
+                                  <div style={{ fontSize: '11px', color: 'var(--accent-info)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                                    <Sparkles size={12} />
+                                    <span>{language === 'pt' ? 'Foto carregada! Clique em "Gerar Avatar 3D" para iniciar.' : 'Photo loaded! Click "Generate 3D Avatar" to start.'}</span>
+                                  </div>
+                                )}
+
+                                {avatarGenerationError && (
+                                  <div style={{
+                                    fontSize: '11px',
+                                    color: '#ef4444',
+                                    background: 'rgba(239, 68, 68, 0.08)',
+                                    padding: '8px 12px',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: '1px solid rgba(239, 68, 68, 0.15)',
+                                    marginTop: '4px'
+                                  }}>
+                                    {avatarGenerationError}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                               <div>
                                 <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>{t('fullName')}</label>

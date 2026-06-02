@@ -102,6 +102,11 @@ export const initDb = async () => {
   } catch (e) {
     // Coluna já existe
   }
+  try {
+    await run(`ALTER TABLE users ADD COLUMN avatar TEXT`);
+  } catch (e) {
+    // Coluna já existe
+  }
 
   await run(`
     CREATE TABLE IF NOT EXISTS sync_items (

@@ -1057,9 +1057,9 @@ function App() {
       }
 
       // 2.2. Inicializa o HTML5 Audio Keep-Alive para habilitar MediaSession e segundo plano no Android (> 5 segundos)
-      const keepAlive = new Audio('/audio/silent-keepalive.wav');
+      const keepAlive = new Audio('/audio/silent-keepalive.wav?v=1.3.1');
       keepAlive.loop = true;
-      keepAlive.volume = 0.01; // Quase inaudível, mas ativa o foco de mídia do Chrome
+      keepAlive.volume = 1.0; // Canal 100% silencioso (44100Hz), volume alto evita gating de energia/DAC do Android
       keepAliveAudioRef.current = keepAlive;
 
       // Inicia a reprodução do canal keep-alive e carrega o áudio principal

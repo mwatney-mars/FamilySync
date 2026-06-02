@@ -6425,15 +6425,6 @@ Instruções para resposta:
                                               )}
                                             </div>
                                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                              <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                                {chore.assigned_to === 'all' ? (
-                                                  <div style={{ display: 'flex', alignItems: 'center', marginRight: '2px' }}>
-                                                    {familyMembers.map((m: any, idx: number) => renderMemberAvatar(m, 16, true, idx, familyMembers.length))}
-                                                  </div>
-                                                ) : (
-                                                  renderMemberAvatar(familyMembers.find(m => m.username === chore.assigned_to), 16)
-                                                )}
-                                              </span>
                                               {isMed && dose && (
                                                 <span style={{ fontSize: '10px', color: 'var(--accent-info)' }}>({dose})</span>
                                               )}
@@ -6615,15 +6606,6 @@ Instruções para resposta:
                                               )}
                                             </div>
                                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                              <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                                {chore.assigned_to === 'all' ? (
-                                                  <div style={{ display: 'flex', alignItems: 'center', marginRight: '2px' }}>
-                                                    {familyMembers.map((m: any, idx: number) => renderMemberAvatar(m, 16, true, idx, familyMembers.length))}
-                                                  </div>
-                                                ) : (
-                                                  renderMemberAvatar(familyMembers.find(m => m.username === chore.assigned_to), 16)
-                                                )}
-                                              </span>
                                               {isMed && dose && (
                                                 <span style={{ fontSize: '10px', color: 'var(--accent-info)' }}>({dose})</span>
                                               )}

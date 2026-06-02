@@ -100,6 +100,7 @@ export interface ShoppingItem {
   updated_at: number;
   deleted: number;
   ai_status?: 'pending' | 'processed';
+  is_archived?: number;
 }
 
 export interface PurchaseRecord {

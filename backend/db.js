@@ -107,6 +107,22 @@ export const initDb = async () => {
   } catch (e) {
     // Coluna já existe
   }
+  try {
+    await run(`ALTER TABLE users ADD COLUMN language TEXT DEFAULT 'pt'`);
+  } catch (e) {
+    // Coluna já existe
+  }
+  try {
+    await run(`ALTER TABLE users ADD COLUMN default_calendar_view TEXT DEFAULT 'month'`);
+  } catch (e) {
+    // Coluna já existe
+  }
+  try {
+    await run(`ALTER TABLE users ADD COLUMN gamification_enabled INTEGER DEFAULT 1`);
+  } catch (e) {
+    // Coluna já existe
+  }
+
 
   await run(`
     CREATE TABLE IF NOT EXISTS sync_items (

@@ -95,7 +95,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     res.json({
       token,
-      user: { id: user.id, username: user.username, display_name: user.display_name, email: user.email, familyId: user.family_id, role: user.role, family_title: user.family_title, birth_date: user.birth_date, gender: user.gender, theme: user.theme || 'dark', accent_theme: user.accent_theme || 'violet', avatar: user.avatar },
+      user: { id: user.id, username: user.username, display_name: user.display_name, email: user.email, familyId: user.family_id, role: user.role, family_title: user.family_title, birth_date: user.birth_date, gender: user.gender, theme: user.theme || 'dark', accent_theme: user.accent_theme || 'violet', avatar: user.avatar, language: user.language || 'pt', default_calendar_view: user.default_calendar_view || 'month', gamification_enabled: user.gamification_enabled !== undefined ? user.gamification_enabled : 1 },
       family: familyDetails
     });
   } catch (err) {
@@ -155,7 +155,7 @@ app.get('/api/family/members', authenticateToken, async (req, res) => {
 
   try {
     const members = await query(
-      'SELECT id, username, display_name, email, role, family_title, birth_date, gender, theme, accent_theme, avatar FROM users WHERE family_id = ?',
+      'SELECT id, username, display_name, email, role, family_title, birth_date, gender, theme, accent_theme, avatar, language, default_calendar_view, gamification_enabled FROM users WHERE family_id = ?',
       [familyId]
     );
     res.json(members);
@@ -168,7 +168,7 @@ app.get('/api/family/members', authenticateToken, async (req, res) => {
 // Atualizar próprio perfil do usuário logado
 app.put('/api/user/profile', authenticateToken, async (req, res) => {
   const { userId } = req.user;
-  const { username, display_name, email, birth_date, gender, family_title, password, theme, accentTheme, avatar } = req.body;
+  const { username, display_name, email, birth_date, gender, family_title, password, theme, accentTheme, avatar, language, defaultCalendarView, gamificationEnabled } = req.body;
 
   try {
     // Buscar usuário atual para validar email
@@ -207,14 +207,17 @@ app.put('/api/user/profile', authenticateToken, async (req, res) => {
     const updatedTheme = theme !== undefined ? theme : (currentUser.theme || 'dark');
     const updatedAccentTheme = accentTheme !== undefined ? accentTheme : (currentUser.accent_theme || 'violet');
     const updatedAvatar = avatar !== undefined ? avatar : currentUser.avatar;
+    const updatedLanguage = language !== undefined ? language : (currentUser.language || 'pt');
+    const updatedDefaultCalendarView = defaultCalendarView !== undefined ? defaultCalendarView : (currentUser.default_calendar_view || 'month');
+    const updatedGamificationEnabled = gamificationEnabled !== undefined ? (gamificationEnabled ? 1 : 0) : (currentUser.gamification_enabled !== undefined ? currentUser.gamification_enabled : 1);
 
     await run(
-      'UPDATE users SET username = ?, display_name = ?, email = ?, password_hash = ?, birth_date = ?, gender = ?, family_title = ?, theme = ?, accent_theme = ?, avatar = ? WHERE id = ?',
-      [updatedUsername, updatedDisplayName, updatedEmail, passwordHash, updatedBirthDate, updatedGender, updatedFamilyTitle, updatedTheme, updatedAccentTheme, updatedAvatar, userId]
+      'UPDATE users SET username = ?, display_name = ?, email = ?, password_hash = ?, birth_date = ?, gender = ?, family_title = ?, theme = ?, accent_theme = ?, avatar = ?, language = ?, default_calendar_view = ?, gamification_enabled = ? WHERE id = ?',
+      [updatedUsername, updatedDisplayName, updatedEmail, passwordHash, updatedBirthDate, updatedGender, updatedFamilyTitle, updatedTheme, updatedAccentTheme, updatedAvatar, updatedLanguage, updatedDefaultCalendarView, updatedGamificationEnabled, userId]
     );
 
     // Buscar dados atualizados
-    const updatedUser = await get('SELECT id, username, display_name, email, family_id, role, family_title, birth_date, gender, theme, accent_theme, avatar FROM users WHERE id = ?', [userId]);
+    const updatedUser = await get('SELECT id, username, display_name, email, family_id, role, family_title, birth_date, gender, theme, accent_theme, avatar, language, default_calendar_view, gamification_enabled FROM users WHERE id = ?', [userId]);
 
     // SSE Broadcast para sincronizar a família (ex: se mudou nome ou título)
     broadcastSyncEvent(currentUser.family_id, null);
@@ -225,7 +228,7 @@ app.put('/api/user/profile', authenticateToken, async (req, res) => {
     );
 
     res.json({
-      message: 'Perfil atualizado com sucesso!',
+      message: 'Perfil updated with success!',
       user: updatedUser,
       token
     });
@@ -749,6 +752,7 @@ app.post('/api/sync', authenticateToken, async (req, res) => {
   }
 
   try {
+    const serverTime = Date.now();
     let updatedCount = 0;
 
     // Processar itens recebidos do cliente
@@ -757,7 +761,7 @@ app.post('/api/sync', authenticateToken, async (req, res) => {
 
       // Verificar se o item já existe no servidor
       const existing = await get(
-        'SELECT updated_at FROM sync_items WHERE id = ? AND family_id = ?',
+        'SELECT id FROM sync_items WHERE id = ? AND family_id = ?',
         [id, familyId]
       );
 
@@ -765,14 +769,17 @@ app.post('/api/sync', authenticateToken, async (req, res) => {
         // Novo item
         await run(
           'INSERT INTO sync_items (id, family_id, collection, encrypted_data, updated_at, deleted) VALUES (?, ?, ?, ?, ?, ?)',
-          [id, familyId, collection, encrypted_data, updated_at, deleted]
+          [id, familyId, collection, encrypted_data, serverTime, deleted]
         );
         updatedCount++;
-      } else if (updated_at > existing.updated_at) {
-        // Item existente modificado mais recentemente pelo cliente (LWW - Last Write Wins)
+      } else {
+        // Para garantir sincronização robusta e imune a discrepâncias de relógio (clock skew)
+        // entre os diferentes dispositivos dos usuários e o servidor, o servidor
+        // sempre aceita as atualizações recebidas e armazena o timestamp de sincronização (updated_at)
+        // usando a hora unificada do servidor (serverTime).
         await run(
           'UPDATE sync_items SET collection = ?, encrypted_data = ?, updated_at = ?, deleted = ? WHERE id = ? AND family_id = ?',
-          [collection, encrypted_data, updated_at, deleted, id, familyId]
+          [collection, encrypted_data, serverTime, deleted, id, familyId]
         );
         updatedCount++;
       }
@@ -783,8 +790,6 @@ app.post('/api/sync', authenticateToken, async (req, res) => {
       'SELECT id, collection, encrypted_data, updated_at, deleted FROM sync_items WHERE family_id = ? AND updated_at > ?',
       [familyId, lastSyncTime || 0]
     );
-
-    const serverTime = Date.now();
 
     // Se houve alterações salvas, notificar os outros clientes conectados da família por SSE
     if (updatedCount > 0) {
@@ -987,13 +992,21 @@ app.post('/api/notifications/unsubscribe', authenticateToken, async (req, res) =
 
 
 // Servir os arquivos estáticos compilados do React frontend em produção
-app.use(express.static(join(__dirname, '../frontend/dist')));
+app.use(express.static(join(__dirname, '../frontend/dist'), {
+  maxAge: '1y',
+  setHeaders: (res, path) => {
+    if (path.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    }
+  }
+}));
 
 // Fallback para index.html do React (essencial para roteamento SPA no cliente)
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) {
     return next();
   }
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.sendFile(join(__dirname, '../frontend/dist/index.html'), (err) => {
     if (err) {
       // Se o dist não estiver compilado ainda, retornar mensagem informativa
@@ -1007,7 +1020,14 @@ app.get('*', (req, res, next) => {
 initDb().then(() => {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    if (JWT_SECRET === 'FamilyHubSecretKey_SuperSecure123!') {
+      console.warn('\x1b[33m%s\x1b[0m', '[WARNING] FamilyHub is running with the default JWT_SECRET! For security reasons, please change JWT_SECRET in your .env file to a random secure string.');
+    }
+    if (VAPID_PUBLIC_KEY === 'BAS9y11NdiOTmDf0AZqnfdBXKUcAbVv4PR81pm6n-H-GO0d1FnJlosMM5MSXiiLAV-kgGgUrErtCfKNeij_EC6Q') {
+      console.warn('\x1b[33m%s\x1b[0m', '[WARNING] FamilyHub is running with default VAPID keys! Push notifications will use shared credentials. Consider generating unique VAPID keys in production.');
+    }
   });
 }).catch(err => {
   console.error('Failed to initialize Database:', err);
 });
+

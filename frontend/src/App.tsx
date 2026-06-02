@@ -32,7 +32,6 @@ import {
   Clock,
   Sun,
   Moon,
-  CloudRain,
   Sparkles,
   Pin,
   Wand2,
@@ -44,15 +43,6 @@ import {
   Upload,
   Download,
   Archive,
-  Waves,
-  Wind,
-  Radio,
-  Car,
-  Cpu,
-  Flame,
-  Droplets,
-  Music,
-  Timer,
   Pencil,
   Bell,
   X
@@ -61,6 +51,8 @@ import {
 
 import { db, queueSyncOperation, generateUUID } from './db';
 import { TRANSLATIONS } from './translations';
+import { LiveClock, LiveDate, LiveGreeting, LiveWeather } from './components/LiveClock';
+import { ZenSpacePanel } from './components/ZenSpacePanel';
 import type {
   Chore,
   ShoppingItem,
@@ -766,20 +758,7 @@ const ZEN_TRANSLATIONS: Record<string, Record<string, string>> = {
   }
 };
 
-const SOUNDS_LIST = [
-  { id: 'rain', icon: 'CloudRain', color: '#60a5fa', activeBg: 'rgba(96, 165, 250, 0.12)', glow: 'rgba(96, 165, 250, 0.25)' },
-  { id: 'ocean', icon: 'Waves', color: '#3b82f6', activeBg: 'rgba(59, 130, 246, 0.12)', glow: 'rgba(59, 130, 246, 0.25)' },
-  { id: 'stream', icon: 'Droplets', color: '#2563eb', activeBg: 'rgba(37, 99, 235, 0.12)', glow: 'rgba(37, 99, 235, 0.25)' },
-  { id: 'night', icon: 'Moon', color: '#a78bfa', activeBg: 'rgba(167, 139, 250, 0.12)', glow: 'rgba(167, 139, 250, 0.25)' },
-  { id: 'fan', icon: 'Wind', color: '#2dd4bf', activeBg: 'rgba(45, 212, 191, 0.12)', glow: 'rgba(45, 212, 191, 0.25)' },
-  { id: 'noise', icon: 'Radio', color: '#c084fc', activeBg: 'rgba(192, 132, 252, 0.12)', glow: 'rgba(192, 132, 252, 0.25)' },
-  { id: 'car', icon: 'Car', color: '#fbbf24', activeBg: 'rgba(251, 191, 36, 0.12)', glow: 'rgba(251, 191, 36, 0.25)' },
-  { id: 'engine', icon: 'Cpu', color: '#f472b6', activeBg: 'rgba(244, 114, 182, 0.12)', glow: 'rgba(244, 114, 182, 0.25)' },
-  { id: 'hairdryer', icon: 'Flame', color: '#f87171', activeBg: 'rgba(248, 113, 113, 0.12)', glow: 'rgba(248, 113, 113, 0.25)' },
-  { id: 'vacuumcleaner', icon: 'Wind', color: '#94a3b8', activeBg: 'rgba(148, 163, 184, 0.12)', glow: 'rgba(148, 163, 184, 0.25)' },
-  { id: 'washingmachine', icon: 'RotateCcw', color: '#22d3ee', activeBg: 'rgba(34, 211, 238, 0.12)', glow: 'rgba(34, 211, 238, 0.25)' },
-  { id: 'train', icon: 'RotateCcw', color: '#34d399', activeBg: 'rgba(52, 211, 153, 0.12)', glow: 'rgba(52, 211, 153, 0.25)' }
-];
+
 
 const getAvatarColor = (username: string) => {
   const colors = [
@@ -1342,21 +1321,7 @@ function App() {
     return ZEN_TRANSLATIONS[language]?.[key] || ZEN_TRANSLATIONS['en']?.[key] || key;
   };
 
-  const renderSoundIcon = (iconName: string, size = 18, style = {}) => {
-    switch (iconName) {
-      case 'CloudRain': return <CloudRain size={size} style={style} />;
-      case 'Waves': return <Waves size={size} style={style} />;
-      case 'Droplets': return <Droplets size={size} style={style} />;
-      case 'Moon': return <Moon size={size} style={style} />;
-      case 'Wind': return <Wind size={size} style={style} />;
-      case 'Radio': return <Radio size={size} style={style} />;
-      case 'Car': return <Car size={size} style={style} />;
-      case 'Cpu': return <Cpu size={size} style={style} />;
-      case 'Flame': return <Flame size={size} style={style} />;
-      case 'RotateCcw': return <RotateCcw size={size} style={style} />;
-      default: return <Music size={size} style={style} />;
-    }
-  };
+
 
   // --- ESTADOS DE USABILIDADE E CUSTOMIZAÇÃO ---
   const [theme, setTheme] = useState<'light' | 'dark' | 'midnight' | 'forest' | 'sunset' | 'nordic' | 'latte' | 'mint' | 'lavender' | 'sand'>(() => {
@@ -1495,7 +1460,7 @@ function App() {
   const [showApiKey, setShowApiKey] = useState<boolean>(false);
 
   // --- CONSULTAS AO BANCO LOCAL DE DADOS (LIVE QUERIES) ---
-  const rawChores = useLiveQuery(() => db.chores.where('deleted').equals(0).toArray());
+  const rawChores = useLiveQuery(() => db.chores.toArray().then(all => all.filter(item => item.deleted !== 1)));
   const localChores = useMemo(() => rawChores || [], [rawChores]);
   const visibleChores = useMemo(() => {
     if (!currentUser) return [];
@@ -1508,9 +1473,10 @@ function App() {
     });
   }, [localChores, currentUser]);
 
-  const rawShopping = useLiveQuery(() => db.shopping.where('deleted').equals(0).toArray());
+  const rawShopping = useLiveQuery(() => db.shopping.toArray().then(all => all.filter(item => item.deleted !== 1)));
   const localShopping = useMemo(() => rawShopping || [], [rawShopping]);
-  const localRewards = useLiveQuery(() => db.rewards.where('deleted').equals(0).toArray()) || [];
+  const rawRewards = useLiveQuery(() => db.rewards.toArray().then(all => all.filter(item => item.deleted !== 1)));
+  const localRewards = useMemo(() => rawRewards || [], [rawRewards]);
   const rawPoints = useLiveQuery(() => db.points.orderBy('timestamp').toArray());
   const localPoints = useMemo(() => rawPoints || [], [rawPoints]);
   const stickyNotesData = useLiveQuery(() => db.metadata.get('family_sticky_notes'));
@@ -1590,7 +1556,16 @@ function App() {
             if (myUpdatedInfo.role !== storedUser.value.role || 
                 myUpdatedInfo.family_title !== storedUser.value.family_title ||
                 myUpdatedInfo.theme !== storedUser.value.theme ||
-                myUpdatedInfo.accent_theme !== storedUser.value.accent_theme) {
+                myUpdatedInfo.accent_theme !== storedUser.value.accent_theme ||
+                myUpdatedInfo.language !== storedUser.value.language ||
+                myUpdatedInfo.default_calendar_view !== storedUser.value.default_calendar_view ||
+                myUpdatedInfo.gamification_enabled !== storedUser.value.gamification_enabled ||
+                myUpdatedInfo.username !== storedUser.value.username ||
+                myUpdatedInfo.display_name !== storedUser.value.display_name ||
+                myUpdatedInfo.avatar !== storedUser.value.avatar ||
+                myUpdatedInfo.email !== storedUser.value.email ||
+                myUpdatedInfo.birth_date !== storedUser.value.birth_date ||
+                myUpdatedInfo.gender !== storedUser.value.gender) {
               hasChanged = true;
             }
             if (hasChanged) {
@@ -1604,6 +1579,22 @@ function App() {
               if (myUpdatedInfo.accent_theme && myUpdatedInfo.accent_theme !== accentTheme) {
                 setAccentTheme(myUpdatedInfo.accent_theme);
                 await db.metadata.put({ key: 'accent_theme', value: myUpdatedInfo.accent_theme });
+              }
+              if (myUpdatedInfo.language && myUpdatedInfo.language !== language) {
+                setLanguage(myUpdatedInfo.language);
+                await db.metadata.put({ key: 'language', value: myUpdatedInfo.language });
+              }
+              if (myUpdatedInfo.default_calendar_view && myUpdatedInfo.default_calendar_view !== defaultCalendarView) {
+                setDefaultCalendarView(myUpdatedInfo.default_calendar_view);
+                setCalendarView(myUpdatedInfo.default_calendar_view);
+                await db.metadata.put({ key: 'default_calendar_view', value: myUpdatedInfo.default_calendar_view });
+              }
+              if (myUpdatedInfo.gamification_enabled !== undefined) {
+                const isGameEnabled = myUpdatedInfo.gamification_enabled === 1;
+                if (isGameEnabled !== gamificationEnabled) {
+                  setGamificationEnabled(isGameEnabled);
+                  await db.metadata.put({ key: 'gamification_enabled', value: isGameEnabled });
+                }
               }
             }
           }
@@ -1623,7 +1614,7 @@ function App() {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 1000);
+    }, 30000); // 30 seconds is perfect for background date check and item archiving
     return () => clearInterval(timer);
   }, []);
 
@@ -1632,7 +1623,7 @@ function App() {
     const handleOnline = () => {
       setIsOnline(true);
       showToast(t('syncStatusOnline') || 'Online', 'success');
-      setTimeout(triggerSync, 500);
+      setTimeout(() => triggerSync(true), 500);
     };
     const handleOffline = () => {
       setIsOnline(false);
@@ -1799,6 +1790,11 @@ function App() {
       
       try {
         eventSource = new EventSource(streamUrl);
+        
+        eventSource.onopen = () => {
+          console.log('Conexão SSE estabelecida/restabelecida com sucesso! Sincronizando dados...');
+          triggerSync(true);
+        };
         
         eventSource.addEventListener('sync', () => {
           console.log('Alerta SSE recebido! Sincronizando dados...');
@@ -2002,6 +1998,11 @@ function App() {
     setAccentTheme(themeName);
     try {
       await db.metadata.put({ key: 'accent_theme', value: themeName });
+      if (currentUser) {
+        const updatedUser = { ...currentUser, accent_theme: themeName };
+        setCurrentUser(updatedUser);
+        await db.metadata.put({ key: 'user_info', value: updatedUser });
+      }
       showToast(t('toastThemeUpdated'), 'success');
       if (isAuthenticated && token) {
         await fetch(`${backendUrl}/api/user/profile`, {
@@ -2021,6 +2022,11 @@ function App() {
   const handleChangeAtmosphere = async (atmosphereName: string) => {
     setTheme(atmosphereName as any);
     try {
+      if (currentUser) {
+        const updatedUser = { ...currentUser, theme: atmosphereName };
+        setCurrentUser(updatedUser);
+        await db.metadata.put({ key: 'user_info', value: updatedUser });
+      }
       if (isAuthenticated && token) {
         await fetch(`${backendUrl}/api/user/profile`, {
           method: 'PUT',
@@ -2040,11 +2046,77 @@ function App() {
     setDefaultCalendarView(viewName);
     try {
       await db.metadata.put({ key: 'default_calendar_view', value: viewName });
+      if (currentUser) {
+        const updatedUser = { ...currentUser, default_calendar_view: viewName };
+        setCurrentUser(updatedUser);
+        await db.metadata.put({ key: 'user_info', value: updatedUser });
+      }
       showToast(t('toastCalendarViewUpdated'), 'success');
+      if (isAuthenticated && token) {
+        await fetch(`${backendUrl}/api/user/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ defaultCalendarView: viewName })
+        });
+      }
     } catch (err) {
       console.error('Erro ao salvar visualização padrão:', err);
     }
   };
+
+  const handleChangeLanguage = async (newLang: string) => {
+    setLanguage(newLang);
+    try {
+      await db.metadata.put({ key: 'language', value: newLang });
+      if (currentUser) {
+        const updatedUser = { ...currentUser, language: newLang };
+        setCurrentUser(updatedUser);
+        await db.metadata.put({ key: 'user_info', value: updatedUser });
+      }
+      showToast(t('toastLanguageUpdated') || 'Idioma atualizado', 'success');
+      if (isAuthenticated && token) {
+        await fetch(`${backendUrl}/api/user/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ language: newLang })
+        });
+      }
+    } catch (err) {
+      console.error('Erro ao salvar idioma:', err);
+    }
+  };
+
+  const handleChangeGamificationEnabled = async (enabled: boolean) => {
+    setGamificationEnabled(enabled);
+    try {
+      await db.metadata.put({ key: 'gamification_enabled', value: enabled });
+      if (currentUser) {
+        const updatedUser = { ...currentUser, gamification_enabled: enabled ? 1 : 0 };
+        setCurrentUser(updatedUser);
+        await db.metadata.put({ key: 'user_info', value: updatedUser });
+      }
+      showToast(t('toastGamificationUpdated') || 'Gamificação atualizada', 'success');
+      if (isAuthenticated && token) {
+        await fetch(`${backendUrl}/api/user/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ gamificationEnabled: enabled })
+        });
+      }
+    } catch (err) {
+      console.error('Erro ao salvar preferência de gamificação:', err);
+    }
+  };
+
 
   // --- CONTROLE DE TOASTS DE NOTIFICAÇÃO ---
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
@@ -2382,9 +2454,12 @@ function App() {
   };
 
   // --- EXECUÇÃO DO MOTOR DE SINCRONIZAÇÃO BIDIRECIONAL (E2EE CLIENT-SIDE) ---
-  async function triggerSync() {
+  async function triggerSync(force = false, isManual = false) {
     if (!isOnline) {
       console.log('Sync ignorado: App está operando em Modo Offline simulado.');
+      if (isManual) {
+        showToast(t('toastSyncError') || 'Falha na sincronização. Dispositivo offline.', 'error');
+      }
       return;
     }
     if (!token || !family) return;
@@ -2437,7 +2512,7 @@ function App() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          lastSyncTime: lastSyncTime,
+          lastSyncTime: force ? 0 : lastSyncTime,
           items: itemsToSync
         })
       });
@@ -2498,26 +2573,46 @@ function App() {
 
       console.log('Sincronização offline-first concluída com sucesso!');
       fetchFamilyMembers();
+
+      if (isManual) {
+        showToast(t('toastSyncSuccess') || 'Sincronizado com sucesso!', 'success');
+      }
     } catch (err) {
       console.error('Erro durante a sincronização automática:', err);
+      if (isManual) {
+        showToast(t('toastSyncError') || 'Falha na sincronização.', 'error');
+      }
     } finally {
       setIsSyncing(false);
     }
   }
 
-  // Sincronizar periodicamente se estiver online
+  // Sincronizar periodicamente e ao focar/restaurar visibilidade se estiver online
   useEffect(() => {
     let interval: any = null;
+
+    const handleFocusSync = () => {
+      if (isAuthenticated && isOnline) {
+        console.log('Foco recuperado ou visibilidade alterada! Sincronizando...');
+        triggerSync();
+      }
+    };
+
     if (isAuthenticated && isOnline) {
       fetchBackendAiConfig();
-      triggerSync(); // Sincronização inicial imediata
+      triggerSync(true); // Sincronização inicial imediata
       interval = setInterval(() => {
         fetchBackendAiConfig();
         triggerSync();
-      }, 60000); // A cada 60s
+      }, 30000); // A cada 30s
+
+      window.addEventListener('focus', handleFocusSync);
+      document.addEventListener('visibilitychange', handleFocusSync);
     }
     return () => {
       if (interval) clearInterval(interval);
+      window.removeEventListener('focus', handleFocusSync);
+      document.removeEventListener('visibilitychange', handleFocusSync);
     };
   }, [isAuthenticated, isOnline, token]);
 
@@ -2590,12 +2685,27 @@ function App() {
         setAccentTheme(data.user.accent_theme);
         await db.metadata.put({ key: 'accent_theme', value: data.user.accent_theme });
       }
+      if (data.user.language) {
+        setLanguage(data.user.language);
+        await db.metadata.put({ key: 'language', value: data.user.language });
+      }
+      if (data.user.default_calendar_view) {
+        setDefaultCalendarView(data.user.default_calendar_view);
+        setCalendarView(data.user.default_calendar_view);
+        await db.metadata.put({ key: 'default_calendar_view', value: data.user.default_calendar_view });
+      }
+      if (data.user.gamification_enabled !== undefined) {
+        const isGameEnabled = data.user.gamification_enabled === 1;
+        setGamificationEnabled(isGameEnabled);
+        await db.metadata.put({ key: 'gamification_enabled', value: isGameEnabled });
+      }
 
       setToken(data.token);
       setCurrentUser(data.user);
       setFamily(data.family);
       setIsAuth(true);
       fetchFamilyMembers(data.token, backendUrl);
+      setTimeout(() => triggerSync(true), 500);
     } catch (err: any) {
       setAuthError(err.message);
     }
@@ -2604,10 +2714,13 @@ function App() {
 
   // Logout
   const handleLogout = async () => {
-    await db.metadata.delete('auth_token');
-    await db.metadata.delete('user_info');
-    await db.metadata.delete('family_info');
-    await db.metadata.delete('last_sync_time');
+    try {
+      // Limpar todas as tabelas locais ao deslogar para garantir privacidade e evitar ghost data
+      await Promise.all(db.tables.map(table => table.clear().catch(() => {})));
+      await db.metadata.clear().catch(() => {});
+    } catch (e) {
+      console.error('Erro ao limpar tabelas locais durante logout:', e);
+    }
     localStorage.removeItem('activeTab');
     setIsAuth(false);
     setToken(null);
@@ -3545,6 +3658,7 @@ function App() {
     await db.shopping.update(itemId, {
       checked: isChecked ? 0 : 1,
       checked_by: isChecked ? '' : checkerName,
+      is_archived: 0,
       updated_at: now
     });
 
@@ -3616,11 +3730,10 @@ function App() {
   // Arquivar Item de Compra (Imediatamente / Forçar Arquivamento)
   const handleArchiveShoppingItem = async (itemId: string) => {
     const now = Date.now();
-    // Define o timestamp como 2 horas no passado para forçar o arquivamento sob a regra de 1h
-    const forceArchiveTime = now - 2 * 60 * 60 * 1000;
     await db.shopping.update(itemId, {
       checked: 1,
-      updated_at: forceArchiveTime
+      is_archived: 1,
+      updated_at: now
     });
 
     if (isAuthenticated) {
@@ -3663,6 +3776,7 @@ function App() {
     await db.shopping.update(itemId, {
       checked: 0,
       checked_by: undefined,
+      is_archived: 0,
       updated_at: Date.now()
     });
 
@@ -4134,9 +4248,8 @@ Siga estritamente as regras abaixo:
       return;
     }
 
-    const pendingItems = await db.shopping
-      .filter(item => item.ai_status === 'pending' && item.deleted === 0)
-      .toArray();
+    const allShopping = await db.shopping.toArray();
+    const pendingItems = allShopping.filter(item => item.ai_status === 'pending' && item.deleted !== 1);
 
     if (pendingItems.length === 0) return;
 
@@ -4229,12 +4342,12 @@ Siga estritamente as regras abaixo:
     setIsGeneratingSuggestions(true);
     try {
       const history = await db.purchase_history
-        .filter(record => record.deleted === 0)
+        .filter(record => record.deleted !== 1)
         .toArray();
 
       const activeItemNames = new Set(
         localShopping
-          .filter(item => item.checked === 0 && item.deleted === 0)
+          .filter(item => item.checked === 0 && item.deleted !== 1)
           .map(item => item.name.toLowerCase().trim())
       );
 
@@ -5254,7 +5367,7 @@ Instruções para resposta:
     const oneHourAgo = Date.now() - 60 * 60 * 1000;
 
     return localShopping.filter(item => 
-      item.checked === 0 || (item.checked === 1 && item.updated_at >= oneHourAgo)
+      item.checked === 0 || (item.checked === 1 && item.is_archived !== 1 && item.updated_at >= oneHourAgo)
     );
   }, [localShopping, currentTime]);
 
@@ -5262,7 +5375,7 @@ Instruções para resposta:
     const oneHourAgo = Date.now() - 60 * 60 * 1000;
 
     return localShopping.filter(item => 
-      item.checked === 1 && item.updated_at < oneHourAgo
+      item.checked === 1 && (item.is_archived === 1 || item.updated_at < oneHourAgo)
     );
   }, [localShopping, currentTime]);
 
@@ -5549,204 +5662,48 @@ Instruções para resposta:
 
   const renderZenSpacePanel = (isFridge = false) => {
     return (
-      <div 
-        className="glass-panel animate-scale-up" 
-        style={{ 
-          padding: isFridge ? '24px' : '20px 24px', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: '16px',
-          background: activeSound 
-            ? `radial-gradient(circle at top right, ${SOUNDS_LIST.find(s => s.id === activeSound)?.activeBg || 'rgba(139, 92, 246, 0.05)'}, transparent 65%), var(--bg-glass)` 
-            : 'var(--bg-glass)'
-        }}
-      >
-        {/* HEADER */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div 
-              style={{ 
-                width: '40px', 
-                height: '40px', 
-                borderRadius: '50%', 
-                background: activeSound 
-                  ? `${SOUNDS_LIST.find(s => s.id === activeSound)?.color}15` 
-                  : 'rgba(255,255,255,0.03)', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                color: activeSound 
-                  ? SOUNDS_LIST.find(s => s.id === activeSound)?.color 
-                  : 'var(--text-secondary)',
-                border: '1px solid',
-                borderColor: activeSound 
-                  ? `${SOUNDS_LIST.find(s => s.id === activeSound)?.color}30` 
-                  : 'var(--border-light)',
-                boxShadow: activeSound 
-                  ? `0 0 10px ${SOUNDS_LIST.find(s => s.id === activeSound)?.color}15` 
-                  : 'none',
-                transition: 'all 0.3s'
-              }}
-              className={activeSound ? 'animate-pulse' : ''}
-            >
-              <Sparkles size={20} />
-            </div>
-            <div>
-              <h3 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                {zt('zenTitle')}
-              </h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '11px', margin: '2px 0 0 0' }}>
-                {zt('zenSubtitle')}
-              </p>
-            </div>
-          </div>
-
-          {/* EQUALIZER/STATUS */}
-          {activeSound ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '11px', color: SOUNDS_LIST.find(s => s.id === activeSound)?.color, fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                {zt('playing')}
-              </span>
-              <div className="zen-wave-container">
-                <div className="zen-wave-bar" style={{ backgroundColor: SOUNDS_LIST.find(s => s.id === activeSound)?.color }}></div>
-                <div className="zen-wave-bar" style={{ backgroundColor: SOUNDS_LIST.find(s => s.id === activeSound)?.color }}></div>
-                <div className="zen-wave-bar" style={{ backgroundColor: SOUNDS_LIST.find(s => s.id === activeSound)?.color }}></div>
-                <div className="zen-wave-bar" style={{ backgroundColor: SOUNDS_LIST.find(s => s.id === activeSound)?.color }}></div>
-              </div>
-            </div>
-          ) : null}
-        </div>
-
-        {/* SOUND SELECTION GRID */}
-        <div 
-          style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(4, 1fr)', 
-            gap: '10px',
-            margin: '4px 0'
-          }}
-        >
-          {SOUNDS_LIST.map((sound) => {
-            const isSelected = activeSound === sound.id;
-            return (
-              <div
-                key={sound.id}
-                onClick={() => {
-                  if (isSelected) {
-                    setActiveSound(null);
-                  } else {
-                    setActiveSound(sound.id);
-                  }
-                }}
-                className={`zen-sound-card ${isSelected ? 'active-custom' : ''}`}
-                style={{
-                  '--active-bg': sound.activeBg,
-                  '--active-color': sound.color,
-                  '--active-glow': sound.glow,
-                  borderColor: isSelected ? sound.color : undefined
-                } as React.CSSProperties}
-                title={zt(sound.id)}
-              >
-                <div 
-                  className="zen-icon-wrapper" 
-                  style={{ 
-                    color: isSelected ? sound.color : 'var(--text-secondary)',
-                    transition: 'color 0.2s'
-                  }}
-                >
-                  {renderSoundIcon(sound.icon, 20)}
-                </div>
-                <span 
-                  style={{ 
-                    fontSize: '10px', 
-                    fontWeight: isSelected ? '700' : '500', 
-                    color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
-                    maxWidth: '100%',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    transition: 'color 0.2s'
-                  }}
-                >
-                  {zt(sound.id)}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* CONTROLS (SLEEP TIMER ONLY) */}
-        <div 
-          style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
-            borderTop: '1px solid var(--border-light)', 
-            paddingTop: '14px',
-            gap: '20px',
-            flexWrap: 'wrap'
-          }}
-        >
-          {/* TIMER CONTROL */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Timer size={16} style={{ color: activeSound ? SOUNDS_LIST.find(s => s.id === activeSound)?.color : 'var(--text-secondary)' }} />
-              {timerSeconds !== null ? (
-                <span style={{ fontSize: '11px', color: 'var(--accent-success)', fontWeight: 'bold' }}>
-                  {(() => {
-                    const h = Math.floor(timerSeconds / 3600);
-                    const m = Math.floor((timerSeconds % 3600) / 60);
-                    const s = timerSeconds % 60;
-                    return h > 0 
-                      ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-                      : `${m}:${String(s).padStart(2, '0')}`;
-                  })()}
-                </span>
-              ) : (
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                  {zt('sleepTimer')}
-                </span>
-              )}
-            </div>
-            <select
-              value={timerSeconds === null ? 'off' : timerSeconds}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === 'off') {
-                  setTimerSeconds(null);
-                } else {
-                  setTimerSeconds(parseInt(val, 10));
-                }
-              }}
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid var(--border-light)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '4px 8px',
-                fontSize: '11px',
-                color: 'var(--text-primary)',
-                outline: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="off" style={{ background: 'var(--bg-panels)' }}>{zt('timerOff')}</option>
-              <option value="900" style={{ background: 'var(--bg-panels)' }}>15 Min</option>
-              <option value="1800" style={{ background: 'var(--bg-panels)' }}>30 Min</option>
-              <option value="2700" style={{ background: 'var(--bg-panels)' }}>45 Min</option>
-              <option value="3600" style={{ background: 'var(--bg-panels)' }}>1 Hour</option>
-              <option value="7200" style={{ background: 'var(--bg-panels)' }}>2 Hours</option>
-              <option value="14400" style={{ background: 'var(--bg-panels)' }}>4 Hours</option>
-              <option value="28800" style={{ background: 'var(--bg-panels)' }}>8 Hours</option>
-            </select>
-          </div>
-        </div>
-      </div>
+      <ZenSpacePanel
+        language={language}
+        activeSound={activeSound}
+        setActiveSound={setActiveSound}
+        timerSeconds={timerSeconds}
+        setTimerSeconds={setTimerSeconds}
+        isFridge={isFridge}
+      />
     );
   };
 
   // TELA PRINCIPAL (MAIN SPA)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-main)' }}>
+      {!(window.crypto && window.crypto.subtle) && (
+        <div 
+          className="animate-fade-in" 
+          style={{ 
+            background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%)', 
+            borderBottom: '1px solid rgba(245, 158, 11, 0.25)', 
+            padding: '10px 24px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            gap: '12px',
+            backdropFilter: 'blur(10px)',
+            zIndex: 9999,
+            color: '#f59e0b',
+            fontSize: '12px',
+            fontWeight: '600',
+            textAlign: 'center',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+          }}
+        >
+          <span style={{ fontSize: '14px' }}>⚠️</span>
+          <span>
+            {language === 'pt' 
+              ? 'Ambiente Inseguro (HTTP): A criptografia E2EE está desativada para proteger sua privacidade. Acesse via HTTPS para habilitar a segurança completa.'
+              : 'Insecure Context (HTTP): E2EE cryptography is disabled to protect your privacy. Access via HTTPS to enable full security.'}
+          </span>
+        </div>
+      )}
       
       {/* HEADER DE SINCRONIZAÇÃO E CONTROLES DE SIMULAÇÃO */}
       {isFridgeMode ? (
@@ -5755,10 +5712,10 @@ Instruções para resposta:
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ fontSize: '32px', fontWeight: '800', letterSpacing: '-1px', color: 'var(--text-primary)', lineHeight: '1', fontFamily: '"Outfit", "Inter", sans-serif' }}>
-                {currentTime.toLocaleTimeString(LOCALE_MAP[language] || 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                <LiveClock language={language} />
               </div>
               <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', fontWeight: '500' }}>
-                {getLocalizedDate(currentTime, language)}
+                <LiveDate language={language} getLocalizedDate={getLocalizedDate} />
               </div>
             </div>
             
@@ -5766,12 +5723,7 @@ Instruções para resposta:
             
             <div>
               <h1 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
-                {(() => {
-                  const hr = currentTime.getHours();
-                  if (hr >= 6 && hr < 12) return '🌅 ' + t('greetingMorning');
-                  if (hr >= 12 && hr < 18) return '☀️ ' + t('greetingAfternoon');
-                  return '🌙 ' + t('greetingEvening');
-                })()}
+                <LiveGreeting t={t} withIcon={true} userName={currentUser ? (currentUser.display_name || currentUser.username) : undefined} />
               </h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                 <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: isOnline ? 'var(--accent-success)' : 'var(--accent-danger)', boxShadow: isOnline ? '0 0 8px var(--accent-success)' : '0 0 8px var(--accent-danger)' }}></span>
@@ -5895,7 +5847,7 @@ Instruções para resposta:
             {/* Sincronização Manual */}
             {isOnline && (
               <button
-                onClick={triggerSync}
+                onClick={() => triggerSync(true, true)}
                 disabled={isSyncing}
                 className="btn-secondary"
                 style={{ padding: '6px', borderRadius: '50%', minWidth: '32px', height: '32px' }}
@@ -6217,98 +6169,39 @@ Instruções para resposta:
 
               {/* ABA 1: DASHBOARD */}
               {activeTab === 'dashboard' && (() => {
-                const getGreeting = () => {
-                  const hr = currentTime.getHours();
-                  if (hr >= 5 && hr < 12) return t('greetingMorning');
-                  if (hr >= 12 && hr < 18) return t('greetingAfternoon');
-                  return t('greetingEvening');
-                };
-
-                const getWeatherInfo = () => {
-                  const hr = currentTime.getHours();
-                  if (hr >= 6 && hr < 12) {
-                    return {
-                      temp: '22°C',
-                      desc: t('weatherMorning'),
-                      icon: <Sun className="animate-pulse" size={24} style={{ color: 'var(--accent-warning)' }} />,
-                      glow: 'rgba(245, 158, 11, 0.15)'
-                    };
-                  } else if (hr >= 12 && hr < 18) {
-                    return {
-                      temp: '26°C',
-                      desc: t('weatherAfternoon'),
-                      icon: <Sun size={24} style={{ color: 'var(--accent-warning)', animation: 'spin 20s linear infinite' }} />,
-                      glow: 'rgba(245, 158, 11, 0.15)'
-                    };
-                  } else if (hr >= 18 && hr < 22) {
-                    return {
-                      temp: '20°C',
-                      desc: t('weatherEvening'),
-                      icon: <Sparkles size={24} style={{ color: 'var(--accent-primary-hover)' }} />,
-                      glow: 'rgba(139, 92, 246, 0.15)'
-                    };
-                  } else {
-                    return {
-                      temp: '17°C',
-                      desc: t('weatherNight'),
-                      icon: <CloudRain size={24} style={{ color: 'var(--accent-info)' }} />,
-                      glow: 'rgba(6, 182, 212, 0.15)'
-                    };
-                  }
-                };
-
-                const weather = getWeatherInfo();
-
                 return (
-                  <div className="animate-fade-in responsive-stack">
-                    
-                    {/* LINHA SUPERIOR: GREETING & MURAL */}
-                    <div className="mural-row-desktop" style={{ display: 'grid', gap: '24px' }}>
-                      {/* COLUNA 1: BOAS VINDAS + ZEN SPACE */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        {/* CARTÃO DE BOAS-VINDAS + CLIMA */}
-                        <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'center', background: `radial-gradient(circle at top right, ${weather.glow}, transparent 65%), var(--bg-glass)` }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div>
-                              <span className="badge-xp" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)', border: '1px solid var(--border-light)', fontSize: '10px' }}>
-                                🏠 {t('controlCenter')}
-                              </span>
-                              <h2 className="welcome-greeting-title">
-                                {(() => {
-                                  const base = getGreeting();
-                                  if (!currentUser) return base;
-                                  const name = currentUser.display_name || currentUser.username;
-                                  return base
-                                    .replace(/Família/g, name)
-                                    .replace(/Family/g, name)
-                                    .replace(/Familia/g, name)
-                                    .replace(/Rodzino/g, name)
-                                    .replace(/Familie/g, name)
-                                    .replace(/la famille/g, name)
-                                    .replace(/Famiglia/g, name);
-                                })()}
-                              </h2>
-                              <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: '500' }}>
-                                {getLocalizedDate(currentTime, language)}
-                              </p>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
-                              {weather.icon}
-                              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', lineHeight: 1 }}>{weather.temp}</span>
-                                <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '2px' }}>{weather.desc}</span>
-                              </div>
-                            </div>
+                <div className="animate-fade-in responsive-stack">
+                  
+                  {/* LINHA SUPERIOR: GREETING & MURAL */}
+                  <div className="mural-row-desktop" style={{ display: 'grid', gap: '24px' }}>
+                    {/* COLUNA 1: BOAS VINDAS + ZEN SPACE */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                      {/* CARTÃO DE BOAS-VINDAS + CLIMA */}
+                      <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'center', background: 'radial-gradient(circle at top right, rgba(139, 92, 246, 0.08), transparent 65%), var(--bg-glass)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                          <div>
+                            <span className="badge-xp" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)', border: '1px solid var(--border-light)', fontSize: '10px' }}>
+                              🏠 {t('controlCenter')}
+                            </span>
+                            <h2 className="welcome-greeting-title">
+                              <LiveGreeting t={t} userName={currentUser ? (currentUser.display_name || currentUser.username) : undefined} />
+                            </h2>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: '500' }}>
+                              <LiveDate language={language} getLocalizedDate={getLocalizedDate} />
+                            </p>
                           </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid var(--border-light)', paddingTop: '14px', fontSize: '20px', fontWeight: '700', color: 'var(--accent-primary-hover)' }}>
-                            <Clock size={20} style={{ color: 'var(--accent-primary)' }} />
-                            <span>{currentTime.toLocaleTimeString(LOCALE_MAP[language] || 'en-US')}</span>
-                          </div>
+                          
+                          <LiveWeather t={t} minimal={true} />
                         </div>
 
-                        {/* O Zen Space foi movido para sua própria aba dedicada */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid var(--border-light)', paddingTop: '14px', fontSize: '20px', fontWeight: '700', color: 'var(--accent-primary-hover)' }}>
+                          <Clock size={20} style={{ color: 'var(--accent-primary)' }} />
+                          <span><LiveClock language={language} /></span>
+                        </div>
                       </div>
+
+                      {/* O Zen Space foi movido para sua própria aba dedicada */}
+                    </div>
 
                       {/* MURAL DE AVISOS DA FAMÍLIA */}
                       <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -8939,8 +8832,7 @@ Instruções para resposta:
                                       <div
                                         key={langOpt.id}
                                         onClick={async () => {
-                                          setLanguage(langOpt.id);
-                                          await db.metadata.put({ key: 'language', value: langOpt.id });
+                                          handleChangeLanguage(langOpt.id);
                                         }}
                                         style={{
                                           padding: '14px 18px',
@@ -9072,8 +8964,7 @@ Instruções para resposta:
                                       checked={gamificationEnabled} 
                                       onChange={async (e) => {
                                         const val = e.target.checked;
-                                        setGamificationEnabled(val);
-                                        await db.metadata.put({ key: 'gamification_enabled', value: val });
+                                        handleChangeGamificationEnabled(val);
                                         if (!val && (activeTab as string) === 'gamification') {
                                           setActiveTab('dashboard');
                                         }
@@ -10492,7 +10383,7 @@ Instruções para resposta:
           rel="noopener noreferrer" 
           style={{ color: 'var(--accent-primary)', fontWeight: 'bold', textDecoration: 'underline' }}
         >
-          FamilyHub 1.3.6
+          FamilyHub 1.3.7
         </a>{' '}
         {t('footerText')}
       </footer>

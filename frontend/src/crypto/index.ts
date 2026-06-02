@@ -49,10 +49,9 @@ class E2EEEncryptionService {
   // Deriva uma chave AES-GCM de 256 bits a partir de uma senha e salt usando PBKDF2
   async deriveKey(passphrase: string, saltHex: string): Promise<any> {
     if (!this.isSubtleAvailable()) {
-      console.warn('A API Web Crypto (Subtle) não está disponível neste contexto (provavelmente HTTP inseguro). Utilizando fallback leve em JS.');
-      this.fallbackPassphrase = passphrase;
-      this.cryptoKey = { type: 'fallback' };
-      return this.cryptoKey;
+      const errorMsg = 'E2EE Security Error: Web Crypto API (subtle) is unavailable in this insecure context. Cryptographic operations are blocked to prevent insecure transmission. Please access FamilyHub via HTTPS, Cloudflare Tunnel, or localhost loopback.';
+      console.error(errorMsg);
+      throw new Error(errorMsg);
     }
 
     try {
@@ -92,7 +91,7 @@ class E2EEEncryptionService {
 
   // Verifica se a chave de criptografia já foi gerada e está em memória
   isKeyLoaded(): boolean {
-    return this.cryptoKey !== null || this.fallbackPassphrase !== null;
+    return this.cryptoKey !== null;
   }
 
   // Limpa a chave em memória (útil para logout)
@@ -103,17 +102,12 @@ class E2EEEncryptionService {
 
   // Criptografa um objeto Javascript qualquer
   async encrypt(data: any): Promise<string> {
-    if (!this.cryptoKey && !this.fallbackPassphrase) {
+    if (!this.cryptoKey) {
       throw new Error('Chave de criptografia E2EE não carregada. Defina a Senha da Família nas configurações.');
     }
 
-    // Usar algoritmo de fallback caso subtle não esteja disponível
     if (!this.isSubtleAvailable()) {
-      const plaintextJson = JSON.stringify(data);
-      // Codificar em URI para tratar caracteres unicode/acentos com segurança
-      const safePlaintext = encodeURIComponent(plaintextJson);
-      const cipherText = this.xorEncryptDecrypt(safePlaintext, this.fallbackPassphrase || 'default');
-      return 'FALLBACK_E2EE:' + btoa(cipherText);
+      throw new Error('Criptografia E2EE indisponível em contexto não-seguro (HTTP). Por favor, acesse via HTTPS para realizar esta operação de forma segura.');
     }
 
     const plaintext = JSON.stringify(data);
@@ -143,7 +137,7 @@ class E2EEEncryptionService {
 
   // Descriptografa uma string Base64 retornando o objeto Javascript original
   async decrypt(encryptedBase64: string): Promise<any> {
-    if (!this.cryptoKey && !this.fallbackPassphrase) {
+    if (!this.cryptoKey) {
       throw new Error('Chave de criptografia E2EE não carregada. Defina a Senha da Família nas configurações.');
     }
 

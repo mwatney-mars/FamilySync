@@ -8283,158 +8283,233 @@ Instruções para resposta:
                   className="animate-fade-in glass-panel" 
                   style={{ 
                     padding: '24px', 
-                    maxWidth: activeSettingsSection === 'menu' ? '800px' : '600px', 
+                    maxWidth: '1020px', 
                     margin: '0 auto', 
-                    width: '100%',
-                    transition: 'max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                    width: '100%'
                   }}
                 >
-                  {activeSettingsSection === 'menu' ? (
-                    <div>
-                      <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '6px', color: 'var(--text-primary)' }}>{t('appSettingsTitle')}</h3>
-                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
-                        {t('appSettingsDesc')}
-                      </p>
+                  <div className="settings-container-grid">
+                    {/* LEFT SIDEBAR NAVIGATION: Shows on Desktop, hidden on Mobile via CSS */}
+                    <div className="settings-sidebar-nav">
+                      <div style={{ marginBottom: '16px', paddingLeft: '8px' }}>
+                        <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('settings')}</h3>
+                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>FamilyHub v1.3.7</p>
+                      </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-                        {/* CARD 1: Meu Perfil */}
-                        {currentUser && (
+                      {currentUser && (
+                        <button 
+                          className={`settings-sidebar-item ${activeSettingsSection === 'profile' || activeSettingsSection === 'menu' ? 'active' : ''}`}
+                          onClick={() => {
+                            setProfileSaveSuccess('');
+                            setProfileSaveError('');
+                            setActiveSettingsSection('profile');
+                          }}
+                        >
+                          <User size={15} />
+                          {t('myProfile')}
+                        </button>
+                      )}
+
+                      <button 
+                        className={`settings-sidebar-item ${activeSettingsSection === 'family' ? 'active' : ''}`}
+                        onClick={() => setActiveSettingsSection('family')}
+                      >
+                        <Users size={15} />
+                        {t('myFamily')}
+                      </button>
+
+                      {currentUser?.role === 'admin' && (
+                        <button 
+                          className={`settings-sidebar-item ${activeSettingsSection === 'server' ? 'active' : ''}`}
+                          onClick={() => setActiveSettingsSection('server')}
+                        >
+                          <Database size={15} />
+                          {t('systemAndDatabase')}
+                        </button>
+                      )}
+
+                      <button 
+                        className={`settings-sidebar-item ${activeSettingsSection === 'appearance' ? 'active' : ''}`}
+                        onClick={() => setActiveSettingsSection('appearance')}
+                      >
+                        <Palette size={15} />
+                        {t('languageAndAppearance')}
+                      </button>
+
+                      <button 
+                        className={`settings-sidebar-item ${activeSettingsSection === 'ai_config' ? 'active' : ''}`}
+                        onClick={() => {
+                          setAiConfigApiKey(geminiApiKey);
+                          setAiConfigEnabled(aiCategorizationEnabled);
+                          setAiConfigTestResult('');
+                          setActiveSettingsSection('ai_config');
+                        }}
+                      >
+                        <Wand2 size={15} />
+                        {t('aiSettings')}
+                      </button>
+
+                      <button 
+                        className={`settings-sidebar-item ${activeSettingsSection === 'biometrics_push' ? 'active' : ''}`}
+                        onClick={() => setActiveSettingsSection('biometrics_push')}
+                      >
+                        <Bell size={15} />
+                        {language === 'pt' ? 'Notificações Push' : 'Push Notifications'}
+                      </button>
+                    </div>
+
+                    {/* RIGHT CONTENT AREA / MOBILE AREA */}
+                    <div className="settings-content-pane">
+                      {/* MOBILE MENU GRID: Visible ONLY on mobile when activeSettingsSection === 'menu' */}
+                      {activeSettingsSection === 'menu' && (
+                        <div className="settings-mobile-menu-grid animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                          <div style={{ gridColumn: '1 / -1', marginBottom: '8px' }}>
+                            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '6px', color: 'var(--text-primary)' }}>{t('appSettingsTitle')}</h3>
+                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+                              {t('appSettingsDesc')}
+                            </p>
+                          </div>
+
+                          {/* CARD 1: Meu Perfil */}
+                          {currentUser && (
+                            <div 
+                              className="glass-panel glass-panel-hover" 
+                              onClick={() => {
+                                setProfileSaveSuccess('');
+                                setProfileSaveError('');
+                                setActiveSettingsSection('profile');
+                              }}
+                              style={{ padding: '20px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)' }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <User size={20} style={{ color: 'var(--accent-primary)' }} />
+                                </div>
+                                <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('myProfile')}</h4>
+                              </div>
+                              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
+                                {t('myProfileDesc')}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* CARD 2: Família & Integrantes */}
                           <div 
                             className="glass-panel glass-panel-hover" 
-                            onClick={() => {
-                              setProfileSaveSuccess('');
-                              setProfileSaveError('');
-                              setActiveSettingsSection('profile');
-                            }}
+                            onClick={() => setActiveSettingsSection('family')}
+                            style={{ padding: '20px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)' }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Users size={20} style={{ color: 'var(--accent-success)' }} />
+                              </div>
+                              <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('myFamily')}</h4>
+                            </div>
+                            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
+                              {currentUser?.role === 'admin' 
+                                ? t('myFamilyDescAdmin')
+                                : t('myFamilyDescUser')}
+                            </p>
+                          </div>
+
+                          {/* CARD 3: Sistema & Banco de Dados (Admin Only) */}
+                          {currentUser?.role === 'admin' && (
+                            <div 
+                              className="glass-panel glass-panel-hover" 
+                              onClick={() => setActiveSettingsSection('server')}
+                              style={{ padding: '20px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)' }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(6, 182, 212, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <Database size={20} style={{ color: 'var(--accent-info)' }} />
+                                </div>
+                                <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('systemAndDatabase')}</h4>
+                              </div>
+                              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
+                                {t('systemAndDatabaseDesc')}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* CARD 6: Aparência & Preferências */}
+                          <div 
+                            className="glass-panel glass-panel-hover" 
+                            onClick={() => setActiveSettingsSection('appearance')}
                             style={{ padding: '20px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)' }}
                           >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                               <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <User size={20} style={{ color: 'var(--accent-primary)' }} />
+                                <Palette size={20} style={{ color: 'var(--accent-primary)' }} />
                               </div>
-                              <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('myProfile')}</h4>
+                              <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('languageAndAppearance')}</h4>
                             </div>
                             <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
-                              {t('myProfileDesc')}
+                              {t('languageAndAppearanceDesc')}
                             </p>
                           </div>
-                        )}
 
-                        {/* CARD 2: Família & Integrantes */}
-                        <div 
-                          className="glass-panel glass-panel-hover" 
-                          onClick={() => setActiveSettingsSection('family')}
-                          style={{ padding: '20px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)' }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <Users size={20} style={{ color: 'var(--accent-success)' }} />
-                            </div>
-                            <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('myFamily')}</h4>
-                          </div>
-                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
-                            {currentUser?.role === 'admin' 
-                              ? t('myFamilyDescAdmin')
-                              : t('myFamilyDescUser')}
-                          </p>
-                        </div>
-
-                        {/* CARD 3: Sistema & Banco de Dados (Admin Only) */}
-                        {currentUser?.role === 'admin' && (
+                          {/* CARD 7: Inteligência Artificial (Gemini) */}
                           <div 
                             className="glass-panel glass-panel-hover" 
-                            onClick={() => setActiveSettingsSection('server')}
+                            onClick={() => {
+                              setAiConfigApiKey(geminiApiKey);
+                              setAiConfigEnabled(aiCategorizationEnabled);
+                              setAiConfigTestResult('');
+                              setActiveSettingsSection('ai_config');
+                            }}
                             style={{ padding: '20px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)' }}
                           >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                              <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(6, 182, 212, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Database size={20} style={{ color: 'var(--accent-info)' }} />
+                              <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(236, 72, 153, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Wand2 size={20} style={{ color: '#ec4899' }} />
                               </div>
-                              <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('systemAndDatabase')}</h4>
+                              <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('aiSettings')}</h4>
                             </div>
                             <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
-                              {t('systemAndDatabaseDesc')}
+                              {t('aiSettingsDesc')}
                             </p>
                           </div>
-                        )}
 
-
-
-                        {/* CARD 6: Aparência & Preferências */}
-                        <div 
-                          className="glass-panel glass-panel-hover" 
-                          onClick={() => setActiveSettingsSection('appearance')}
-                          style={{ padding: '20px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)' }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <Palette size={20} style={{ color: 'var(--accent-primary)' }} />
+                          {/* CARD 8: Notificações Push */}
+                          <div 
+                            className="glass-panel glass-panel-hover" 
+                            onClick={() => setActiveSettingsSection('biometrics_push')}
+                            style={{ padding: '20px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)' }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Bell size={20} style={{ color: '#10b981' }} />
+                              </div>
+                              <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>
+                                {language === 'pt' ? 'Notificações Push' : 'Push Notifications'}
+                              </h4>
                             </div>
-                            <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('languageAndAppearance')}</h4>
+                            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
+                              {language === 'pt' 
+                                ? 'Configure e controle o recebimento de notificações push nativas no seu dispositivo.' 
+                                : 'Configure and control native push notification delivery on your device.'}
+                            </p>
                           </div>
-                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
-                            {t('languageAndAppearanceDesc')}
-                          </p>
                         </div>
+                      )}
 
-                        {/* CARD 7: Inteligência Artificial (Gemini) */}
-                        <div 
-                          className="glass-panel glass-panel-hover" 
-                          onClick={() => {
-                            setAiConfigApiKey(geminiApiKey);
-                            setAiConfigEnabled(aiCategorizationEnabled);
-                            setAiConfigTestResult('');
-                            setActiveSettingsSection('ai_config');
-                          }}
-                          style={{ padding: '20px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)' }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(236, 72, 153, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <Wand2 size={20} style={{ color: '#ec4899' }} />
+                      {/* DETALHES DE CONFIGURAÇÕES (Sempre visível no Desktop, visível no Mobile apenas quando activeSettingsSection !== 'menu') */}
+                      {(activeSettingsSection !== 'menu' || true) && (
+                        <div className={(activeSettingsSection === 'menu' ? "hide-on-mobile" : "") + " animate-slide-up"}>
+                          {/* Botão de Voltar - Exibido APENAS no mobile quando um detalhe está ativo */}
+                          {activeSettingsSection !== 'menu' && (
+                            <div className="settings-back-button-container" style={{ marginBottom: '20px' }}>
+                              <button 
+                                onClick={() => setActiveSettingsSection('menu')} 
+                                className="btn-secondary" 
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}
+                              >
+                                <ArrowLeft size={14} /> {t('backToSettings')}
+                              </button>
                             </div>
-                            <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('aiSettings')}</h4>
-                          </div>
-                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
-                            {t('aiSettingsDesc')}
-                          </p>
-                        </div>
+                          )}
 
-                        {/* CARD 8: Notificações Push */}
-                        <div 
-                          className="glass-panel glass-panel-hover" 
-                          onClick={() => setActiveSettingsSection('biometrics_push')}
-                          style={{ padding: '20px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)' }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <Bell size={20} style={{ color: '#10b981' }} />
-                            </div>
-                            <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>
-                              {language === 'pt' ? 'Notificações Push' : 'Push Notifications'}
-                            </h4>
-                          </div>
-                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
-                            {language === 'pt' 
-                              ? 'Configure e controle o recebimento de notificações push nativas no seu dispositivo.' 
-                              : 'Configure and control native push notification delivery on your device.'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="animate-slide-up">
-                      {/* Botão de Voltar */}
-                      <div style={{ marginBottom: '20px' }}>
-                        <button 
-                          onClick={() => setActiveSettingsSection('menu')} 
-                          className="btn-secondary" 
-                          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}
-                        >
-                          <ArrowLeft size={14} /> {t('backToSettings')}
-                        </button>
-                      </div>
-
-                      {/* CONTEÚDOS DAS SUB-SEÇÕES */}
+                          {/* CONTEÚDOS DAS SUB-SEÇÕES */}
                       
                       {/* 0. TEMA E APARÊNCIA */}
                       {activeSettingsSection === 'appearance' && (
@@ -9427,7 +9502,7 @@ Instruções para resposta:
                         </div>
                       )}
                       {/* 1. MEU PERFIL */}
-                      {activeSettingsSection === 'profile' && currentUser && (
+                      {(activeSettingsSection === 'profile' || (activeSettingsSection === 'menu' && currentUser)) && currentUser && (
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
                             <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -10345,8 +10420,10 @@ Instruções para resposta:
 
 
 
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
 

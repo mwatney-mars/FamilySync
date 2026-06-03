@@ -1982,6 +1982,95 @@ select.input-field option {
   filter: drop-shadow(0 0 4px rgba(255,255,255,0.1));
 }
 
+/* --- REDESIGN DO MENU DE CONFIGURAÇÕES (SPLIT SIDEBAR LAYOUT) --- */
+.settings-container-grid {
+  display: flex;
+  gap: 28px;
+  width: 100%;
+  align-items: flex-start;
+}
+
+.settings-sidebar-nav {
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-light);
+  padding-right: 20px;
+}
+
+.settings-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast) ease;
+  text-align: left;
+  width: 100%;
+}
+
+.settings-sidebar-item:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  transform: translateX(4px);
+}
+
+.settings-sidebar-item.active {
+  background: rgba(139, 92, 246, 0.08);
+  border-color: rgba(139, 92, 246, 0.15);
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+.settings-content-pane {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+/* Ocultar elementos baseados na viewport */
+@media (max-width: 820px) {
+  .settings-container-grid {
+    flex-direction: column;
+    gap: 0;
+  }
+  .settings-sidebar-nav {
+    display: none !important;
+  }
+  .settings-sidebar-item {
+    width: 100%;
+  }
+  .settings-mobile-menu-grid {
+    display: grid !important;
+  }
+  .settings-content-pane {
+    width: 100%;
+  }
+  .settings-back-button-container {
+    display: block !important;
+  }
+}
+
+@media (min-width: 821px) {
+  .settings-mobile-menu-grid {
+    display: none !important;
+  }
+  .settings-back-button-container {
+    display: none !important;
+  }
+  .hide-on-desktop {
+    display: none !important;
+  }
+}
+
+
 
 
 

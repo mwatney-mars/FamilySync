@@ -8305,7 +8305,7 @@ Instruções para resposta:
                             setActiveSettingsSection('profile');
                           }}
                         >
-                          <User size={15} />
+                          <User size={15} style={{ color: '#8b5cf6' }} />
                           {t('myProfile')}
                         </button>
                       )}
@@ -8314,7 +8314,7 @@ Instruções para resposta:
                         className={`settings-sidebar-item ${activeSettingsSection === 'family' ? 'active' : ''}`}
                         onClick={() => setActiveSettingsSection('family')}
                       >
-                        <Users size={15} />
+                        <Users size={15} style={{ color: '#10b981' }} />
                         {t('myFamily')}
                       </button>
 
@@ -8323,7 +8323,7 @@ Instruções para resposta:
                           className={`settings-sidebar-item ${activeSettingsSection === 'server' ? 'active' : ''}`}
                           onClick={() => setActiveSettingsSection('server')}
                         >
-                          <Database size={15} />
+                          <Database size={15} style={{ color: '#3b82f6' }} />
                           {t('systemAndDatabase')}
                         </button>
                       )}
@@ -8361,7 +8361,7 @@ Instruções para resposta:
                           setActiveSettingsSection('ai_config');
                         }}
                       >
-                        <Wand2 size={15} />
+                        <Wand2 size={15} style={{ color: '#ec4899' }} />
                         {t('aiSettings')}
                       </button>
 
@@ -8369,7 +8369,7 @@ Instruções para resposta:
                         className={`settings-sidebar-item ${activeSettingsSection === 'biometrics_push' ? 'active' : ''}`}
                         onClick={() => setActiveSettingsSection('biometrics_push')}
                       >
-                        <Bell size={15} />
+                        <Bell size={15} style={{ color: '#f97316' }} />
                         {language === 'pt' ? 'Notificações Push' : 'Push Notifications'}
                       </button>
                     </div>
@@ -8399,7 +8399,7 @@ Instruções para resposta:
                             >
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                  <User size={20} style={{ color: 'var(--accent-primary)' }} />
+                                  <User size={20} style={{ color: '#8b5cf6' }} />
                                 </div>
                                 <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('myProfile')}</h4>
                               </div>
@@ -8417,7 +8417,7 @@ Instruções para resposta:
                           >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                               <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Users size={20} style={{ color: 'var(--accent-success)' }} />
+                                <Users size={20} style={{ color: '#10b981' }} />
                               </div>
                               <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('myFamily')}</h4>
                             </div>
@@ -8436,8 +8436,8 @@ Instruções para resposta:
                               style={{ padding: '20px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)' }}
                             >
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(6, 182, 212, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                  <Database size={20} style={{ color: 'var(--accent-info)' }} />
+                                <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <Database size={20} style={{ color: '#3b82f6' }} />
                                 </div>
                                 <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{t('systemAndDatabase')}</h4>
                               </div>
@@ -8527,8 +8527,8 @@ Instruções para resposta:
                             style={{ padding: '20px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255, 255, 255, 0.01)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)' }}
                           >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                              <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Bell size={20} style={{ color: '#10b981' }} />
+                              <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(249, 115, 22, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Bell size={20} style={{ color: '#f97316' }} />
                               </div>
                               <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>
                                 {language === 'pt' ? 'Notificações Push' : 'Push Notifications'}

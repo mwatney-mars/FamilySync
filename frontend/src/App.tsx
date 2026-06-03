@@ -8293,7 +8293,7 @@ Instruções para resposta:
                     <div className="settings-sidebar-nav">
                       <div style={{ marginBottom: '16px', paddingLeft: '8px' }}>
                         <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{t('settings')}</h3>
-                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>FamilyHub v1.3.7</p>
+                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>FamilyHub v1.3.8</p>
                       </div>
 
                       {currentUser && (
@@ -10474,7 +10474,7 @@ Instruções para resposta:
           rel="noopener noreferrer" 
           style={{ color: 'var(--accent-primary)', fontWeight: 'bold', textDecoration: 'underline' }}
         >
-          FamilyHub 1.3.7
+          FamilyHub 1.3.8
         </a>{' '}
         {t('footerText')}
       </footer>
